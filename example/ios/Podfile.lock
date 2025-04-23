@@ -1,0 +1,33 @@
+PODS:
+  - Flutter (1.0.0)
+  - purchases_flutter (8.7.3):
+    - Flutter
+    - PurchasesHybridCommon (= 13.28.1)
+  - PurchasesHybridCommon (13.28.1):
+    - RevenueCat (= 5.21.2)
+  - RevenueCat (5.21.2)
+
+DEPENDENCIES:
+  - Flutter (from `Flutter`)
+  - purchases_flutter (from `.symlinks/plugins/purchases_flutter/ios`)
+
+SPEC REPOS:
+  trunk:
+    - PurchasesHybridCommon
+    - RevenueCat
+
+EXTERNAL SOURCES:
+  Flutter:
+    :path: Flutter
+  purchases_flutter:
+    :path: ".symlinks/plugins/purchases_flutter/ios"
+
+SPEC CHECKSUMS:
+  Flutter: e0871f40cf51350855a761d2e70bf5af5b9b5de7
+  purchases_flutter: 8abf2713ef15d22c85a2c3a8ffea30dafdceea2c
+  PurchasesHybridCommon: bb4c1ddc8683a18859da35f45a0717379f889d94
+  RevenueCat: d8174cfd72fab33f3b877d38c9f033142dc87c60
+
+PODFILE CHECKSUM: e30f02f9d1c72c47bb6344a0a748c9d268180865
+
+COCOAPODS: 1.16.2
