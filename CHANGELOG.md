@@ -1,4 +1,4 @@
-## 0.0.02
+## 0.0.2
 
 * Updated license, changelog, and readme
 
