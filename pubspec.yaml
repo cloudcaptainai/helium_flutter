@@ -1,7 +1,8 @@
 name: helium_flutter
-description: "A new Flutter plugin project."
+description: "Flutter Paywall SDK for Helium. Remotely build and auto-optimize paywalls (tryhelium.com)"
 version: 0.0.1
 homepage: https://tryhelium.com
+license: MIT
 
 environment:
   sdk: ^3.7.2
