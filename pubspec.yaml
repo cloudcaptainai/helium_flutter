@@ -1,7 +1,7 @@
 name: helium_flutter
 description: "A new Flutter plugin project."
 version: 0.0.1
-homepage:
+homepage: https://tryhelium.com
 
 environment:
   sdk: ^3.7.2
