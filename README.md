@@ -2,7 +2,26 @@
 
 ## **Installation**
 
-[Installation instructions to be filled in later]
+Add the helium_flutter package to your pubspec.yaml:
+
+```yaml
+dependencies:
+  helium_flutter: ^0.0.1
+```
+
+Then run:
+
+```bash
+flutter pub get
+```
+
+Make sure that Swift Package Manager Support is enabled:
+```bash
+flutter upgrade
+flutter config --enable-swift-package-manager
+```
+See [Google's guide on this](https://docs.flutter.dev/packages-and-plugins/swift-package-manager/for-app-developers) for more details.
+
 
 ## Configuration
 
