@@ -65,8 +65,6 @@ public class HeliumFlutterPlugin: NSObject, FlutterPlugin {
         } else {
             result(FlutterError(code: "BAD_ARGS", message: "Arguments not passed correctly", details: nil))
         }
-    case "getPlatformVersion":
-      result("iOS " + UIDevice.current.systemVersion)
     default:
       result(FlutterMethodNotImplemented)
     }

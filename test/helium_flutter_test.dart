@@ -1,15 +1,15 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:helium_flutter/core/const/contants.dart';
+import 'package:helium_flutter/core/helium_flutter_method_channel.dart';
+import 'package:helium_flutter/core/helium_flutter_platform.dart';
 import 'package:helium_flutter/helium_flutter.dart';
-import 'package:helium_flutter/helium_flutter_platform_interface.dart';
-import 'package:helium_flutter/helium_flutter_method_channel.dart';
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
+
+import 'core/const.dart';
 
 class MockHeliumFlutterPlatform
     with MockPlatformInterfaceMixin
     implements HeliumFlutterPlatform {
-  @override
-  Future<String?> getPlatformVersion() => Future.value('42');
-
   @override
   Future<String?> initialize({
     required HeliumCallbacks callbacks,
@@ -18,25 +18,22 @@ class MockHeliumFlutterPlatform
     required String customAPIEndpoint,
     required Map<String, dynamic> customUserTraits,
   }) {
-    return Future.value('Done');
+    return Future.value('Initialization started!');
   }
 
   @override
   Future<String?> getDownloadStatus() {
-    // TODO: implement getDownloadStatus
-    throw UnimplementedError();
+    return Future.value('Completed');
   }
 
   @override
   Future<String?> getHeliumUserId() {
-    // TODO: implement getHeliumUserId
-    throw UnimplementedError();
+    return Future.value('user_id');
   }
 
   @override
   Future<bool?> hideUpsell() {
-    // TODO: implement hideUpsell
-    throw UnimplementedError();
+    return Future.value(true);
   }
 
   @override
@@ -44,35 +41,83 @@ class MockHeliumFlutterPlatform
     required String newUserId,
     required Map<String, dynamic> traits,
   }) {
-    // TODO: implement overrideUserId
-    throw UnimplementedError();
+    return Future.value(newUserId);
   }
 
   @override
   Future<bool?> paywallsLoaded() {
-    // TODO: implement paywallsLoaded
-    throw UnimplementedError();
+    return Future.value(true);
   }
 
   @override
   Future<String?> presentUpsell({required String trigger}) {
-    // TODO: implement presentUpsell
-    throw UnimplementedError();
+    return Future.value('Upsell presented!');
   }
 }
 
 void main() {
   final HeliumFlutterPlatform initialPlatform = HeliumFlutterPlatform.instance;
+  HeliumFlutter heliumFlutterPlugin = HeliumFlutter();
+  MockHeliumFlutterPlatform fakePlatform = MockHeliumFlutterPlatform();
+  HeliumFlutterPlatform.instance = fakePlatform;
+  late InitializeValue initializeValue;
 
-  test('$MethodChannelHeliumFlutter is the default instance', () {
-    expect(initialPlatform, isInstanceOf<MethodChannelHeliumFlutter>());
+  setUp(() {
+    initializeValue = InitializeValue(
+      apiKey: 'sk-your-api-key',
+      callbacks: PaymentCallbacks(),
+      customAPIEndpoint: 'https://example.com',
+      customUserId: 'customUserId',
+      customUserTraits: {
+        'exampleUserTrait': 'test_value',
+        'somethingElse': 'somethingElse',
+        'somethingElse2': 'somethingElse2',
+        'vibes': 3.0,
+      },
+    );
   });
 
-  test('getPlatformVersion', () async {
-    HeliumFlutter heliumFlutterPlugin = HeliumFlutter();
-    MockHeliumFlutterPlatform fakePlatform = MockHeliumFlutterPlatform();
-    HeliumFlutterPlatform.instance = fakePlatform;
+  test('$HeliumFlutterMethodChannel is the default instance', () {
+    expect(initialPlatform, isInstanceOf<HeliumFlutterMethodChannel>());
+  });
 
-    expect('42', '42');
+  test(initializeMethodName, () async {
+    expect(
+      await heliumFlutterPlugin.initialize(
+        callbacks: initializeValue.callbacks,
+        apiKey: initializeValue.apiKey,
+        customUserId: initializeValue.customUserId,
+        customAPIEndpoint: initializeValue.customAPIEndpoint,
+        customUserTraits: initializeValue.customUserTraits,
+      ),
+      'Initialization started!',
+    );
+  });
+  test(getDownloadStatusMethodName, () async {
+    expect(await heliumFlutterPlugin.getDownloadStatus(), 'Completed');
+  });
+  test(getHeliumUserIdMethodName, () async {
+    expect(await heliumFlutterPlugin.getHeliumUserId(), 'user_id');
+  });
+  test(hideUpsellMethodName, () async {
+    expect(await heliumFlutterPlugin.hideUpsell(), true);
+  });
+  test(overrideUserIdMethodName, () async {
+    expect(
+      await heliumFlutterPlugin.overrideUserId(
+        newUserId: 'new_user_id',
+        traits: initializeValue.customUserTraits,
+      ),
+      'new_user_id',
+    );
+  });
+  test(paywallsLoadedMethodName, () async {
+    expect(await heliumFlutterPlugin.paywallsLoaded(), true);
+  });
+  test(presentUpsellMethodName, () async {
+    expect(
+      await heliumFlutterPlugin.presentUpsell(trigger: 'onboarding'),
+      'Upsell presented!',
+    );
   });
 }

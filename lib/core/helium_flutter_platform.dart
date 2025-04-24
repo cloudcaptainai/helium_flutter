@@ -9,11 +9,11 @@ abstract class HeliumFlutterPlatform extends PlatformInterface {
 
   static final Object _token = Object();
 
-  static HeliumFlutterPlatform _instance = MethodChannelHeliumFlutter();
+  static HeliumFlutterPlatform _instance = HeliumFlutterMethodChannel();
 
   /// The default instance of [HeliumFlutterPlatform] to use.
   ///
-  /// Defaults to [MethodChannelHeliumFlutter].
+  /// Defaults to [HeliumFlutterMethodChannel].
   static HeliumFlutterPlatform get instance => _instance;
 
   /// Platform-specific implementations should set this with their own
@@ -24,40 +24,33 @@ abstract class HeliumFlutterPlatform extends PlatformInterface {
     _instance = instance;
   }
 
+  ///Initialize helium sdk at the start up of flutter application. It will download custom paywall view
   Future<String?> initialize({
     required HeliumCallbacks callbacks,
     required String apiKey,
     required String customUserId,
     required String customAPIEndpoint,
     required Map<String, dynamic> customUserTraits,
-  }) async {
-    throw UnimplementedError('initialize() has not been implemented.');
-  }
+  });
 
-  Future<String?> getDownloadStatus() async {
-    throw UnimplementedError('platformVersion() has not been implemented.');
-  }
+  ///Download status of paywall
+  Future<String?> getDownloadStatus();
 
-  Future<String?> presentUpsell({required String trigger}) async {
-    throw UnimplementedError('platformVersion() has not been implemented.');
-  }
+  ///Presents view based on [trigger]
+  Future<String?> presentUpsell({required String trigger});
 
-  Future<bool?> hideUpsell() async {
-    throw UnimplementedError('platformVersion() has not been implemented.');
-  }
+  ///Hides view
+  Future<bool?> hideUpsell();
 
-  Future<String?> getHeliumUserId() async {
-    throw UnimplementedError('platformVersion() has not been implemented.');
-  }
+  ///Gets helium user id
+  Future<String?> getHeliumUserId();
 
-  Future<bool?> paywallsLoaded() async {
-    throw UnimplementedError('platformVersion() has not been implemented.');
-  }
+  ///Returns bool based on paywall loaded or not
+  Future<bool?> paywallsLoaded();
 
+  ///Overrides user id to given [newUserId]
   Future<String?> overrideUserId({
     required String newUserId,
     required Map<String, dynamic> traits,
-  }) async {
-    throw UnimplementedError('platformVersion() has not been implemented.');
-  }
+  });
 }
