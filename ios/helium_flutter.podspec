@@ -4,17 +4,18 @@
 #
 Pod::Spec.new do |s|
   s.name             = 'helium_flutter'
-  s.version          = '0.0.1'
+  s.version          = '0.0.3'
   s.summary          = 'A new Flutter plugin project.'
   s.description      = <<-DESC
-A new Flutter plugin project.
+A Flutter plugin that integrates the Helium SDK for iOS.
                        DESC
-  s.homepage         = 'http://example.com'
-  s.license          = { :file => '../LICENSE' }
-  s.author           = { 'Your Company' => 'email@example.com' }
-  s.source           = { :path => '.' }
+  s.homepage         = 'https://tryhelium.com'
+  s.license          = { :type => 'MIT', :file => '../LICENSE' }
+  s.author           = { 'CloudCaptainAI' => 'https://github.com/cloudcaptainai' }
+  s.source           = { :git => 'https://github.com/cloudcaptainai/helium_flutter.git', :tag => s.version }
   s.source_files = 'helium_flutter/Sources/helium_flutter/**/*'
   s.dependency 'Flutter'
+  s.dependency 'Helium'
   s.platform = :ios, '14.0'
 
   # Flutter.framework does not contain a i386 slice.
