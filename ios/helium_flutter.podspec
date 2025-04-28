@@ -4,7 +4,7 @@
 #
 Pod::Spec.new do |s|
   s.name             = 'helium_flutter'
-  s.version          = '0.0.3'
+  s.version          = '0.0.4'
   s.summary          = 'A new Flutter plugin project.'
   s.description      = <<-DESC
 A Flutter plugin that integrates the Helium SDK for iOS.
