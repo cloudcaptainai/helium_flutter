@@ -11,13 +11,16 @@ PODS:
     - DeviceKit (~> 4.0.0)
     - Kingfisher (~> 7.0)
     - SwiftyJSON (~> 5.0.2)
-  - helium_flutter (0.0.3):
+  - helium_flutter (0.0.4):
     - Flutter
     - Helium
   - integration_test (0.0.1):
     - Flutter
   - JSONSafeEncoding (2.0.0)
   - Kingfisher (7.12.0)
+  - path_provider_foundation (0.0.1):
+    - Flutter
+    - FlutterMacOS
   - purchases_flutter (8.7.3):
     - Flutter
     - PurchasesHybridCommon (= 13.28.1)
@@ -31,6 +34,7 @@ DEPENDENCIES:
   - Flutter (from `Flutter`)
   - helium_flutter (from `.symlinks/plugins/helium_flutter/ios`)
   - integration_test (from `.symlinks/plugins/integration_test/ios`)
+  - path_provider_foundation (from `.symlinks/plugins/path_provider_foundation/darwin`)
   - purchases_flutter (from `.symlinks/plugins/purchases_flutter/ios`)
 
 SPEC REPOS:
@@ -53,6 +57,8 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/helium_flutter/ios"
   integration_test:
     :path: ".symlinks/plugins/integration_test/ios"
+  path_provider_foundation:
+    :path: ".symlinks/plugins/path_provider_foundation/darwin"
   purchases_flutter:
     :path: ".symlinks/plugins/purchases_flutter/ios"
 
@@ -62,10 +68,11 @@ SPEC CHECKSUMS:
   DeviceKit: 8d3a6ce9f98c3a1a591a84b4edf69693c3552083
   Flutter: e0871f40cf51350855a761d2e70bf5af5b9b5de7
   Helium: 9ed63da7f43ec990ed6f03bfeae2ce8452d257e9
-  helium_flutter: dc909af98f97e9be492a5f5f589a5882b99c4aaf
+  helium_flutter: d3c158efeab239b605316cd23bf4c58e4f842b30
   integration_test: 252f60fa39af5e17c3aa9899d35d908a0721b573
   JSONSafeEncoding: 54722ebc4fe1482e3e60a8450e1287481e32dd8b
   Kingfisher: 53a10ea35051a436b5fb626ca2dd8f3144d755e9
+  path_provider_foundation: 2b6b4c569c0fb62ec74538f866245ac84301af46
   purchases_flutter: 8abf2713ef15d22c85a2c3a8ffea30dafdceea2c
   PurchasesHybridCommon: bb4c1ddc8683a18859da35f45a0717379f889d94
   RevenueCat: d8174cfd72fab33f3b877d38c9f033142dc87c60

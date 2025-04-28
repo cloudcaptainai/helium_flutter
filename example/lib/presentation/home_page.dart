@@ -27,6 +27,7 @@ class _HomePageState extends State<HomePage> {
           children: [
             SizedBox(height: 8),
             ElevatedButton(
+              key: ValueKey('download_status'),
               onPressed: () async {
                 String status =
                     await _heliumFlutterPlugin.getDownloadStatus() ?? '';
@@ -40,6 +41,7 @@ class _HomePageState extends State<HomePage> {
             Text(_downloadState),
             SizedBox(height: 8),
             ElevatedButton(
+              key: ValueKey('user_id'),
               onPressed: () async {
                 String result =
                     await _heliumFlutterPlugin.getHeliumUserId() ?? '';
@@ -53,6 +55,7 @@ class _HomePageState extends State<HomePage> {
             Text(_userId),
             SizedBox(height: 8),
             ElevatedButton(
+              key: ValueKey('is_upsell_hidden'),
               onPressed: () async {
                 bool result = await _heliumFlutterPlugin.hideUpsell() ?? false;
                 setState(() {
@@ -65,6 +68,7 @@ class _HomePageState extends State<HomePage> {
             Text(_upsellHidden.toString()),
             SizedBox(height: 8),
             ElevatedButton(
+              key: ValueKey('is_paywall_loaded'),
               onPressed: () async {
                 bool result =
                     await _heliumFlutterPlugin.paywallsLoaded() ?? false;
@@ -78,6 +82,7 @@ class _HomePageState extends State<HomePage> {
             Text(_paywallsLoaded.toString()),
             SizedBox(height: 8),
             ElevatedButton(
+              key: ValueKey('present_upsell'),
               onPressed: () async {
                 await _heliumFlutterPlugin.presentUpsell(
                       trigger: 'onboarding',
@@ -88,6 +93,7 @@ class _HomePageState extends State<HomePage> {
             ),
             SizedBox(height: 8),
             ElevatedButton(
+              key: ValueKey('view_for_trigger'),
               onPressed: () {
                 Navigator.of(context).push(
                   MaterialPageRoute(builder: (_) => const ViewForTriggerPage()),
