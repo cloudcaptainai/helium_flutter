@@ -16,9 +16,9 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
   Future<String?> initialize({
     required HeliumCallbacks callbacks,
     required String apiKey,
-    required String customUserId,
     required String customAPIEndpoint,
-    required Map<String, dynamic> customUserTraits,
+    String? customUserId,
+    Map<String, dynamic>? customUserTraits,
   }) async {
     _setMethodCallHandlers(callbacks);
     final result = await methodChannel
