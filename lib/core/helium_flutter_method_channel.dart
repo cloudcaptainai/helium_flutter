@@ -12,9 +12,11 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
   @visibleForTesting
   MethodChannel methodChannel = const MethodChannel(heliumFlutter);
 
-  late Widget _fallbackPaywallWidget;
+  Widget? _fallbackPaywallWidget;
   bool _isFallbackSheetShowing = false;
   BuildContext? _fallbackContext;
+
+  bool _isInitialized = false;
 
   @override
   Future<String?> initialize({
@@ -27,6 +29,12 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
   }) async {
     _setMethodCallHandlers(callbacks);
     _fallbackPaywallWidget = fallbackPaywall;
+
+    if (_isInitialized) {
+      return "Helium already initialized!";
+    }
+    _isInitialized = true;
+
     final result = await methodChannel
         .invokeMethod<String?>(initializeMethodName, {
       'apiKey': apiKey,
@@ -125,7 +133,7 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
           useSafeArea: true,
           builder: (BuildContext context) {
             return SizedBox.expand(
-              child: _fallbackPaywallWidget,
+              child: _fallbackPaywallWidget ?? Text("No fallback view provided"),
             );
           },
         );
