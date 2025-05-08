@@ -1,4 +1,4 @@
-import 'package:flutter/widgets.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:helium_flutter/core/const/contants.dart';
 import 'package:helium_flutter/core/helium_callbacks.dart';
@@ -10,7 +10,7 @@ class HeliumFlutter {
   ///Initialize helium sdk at the start up of flutter application. It will download custom paywall view
   Future<String?> initialize({
     required HeliumCallbacks callbacks,
-    required Widget Function(BuildContext) fallbackPaywall,
+    required Widget fallbackPaywall,
     required String apiKey,
     required String customAPIEndpoint,
     String? customUserId,
@@ -51,8 +51,8 @@ class HeliumFlutter {
       HeliumFlutterPlatform.instance.paywallsLoaded();
 
   ///Presents view based on [trigger]
-  Future<String?> presentUpsell({required String trigger, required BuildContext context}}) =>
-      HeliumFlutterPlatform.instance.presentUpsell(trigger: trigger, context: context);
+  Future<String?> presentUpsell({required BuildContext context, required String trigger}) =>
+      HeliumFlutterPlatform.instance.presentUpsell(context: context, trigger: trigger);
 }
 
 ///This widget used to present view based on [trigger]

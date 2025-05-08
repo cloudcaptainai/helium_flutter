@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:helium_flutter/core/const/contants.dart';
 import 'package:helium_flutter/core/helium_flutter_method_channel.dart';
@@ -13,10 +14,11 @@ class MockHeliumFlutterPlatform
   @override
   Future<String?> initialize({
     required HeliumCallbacks callbacks,
+    required Widget fallbackPaywall,
     required String apiKey,
-    required String customUserId,
     required String customAPIEndpoint,
-    required Map<String, dynamic> customUserTraits,
+    String? customUserId,
+    Map<String, dynamic>? customUserTraits,
   }) {
     return Future.value('Initialization started!');
   }

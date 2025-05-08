@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:flutter/material.dart';
 import 'package:helium_flutter/helium_flutter.dart';
 import 'package:helium_flutter_example/presentation/revenue_cat_page.dart';
@@ -84,11 +86,12 @@ class _HomePageState extends State<HomePage> {
             ElevatedButton(
               key: ValueKey('present_upsell'),
               onPressed: () async {
-                await _heliumFlutterPlugin.presentUpsell(
+                final presentResult = await _heliumFlutterPlugin.presentUpsell(
                       trigger: 'onboarding',
                       context: context,
                     ) ??
                     '';
+                log("presentUpsell result - $presentResult");
               },
               child: Text('Present upsell'),
             ),

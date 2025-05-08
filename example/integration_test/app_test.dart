@@ -9,8 +9,8 @@
 //Run with this
 //flutter drive --driver=test_driver/integration_test.dart --target=integration_test/screenshot_test.dart
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:helium_flutter/helium_flutter.dart';
@@ -81,6 +81,7 @@ Future<void> initializeHeliumSwift() async {
   try {
     await heliumFlutterPlugin.initialize(
       apiKey: apiKey,
+      fallbackPaywall: Text("test fallback"),
       callbacks: paymentCallbacks,
       customAPIEndpoint: customAPIEndpoint,
       customUserId: customUserId,

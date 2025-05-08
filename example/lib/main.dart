@@ -29,6 +29,7 @@ Future<void> initializeHeliumSwift() async {
   try {
     await heliumFlutterPlugin.initialize(
       apiKey: apiKey,
+      fallbackPaywall: Text("fallback view here..."),
       callbacks: paymentCallbacks,
       customAPIEndpoint: customAPIEndpoint,
       customUserId: customUserId,

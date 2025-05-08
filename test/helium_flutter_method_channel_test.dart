@@ -1,5 +1,6 @@
 import 'dart:developer';
 
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:helium_flutter/core/const/contants.dart';
@@ -14,6 +15,7 @@ void main() {
   const MethodChannel channel = MethodChannel(heliumFlutter);
 
   late InitializeValue initializeValue;
+  late BuildContext context;
 
   setUp(() {
     initializeValue = InitializeValue(
@@ -61,6 +63,7 @@ void main() {
     expect(
       await platform.initialize(
         callbacks: initializeValue.callbacks,
+        fallbackPaywall: Text('Test'),
         apiKey: initializeValue.apiKey,
         customUserId: initializeValue.customUserId,
         customAPIEndpoint: initializeValue.customAPIEndpoint,
@@ -90,10 +93,23 @@ void main() {
   test(paywallsLoadedMethodName, () async {
     expect(await platform.paywallsLoaded(), true);
   });
-  test(presentUpsellMethodName, () async {
+  testWidgets(presentUpsellMethodName, (WidgetTester tester) async {
+    // Build a minimal widget to provide context
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Builder(
+          builder: (BuildContext ctx) {
+            // Save the context for use in the test
+            context = ctx;
+            return const Scaffold(body: Text('Test'));
+          },
+        ),
+      ),
+    );
+
     expect(
-      await platform.presentUpsell(trigger: 'onboarding'),
-      'Upsell presented!',
+      await platform.presentUpsell(context: context, trigger: 'onboarding'),
+      'Unsuccessful Helium download',
     );
   });
 }

@@ -1,4 +1,4 @@
-import 'package:flutter/widgets.dart';
+import 'package:flutter/material.dart';
 import 'package:helium_flutter/core/helium_callbacks.dart';
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 
@@ -28,7 +28,7 @@ abstract class HeliumFlutterPlatform extends PlatformInterface {
   ///Initialize helium sdk at the start up of flutter application. It will download custom paywall view
   Future<String?> initialize({
     required HeliumCallbacks callbacks,
-    required Widget Function(BuildContext) fallbackPaywall,
+    required Widget fallbackPaywall,
     required String apiKey,
     required String customAPIEndpoint,
     String? customUserId,
@@ -39,7 +39,7 @@ abstract class HeliumFlutterPlatform extends PlatformInterface {
   Future<String?> getDownloadStatus();
 
   ///Presents view based on [trigger]
-  Future<String?> presentUpsell({required String trigger, required BuildContext context});
+  Future<String?> presentUpsell({required BuildContext context, required String trigger});
 
   ///Hides view
   Future<bool?> hideUpsell();

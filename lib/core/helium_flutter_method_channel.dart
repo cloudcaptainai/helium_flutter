@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter/widgets.dart';
 import 'package:helium_flutter/core/const/contants.dart';
 import 'package:helium_flutter/core/helium_callbacks.dart';
 import 'helium_flutter_platform.dart';
@@ -13,25 +12,26 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
   @visibleForTesting
   MethodChannel methodChannel = const MethodChannel(heliumFlutter);
 
-  late Widget Function(BuildContext) fallbackPaywallBuilder;
+  late Widget fallbackPaywallWidget;
 
   @override
   Future<String?> initialize({
     required HeliumCallbacks callbacks,
-    required Widget Function(BuildContext) fallbackPaywall,
+    required Widget fallbackPaywall,
     required String apiKey,
     required String customAPIEndpoint,
     String? customUserId,
     Map<String, dynamic>? customUserTraits,
   }) async {
     _setMethodCallHandlers(callbacks);
+    fallbackPaywallWidget = fallbackPaywall;
     final result = await methodChannel
         .invokeMethod<String?>(initializeMethodName, {
-          'apiKey': apiKey,
-          'customUserId': customUserId,
-          'customAPIEndpoint': customAPIEndpoint,
-          'customUserTraits': customUserTraits,
-        });
+      'apiKey': apiKey,
+      'customUserId': customUserId,
+      'customAPIEndpoint': customAPIEndpoint,
+      'customUserTraits': customUserTraits,
+    });
     return result;
   }
 
@@ -100,12 +100,30 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
 
   @override
   Future<String?> presentUpsell({
-    required String trigger,
     required BuildContext context,
+    required String trigger,
   }) async {
+    void showUpsellModal(BuildContext ctx) {
+      showModalBottomSheet(
+        context: ctx,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.zero,
+        ),
+        isScrollControlled: true,
+        useSafeArea: true,
+        builder: (BuildContext context) {
+          return SizedBox.expand(
+            child: fallbackPaywallWidget,
+          );
+        },
+      );
+    }
+
     final downloadStatus = await getDownloadStatus();
     if (downloadStatus != 'success') {
-      showModalBottomSheet(context: context, builder: fallbackPaywallBuilder);
+      if (context.mounted) {
+        showUpsellModal(context);
+      }
       return 'Unsuccessful Helium download';
     }
 
@@ -116,7 +134,9 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
       );
       return result;
     } on PlatformException catch (e) {
-      // todo show fallback
+      if (context.mounted) {
+        showUpsellModal(context);
+      }
       return "Failed to present upsell: '${e.message}'.";
     }
   }
