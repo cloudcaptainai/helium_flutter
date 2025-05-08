@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:helium_flutter/core/helium_callbacks.dart';
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 
+import 'const/contants.dart';
 import 'helium_flutter_method_channel.dart';
 
 abstract class HeliumFlutterPlatform extends PlatformInterface {
@@ -55,4 +57,21 @@ abstract class HeliumFlutterPlatform extends PlatformInterface {
     required String newUserId,
     required Map<String, dynamic> traits,
   });
+}
+
+///This widget used to present view based on [trigger]
+class UpsellViewForTrigger extends StatelessWidget {
+  const UpsellViewForTrigger({super.key, this.trigger});
+  final String viewType = upsellViewForTrigger;
+  final String? trigger;
+
+  @override
+  Widget build(BuildContext context) {
+    return UiKitView(
+      viewType: viewType,
+      layoutDirection: TextDirection.ltr,
+      creationParams: trigger != null ? {'trigger': trigger} : {},
+      creationParamsCodec: const StandardMessageCodec(),
+    );
+  }
 }

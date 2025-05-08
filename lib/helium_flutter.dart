@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:helium_flutter/core/const/contants.dart';
 import 'package:helium_flutter/core/helium_callbacks.dart';
 import 'package:helium_flutter/core/helium_flutter_platform.dart';
 export './core/helium_callbacks.dart';
@@ -53,21 +51,4 @@ class HeliumFlutter {
   ///Presents view based on [trigger]
   Future<String?> presentUpsell({required BuildContext context, required String trigger}) =>
       HeliumFlutterPlatform.instance.presentUpsell(context: context, trigger: trigger);
-}
-
-///This widget used to present view based on [trigger]
-class UpsellViewForTrigger extends StatelessWidget {
-  const UpsellViewForTrigger({super.key, this.trigger});
-  final String viewType = upsellViewForTrigger;
-  final String? trigger;
-
-  @override
-  Widget build(BuildContext context) {
-    return UiKitView(
-      viewType: viewType,
-      layoutDirection: TextDirection.ltr,
-      creationParams: trigger != null ? {'trigger': trigger} : {},
-      creationParamsCodec: const StandardMessageCodec(),
-    );
-  }
 }
