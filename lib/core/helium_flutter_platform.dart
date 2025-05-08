@@ -1,3 +1,4 @@
+import 'package:flutter/widgets.dart';
 import 'package:helium_flutter/core/helium_callbacks.dart';
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 
@@ -27,6 +28,7 @@ abstract class HeliumFlutterPlatform extends PlatformInterface {
   ///Initialize helium sdk at the start up of flutter application. It will download custom paywall view
   Future<String?> initialize({
     required HeliumCallbacks callbacks,
+    required Widget fallbackPaywall,
     required String apiKey,
     required String customAPIEndpoint,
     String? customUserId,

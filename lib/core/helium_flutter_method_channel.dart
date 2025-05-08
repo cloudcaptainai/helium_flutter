@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'dart:developer';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/widgets.dart';
 import 'package:helium_flutter/core/const/contants.dart';
 import 'package:helium_flutter/core/helium_callbacks.dart';
 import 'helium_flutter_platform.dart';
@@ -15,6 +15,7 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
   @override
   Future<String?> initialize({
     required HeliumCallbacks callbacks,
+    required Widget fallbackPaywall,
     required String apiKey,
     required String customAPIEndpoint,
     String? customUserId,
@@ -96,10 +97,21 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
 
   @override
   Future<String?> presentUpsell({required String trigger}) async {
-    final result = await methodChannel.invokeMethod<String?>(
-      presentUpsellMethodName,
-      trigger,
-    );
-    return result;
+    final downloadStatus = await getDownloadStatus();
+    if (downloadStatus != 'success') {
+      // todo show fallback
+      return 'Unsuccessful Helium download';
+    }
+
+    try {
+      final result = await methodChannel.invokeMethod<String?>(
+        presentUpsellMethodName,
+        trigger,
+      );
+      return result;
+    } on PlatformException catch (e) {
+      // todo show fallback
+      return "Failed to present upsell: '${e.message}'.";
+    }
   }
 }
