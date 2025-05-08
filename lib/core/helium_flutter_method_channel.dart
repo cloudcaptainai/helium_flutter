@@ -12,7 +12,9 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
   @visibleForTesting
   MethodChannel methodChannel = const MethodChannel(heliumFlutter);
 
-  late Widget fallbackPaywallWidget;
+  late Widget _fallbackPaywallWidget;
+  bool _isFallbackSheetShowing = false;
+  BuildContext? _fallbackContext;
 
   @override
   Future<String?> initialize({
@@ -24,7 +26,7 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
     Map<String, dynamic>? customUserTraits,
   }) async {
     _setMethodCallHandlers(callbacks);
-    fallbackPaywallWidget = fallbackPaywall;
+    _fallbackPaywallWidget = fallbackPaywall;
     final result = await methodChannel
         .invokeMethod<String?>(initializeMethodName, {
       'apiKey': apiKey,
@@ -75,6 +77,10 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
     final result = await methodChannel.invokeMethod<bool?>(
       hideUpsellMethodName,
     );
+    // Hide fallback sheet if it is displaying
+    if (_isFallbackSheetShowing && _fallbackContext != null && _fallbackContext!.mounted) {
+      Navigator.of(_fallbackContext!).pop();
+    }
     return result;
   }
 
@@ -103,26 +109,36 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
     required BuildContext context,
     required String trigger,
   }) async {
-    void showUpsellModal(BuildContext ctx) {
-      showModalBottomSheet(
-        context: ctx,
-        shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.zero,
-        ),
-        isScrollControlled: true,
-        useSafeArea: true,
-        builder: (BuildContext context) {
-          return SizedBox.expand(
-            child: fallbackPaywallWidget,
-          );
-        },
-      );
+    if (_isFallbackSheetShowing) return 'Already showing';
+
+    _isFallbackSheetShowing = true;
+    _fallbackContext = context;
+
+    Future<void> showFallbackSheet(BuildContext ctx) async {
+      try {
+        await showModalBottomSheet(
+          context: ctx,
+          shape: const RoundedRectangleBorder(
+            borderRadius: BorderRadius.zero,
+          ),
+          isScrollControlled: true,
+          useSafeArea: true,
+          builder: (BuildContext context) {
+            return SizedBox.expand(
+              child: _fallbackPaywallWidget,
+            );
+          },
+        );
+      } finally {
+        _isFallbackSheetShowing = false;
+        _fallbackContext = null;
+      }
     }
 
     final downloadStatus = await getDownloadStatus();
     if (downloadStatus != 'success') {
       if (context.mounted) {
-        showUpsellModal(context);
+        showFallbackSheet(context);
       }
       return 'Unsuccessful Helium download';
     }
@@ -135,7 +151,7 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
       return result;
     } on PlatformException catch (e) {
       if (context.mounted) {
-        showUpsellModal(context);
+        showFallbackSheet(context);
       }
       return "Failed to present upsell: '${e.message}'.";
     }
