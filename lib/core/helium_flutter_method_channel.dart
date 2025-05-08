@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:developer';
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:helium_flutter/core/const/contants.dart';
@@ -12,10 +13,12 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
   @visibleForTesting
   MethodChannel methodChannel = const MethodChannel(heliumFlutter);
 
+  late Widget Function(BuildContext) fallbackPaywallBuilder;
+
   @override
   Future<String?> initialize({
     required HeliumCallbacks callbacks,
-    required Widget fallbackPaywall,
+    required Widget Function(BuildContext) fallbackPaywall,
     required String apiKey,
     required String customAPIEndpoint,
     String? customUserId,
@@ -96,10 +99,13 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
   }
 
   @override
-  Future<String?> presentUpsell({required String trigger}) async {
+  Future<String?> presentUpsell({
+    required String trigger,
+    required BuildContext context,
+  }) async {
     final downloadStatus = await getDownloadStatus();
     if (downloadStatus != 'success') {
-      // todo show fallback
+      showModalBottomSheet(context: context, builder: fallbackPaywallBuilder);
       return 'Unsuccessful Helium download';
     }
 

@@ -86,6 +86,7 @@ class _HomePageState extends State<HomePage> {
               onPressed: () async {
                 await _heliumFlutterPlugin.presentUpsell(
                       trigger: 'onboarding',
+                      context: context,
                     ) ??
                     '';
               },

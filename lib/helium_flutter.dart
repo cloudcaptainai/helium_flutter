@@ -10,7 +10,7 @@ class HeliumFlutter {
   ///Initialize helium sdk at the start up of flutter application. It will download custom paywall view
   Future<String?> initialize({
     required HeliumCallbacks callbacks,
-    required Widget fallbackPaywall,
+    required Widget Function(BuildContext) fallbackPaywall,
     required String apiKey,
     required String customAPIEndpoint,
     String? customUserId,
@@ -51,8 +51,8 @@ class HeliumFlutter {
       HeliumFlutterPlatform.instance.paywallsLoaded();
 
   ///Presents view based on [trigger]
-  Future<String?> presentUpsell({required String trigger}) =>
-      HeliumFlutterPlatform.instance.presentUpsell(trigger: trigger);
+  Future<String?> presentUpsell({required String trigger, required BuildContext context}}) =>
+      HeliumFlutterPlatform.instance.presentUpsell(trigger: trigger, context: context);
 }
 
 ///This widget used to present view based on [trigger]

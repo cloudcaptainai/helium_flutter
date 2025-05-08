@@ -50,7 +50,7 @@ class MockHeliumFlutterPlatform
   }
 
   @override
-  Future<String?> presentUpsell({required String trigger}) {
+  Future<String?> presentUpsell({required String trigger, required BuildContext context}) {
     return Future.value('Upsell presented!');
   }
 }
