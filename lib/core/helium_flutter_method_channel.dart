@@ -117,12 +117,12 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
     required BuildContext context,
     required String trigger,
   }) async {
-    if (_isFallbackSheetShowing) return 'Already showing';
-
-    _isFallbackSheetShowing = true;
-    _fallbackContext = context;
-
     Future<void> showFallbackSheet(BuildContext ctx) async {
+      if (_isFallbackSheetShowing) return; // already showing!
+
+      _isFallbackSheetShowing = true;
+      _fallbackContext = context;
+
       try {
         await showModalBottomSheet(
           context: ctx,
