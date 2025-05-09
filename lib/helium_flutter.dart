@@ -7,9 +7,9 @@ export './types/helium_transaction_status.dart';
 class HeliumFlutter {
   ///Initialize helium sdk at the start up of flutter application. It will download custom paywall view
   Future<String?> initialize({
+    required String apiKey,
     required HeliumCallbacks callbacks,
     required Widget fallbackPaywall,
-    required String apiKey,
     required String customAPIEndpoint,
     String? customUserId,
     Map<String, dynamic>? customUserTraits,
