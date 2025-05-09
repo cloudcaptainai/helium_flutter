@@ -63,6 +63,7 @@ void main() {
   MockHeliumFlutterPlatform fakePlatform = MockHeliumFlutterPlatform();
   HeliumFlutterPlatform.instance = fakePlatform;
   late InitializeValue initializeValue;
+  late BuildContext context;
 
   setUp(() {
     initializeValue = InitializeValue(
@@ -87,6 +88,7 @@ void main() {
     expect(
       await heliumFlutterPlugin.initialize(
         callbacks: initializeValue.callbacks,
+        fallbackPaywall: Text("Test"),
         apiKey: initializeValue.apiKey,
         customUserId: initializeValue.customUserId,
         customAPIEndpoint: initializeValue.customAPIEndpoint,
@@ -116,9 +118,22 @@ void main() {
   test(paywallsLoadedMethodName, () async {
     expect(await heliumFlutterPlugin.paywallsLoaded(), true);
   });
-  test(presentUpsellMethodName, () async {
+  testWidgets(presentUpsellMethodName, (WidgetTester tester) async {
+    // Build a minimal widget to provide context
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Builder(
+          builder: (BuildContext ctx) {
+            // Save the context for use in the test
+            context = ctx;
+            return const Scaffold(body: Text('Test'));
+          },
+        ),
+      ),
+    );
+
     expect(
-      await heliumFlutterPlugin.presentUpsell(trigger: 'onboarding'),
+      await heliumFlutterPlugin.presentUpsell(context: context, trigger: 'onboarding'),
       'Upsell presented!',
     );
   });

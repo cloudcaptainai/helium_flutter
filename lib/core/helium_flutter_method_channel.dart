@@ -144,11 +144,11 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
     }
 
     final downloadStatus = await getDownloadStatus();
-    if (downloadStatus != 'success') {
+    if (downloadStatus != '"downloadSuccess"') {
       if (context.mounted) {
         showFallbackSheet(context);
       }
-      return 'Unsuccessful Helium download';
+      return 'Unsuccessful Helium download - $downloadStatus';
     }
 
     try {
