@@ -1,5 +1,5 @@
 {
-  "originHash" : "d60aa8b79741c00aa882aa7481550b4ec175850141c1a5e821bac8ed35899ee0",
+  "originHash" : "50a943b2ae9b6546a29e99b2ebde483b58c11792923058962b2ffcf5d911bdf1",
   "pins" : [
     {
       "identity" : "analytics-swift",
@@ -33,8 +33,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/cloudcaptainai/helium-swift.git",
       "state" : {
-        "revision" : "9790873fee93c9b99030ecfb915063c5be4db3ea",
-        "version" : "1.5.9"
+        "revision" : "9e880a5731e454cbd1f4b05efbd4e027fa7bfd07",
+        "version" : "2.0.2"
       }
     },
     {
@@ -51,8 +51,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/onevcat/Kingfisher.git",
       "state" : {
-        "revision" : "2ef543ee21d63734e1c004ad6c870255e8716c50",
-        "version" : "7.12.0"
+        "revision" : "7deda23bbdca612076c5c315003d8638a08ed0f1",
+        "version" : "8.3.2"
       }
     },
     {

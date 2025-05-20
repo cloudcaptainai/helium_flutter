@@ -2,10 +2,13 @@
 # To learn more about a Podspec see http://guides.cocoapods.org/syntax/podspec.html.
 # Run `pod lib lint helium_flutter.podspec` to validate before publishing.
 #
+require 'yaml'
+pubspec = YAML.load_file(File.join('..', 'pubspec.yaml'))
+
 Pod::Spec.new do |s|
   s.name             = 'helium_flutter'
-  s.version          = '0.0.4'
-  s.summary          = 'A new Flutter plugin project.'
+  s.version          = pubspec['version']
+  s.summary          = 'Helium SDK for Flutter'
   s.description      = <<-DESC
 A Flutter plugin that integrates the Helium SDK for iOS.
                        DESC
@@ -15,7 +18,7 @@ A Flutter plugin that integrates the Helium SDK for iOS.
   s.source           = { :git => 'https://github.com/cloudcaptainai/helium_flutter.git', :tag => s.version }
   s.source_files = 'helium_flutter/Sources/helium_flutter/**/*'
   s.dependency 'Flutter'
-  s.dependency 'Helium'
+  s.dependency 'Helium', '2.0.2'
   s.platform = :ios, '14.0'
 
   # Flutter.framework does not contain a i386 slice.
