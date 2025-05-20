@@ -1,3 +1,7 @@
+## 0.0.6
+
+- Paywall locked to portrait orientation & other fixes/improvements
+
 ## 0.0.5
 
 - Improvements
