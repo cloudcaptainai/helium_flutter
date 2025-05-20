@@ -16,12 +16,19 @@ flutter pub get
 ```
 
 Make sure that Swift Package Manager Support is enabled:
+
 ```bash
 flutter upgrade
 flutter config --enable-swift-package-manager
 ```
+
 See [Google's guide on this](https://docs.flutter.dev/packages-and-plugins/swift-package-manager/for-app-developers) for more details.
 
+Note that Helium requires a deployment target of iOS 14 or higher. This can be specified by setting it in your `ios/Podfile`with:
+
+```
+platform :ios, '14.0'
+```
 
 ## Configuration
 
@@ -135,10 +142,10 @@ class RevenueCatCallbacks implements HeliumCallbacks {
         return HeliumTransactionStatus.failed;
       }
       
-      final purchaseResult = await Purchases.purchasePackage(packageToPurchase);
+      final customerInfo = await Purchases.purchasePackage(packageToPurchase);
       
       // Check if the purchase was successful by looking at entitlements
-      if (purchaseResult.customerInfo.entitlements.active.isNotEmpty) {
+      if (customerInfo.entitlements.active.isNotEmpty) {
         return HeliumTransactionStatus.purchased;
       } else {
         return HeliumTransactionStatus.failed;
@@ -206,6 +213,9 @@ void main() {
     
     // The callbacks implementation you created earlier
     callbacks: paymentCallbacks,
+
+    // Defines a fallback paywall to show in case the user's device is not connected to the internet.
+    fallbackPaywall: Text("fallback display")
     
     // If set, a custom API endpoint (usually provided by Helium)
     customAPIEndpoint: "https://api-v2.tryhelium.com/on-launch",
@@ -254,6 +264,7 @@ String downloadStatus = await heliumFlutter.getDownloadStatus() ?? 'Unknown';
 ```
 
 The download status will be one of the following:
+
 - `"notDownloadedYet"`: The download has not been initiated or is still in progress.
 - `"downloadSuccess"`: The download was successful.
 - `"downloadFailure"`: The download failed.
@@ -278,31 +289,15 @@ You can present a paywall programmatically using the `presentUpsell` method:
 
 ```dart
 ElevatedButton(
-  onPressed: () async {
-    await heliumFlutter.presentUpsell(trigger: 'onboarding');
+  onPressed: () {
+    final heliumFlutter = HeliumFlutter();
+    heliumFlutter.presentUpsell(context: context, trigger: 'onboarding');
   },
   child: Text('Show Premium Features'),
 ),
 ```
 
 The `trigger` parameter is a unique identifier for the paywall trigger point in your app. Helium uses this to track and optimize the paywall for each trigger point.
-
-### Via Widget Integration
-
-You can also use the `UpsellViewForTrigger` widget to embed a paywall directly in your widget tree:
-
-```dart
-class ViewForTriggerPage extends StatelessWidget {
-  const ViewForTriggerPage({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: UpsellViewForTrigger(trigger: 'onboarding'),
-    );
-  }
-}
-```
 
 ### Hiding Paywalls
 
