@@ -1,3 +1,7 @@
+## 0.0.7
+
+- Lower minimum-supported Flutter version to 3.24.0 (Dart v3.5.0)
+
 ## 0.0.6
 
 - Paywall locked to portrait orientation & other fixes/improvements
