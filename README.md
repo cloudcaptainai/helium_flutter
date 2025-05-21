@@ -6,7 +6,7 @@ Add the helium_flutter package to your pubspec.yaml:
 
 ```yaml
 dependencies:
-  helium_flutter: ^0.0.1
+  helium_flutter: ^0.0.6
 ```
 
 Then run:
@@ -15,14 +15,16 @@ Then run:
 flutter pub get
 ```
 
-Make sure that Swift Package Manager Support is enabled:
+**_Recommended -_** Make sure that Swift Package Manager support is enabled _(Flutter version 3.24 or higher required)_:
 
 ```bash
 flutter upgrade
 flutter config --enable-swift-package-manager
 ```
 
-See [Google's guide on this](https://docs.flutter.dev/packages-and-plugins/swift-package-manager/for-app-developers) for more details.
+See this [Flutter documentation](https://docs.flutter.dev/packages-and-plugins/swift-package-manager/for-app-developers) for more details.
+
+**NOTE -** You can still use Cocoapods for your dependencies if preferred. If you need to disable Swift Package Manager dependencies after having enabled it, refer to that same [Flutter documentation](https://docs.flutter.dev/packages-and-plugins/swift-package-manager/for-app-developers#how-to-turn-off-swift-package-manager). _(Flutter version 3.24 or higher is still recommended.)_
 
 Note that Helium requires a deployment target of iOS 14 or higher. This can be specified by setting it in your `ios/Podfile`with:
 
