@@ -51,4 +51,8 @@ class HeliumFlutter {
   ///Presents view based on [trigger]
   Future<String?> presentUpsell({required BuildContext context, required String trigger}) =>
       HeliumFlutterPlatform.instance.presentUpsell(context: context, trigger: trigger);
+
+  Widget getUpsellWidget({required String trigger}) =>
+      HeliumFlutterPlatform.instance.getUpsellWidget(trigger: trigger);
+
 }
