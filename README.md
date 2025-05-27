@@ -299,13 +299,30 @@ You can present a paywall programmatically using the `presentUpsell` method:
 ElevatedButton(
   onPressed: () {
     final heliumFlutter = HeliumFlutter();
-    heliumFlutter.presentUpsell(context: context, trigger: 'onboarding');
+    heliumFlutter.presentUpsell(context: context, trigger: 'insert-trigger-here');
   },
   child: Text('Show Premium Features'),
 ),
 ```
 
 The `trigger` parameter is a unique identifier for the paywall trigger point in your app. Helium uses this to track and optimize the paywall for each trigger point.
+
+### Via Widget Integration
+
+You can also use the `HeliumFlutter.getUpsellWidget` method to embed a paywall directly in your widget tree:
+
+```dart
+class ExamplePageWithEmbeddedPaywall extends StatelessWidget {
+  const ExamplePageWithEmbeddedPaywall({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: HeliumFlutter().getUpsellWidget(trigger: "insert-trigger-here"),
+    );
+  }
+}
+```
 
 ### Hiding Paywalls
 
