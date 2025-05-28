@@ -109,7 +109,7 @@ void main() {
 
     expect(
       await platform.presentUpsell(context: context, trigger: 'onboarding'),
-      'Unsuccessful Helium download',
+      'Unsuccessful Helium download - Completed',
     );
   });
 }

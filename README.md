@@ -2,11 +2,11 @@
 
 ## **Installation**
 
-Add the helium_flutter package to your pubspec.yaml:
+Run `flutter pub add helium_flutter` or manually add the helium_flutter package to your pubspec.yaml:
 
 ```yaml
 dependencies:
-  helium_flutter: ^0.0.7
+  helium_flutter: ^0.0.8
 ```
 
 Then run:
