@@ -18,7 +18,7 @@ A Flutter plugin that integrates the Helium SDK for iOS.
   s.source           = { :git => 'https://github.com/cloudcaptainai/helium_flutter.git', :tag => s.version }
   s.source_files = 'helium_flutter/Sources/helium_flutter/**/*'
   s.dependency 'Flutter'
-  s.dependency 'Helium', '2.0.6' # note that the dependency in Package.swift is what's actually used... we might be able to remove this but safer to keep in for now
+  s.dependency 'Helium', '2.0.7' # note that the dependency in Package.swift is what's actually used... we might be able to remove this but safer to keep in for now
   s.platform = :ios, '14.0'
 
   # Flutter.framework does not contain a i386 slice.
