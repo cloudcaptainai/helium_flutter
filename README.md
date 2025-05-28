@@ -2,11 +2,11 @@
 
 ## **Installation**
 
-Add the helium_flutter package to your pubspec.yaml:
+Run `flutter pub add helium_flutter` or manually add the helium_flutter package to your pubspec.yaml:
 
 ```yaml
 dependencies:
-  helium_flutter: ^0.0.7
+  helium_flutter: ^0.0.8
 ```
 
 Then run:
@@ -15,7 +15,9 @@ Then run:
 flutter pub get
 ```
 
-**Recommended -** Make sure that Swift Package Manager support is enabled _(Flutter version 3.24 or higher required)_:
+The minimum version of Flutter supported by this SDK is **3.24.0**.
+
+**Recommended -**  Make sure that Swift Package Manager support is enabled:
 
 ```bash
 flutter upgrade
@@ -24,13 +26,17 @@ flutter config --enable-swift-package-manager
 
 See this [Flutter documentation](https://docs.flutter.dev/packages-and-plugins/swift-package-manager/for-app-developers) for more details.
 
-**Note -** You can still use Cocoapods for your dependencies if preferred. If you need to disable Swift Package Manager dependencies after having enabled it, refer to that same [Flutter documentation](https://docs.flutter.dev/packages-and-plugins/swift-package-manager/for-app-developers#how-to-turn-off-swift-package-manager). _(Flutter version 3.24 or higher still required)_
+**Note -** You can still use Cocoapods for your dependencies if preferred. If you need to disable Swift Package Manager dependencies after having enabled it, refer to that same [Flutter documentation](https://docs.flutter.dev/packages-and-plugins/swift-package-manager/for-app-developers#how-to-turn-off-swift-package-manager).
 
-Note that Helium requires a deployment target of iOS 14 or higher. This can be specified by setting it in your `ios/Podfile`with:
+### iOS Settings
+
+Helium requires a deployment target of iOS 14 or higher. This can be specified by setting it in your `ios/Podfile`with:
 
 ```
 platform :ios, '14.0'
 ```
+
+If you still see errors related to minimum iOS version, consider updating to 14.0 or higher [directly in the Xcode project](https://docs.flutter.dev/packages-and-plugins/swift-package-manager/for-app-developers#how-to-use-a-swift-package-manager-flutter-plugin-that-requires-a-higher-os-version).
 
 ## Configuration
 
@@ -293,13 +299,30 @@ You can present a paywall programmatically using the `presentUpsell` method:
 ElevatedButton(
   onPressed: () {
     final heliumFlutter = HeliumFlutter();
-    heliumFlutter.presentUpsell(context: context, trigger: 'onboarding');
+    heliumFlutter.presentUpsell(context: context, trigger: 'insert-trigger-here');
   },
   child: Text('Show Premium Features'),
 ),
 ```
 
 The `trigger` parameter is a unique identifier for the paywall trigger point in your app. Helium uses this to track and optimize the paywall for each trigger point.
+
+### Via Widget Integration
+
+You can also use the `HeliumFlutter.getUpsellWidget` method to embed a paywall directly in your widget tree:
+
+```dart
+class ExamplePageWithEmbeddedPaywall extends StatelessWidget {
+  const ExamplePageWithEmbeddedPaywall({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: HeliumFlutter().getUpsellWidget(trigger: "insert-trigger-here"),
+    );
+  }
+}
+```
 
 ### Hiding Paywalls
 

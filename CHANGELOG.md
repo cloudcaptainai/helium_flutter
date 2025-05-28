@@ -1,3 +1,8 @@
+## 0.0.8
+
+- New `HeliumFlutter.getUpsellWidget` method to embed a paywall directly in your widget tree
+- Bug fixes
+
 ## 0.0.7
 
 - Lower minimum-supported Flutter version to 3.24.0 (Dart v3.5.0)

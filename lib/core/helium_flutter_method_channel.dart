@@ -164,4 +164,76 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
       return "Failed to present upsell: '${e.message}'.";
     }
   }
+
+  @override
+  Widget getUpsellWidget({required String trigger}) {
+    return UpsellWrapperWidget(
+      trigger: trigger,
+      fallbackPaywallWidget: _fallbackPaywallWidget ?? Text("No fallback view provided"),
+      downloadStatusFetcher: getDownloadStatus, // Pass the actual async function
+    );
+  }
+
+}
+
+/// A wrapper widget that handles the asynchronous fetching of download status
+/// and then displays the appropriate UI. Fetching download status should be
+/// nearly synchronous.
+class UpsellWrapperWidget extends StatefulWidget {
+  final String trigger;
+  final Widget fallbackPaywallWidget;
+  final Future<String?> Function() downloadStatusFetcher;
+
+  const UpsellWrapperWidget({
+    super.key,
+    required this.trigger,
+    required this.fallbackPaywallWidget,
+    required this.downloadStatusFetcher,
+  });
+
+  @override
+  State<UpsellWrapperWidget> createState() => _UpsellWrapperWidgetState();
+}
+class _UpsellWrapperWidgetState extends State<UpsellWrapperWidget> {
+  late Future<String?> _downloadStatusFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _downloadStatusFuture = widget.downloadStatusFetcher();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<String?>(
+      future: _downloadStatusFuture,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const SizedBox.shrink();
+        }
+        if (snapshot.data == '"downloadSuccess"') {
+          return UpsellViewForTrigger(trigger: widget.trigger);
+        } else {
+          return widget.fallbackPaywallWidget;
+        }
+      },
+    );
+  }
+}
+
+///This widget used to present view based on [trigger]
+class UpsellViewForTrigger extends StatelessWidget {
+  const UpsellViewForTrigger({super.key, this.trigger});
+  final String viewType = upsellViewForTrigger;
+  final String? trigger;
+
+  @override
+  Widget build(BuildContext context) {
+    return UiKitView(
+      viewType: viewType,
+      layoutDirection: TextDirection.ltr,
+      creationParams: trigger != null ? {'trigger': trigger} : {},
+      creationParamsCodec: const StandardMessageCodec(),
+    );
+  }
 }
