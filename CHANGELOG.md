@@ -1,3 +1,7 @@
+## 0.0.9
+
+- hideUpsell and paywallsLoaded simply return non-optional bools now
+
 ## 0.0.8
 
 - New `HeliumFlutter.getUpsellWidget` method to embed a paywall directly in your widget tree

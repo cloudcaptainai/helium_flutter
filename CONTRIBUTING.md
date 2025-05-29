@@ -49,8 +49,9 @@ To release a new version:
 
 1. **Update version**: Modify the `version:` field in `pubspec.yaml`
 2. **Update changelog**: Add release notes to `CHANGELOG.md` (remember to update both!)
-3. **Commit and push**: Push your changes to the `main` branch
-4. **Automatic flow**:
+3. **Update helium-swift dependency (optional)**: Update the dependency version in BOTH `ios/helium_flutter/Package.swift` and `ios/helium_flutter.podspec`
+4. **Commit and push**: Push your changes to the `main` branch
+5. **Automatic flow**:
     - Release workflow detects version change
     - Runs tests and if successful
     - Creates git tag and GitHub release

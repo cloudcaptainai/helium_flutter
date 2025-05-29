@@ -33,7 +33,7 @@ class HeliumFlutter {
       HeliumFlutterPlatform.instance.getHeliumUserId();
 
   ///Hides view
-  Future<bool?> hideUpsell() => HeliumFlutterPlatform.instance.hideUpsell();
+  Future<bool> hideUpsell() => HeliumFlutterPlatform.instance.hideUpsell();
 
   ///Overrides user id to given [newUserId]
   Future<String?> overrideUserId({
@@ -45,7 +45,7 @@ class HeliumFlutter {
   );
 
   ///Returns bool based on paywall loaded or not
-  Future<bool?> paywallsLoaded() =>
+  Future<bool> paywallsLoaded() =>
       HeliumFlutterPlatform.instance.paywallsLoaded();
 
   ///Presents view based on [trigger]

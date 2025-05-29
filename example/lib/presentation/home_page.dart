@@ -59,7 +59,7 @@ class _HomePageState extends State<HomePage> {
             ElevatedButton(
               key: ValueKey('is_upsell_hidden'),
               onPressed: () async {
-                bool result = await _heliumFlutterPlugin.hideUpsell() ?? false;
+                bool result = await _heliumFlutterPlugin.hideUpsell();
                 setState(() {
                   _upsellHidden = result;
                 });
@@ -73,7 +73,7 @@ class _HomePageState extends State<HomePage> {
               key: ValueKey('is_paywall_loaded'),
               onPressed: () async {
                 bool result =
-                    await _heliumFlutterPlugin.paywallsLoaded() ?? false;
+                    await _heliumFlutterPlugin.paywallsLoaded();
                 setState(() {
                   _paywallsLoaded = result;
                 });
