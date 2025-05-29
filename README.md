@@ -216,14 +216,14 @@ void main() {
   // Initialize Helium
   final heliumFlutter = HeliumFlutter();
   heliumFlutter.initialize(
-    // You'll get this from Helium founders during setup!
+    // [Required] You'll get this from Helium founders during setup!
     apiKey: "<your-helium-api-key>",
     
-    // The callbacks implementation you created earlier
+    // [Required] The callbacks implementation you created earlier
     callbacks: paymentCallbacks,
 
-    // Defines a fallback paywall to show in case the user's device is not connected to the internet.
-    fallbackPaywall: Text("fallback display")
+    // [Required] Defines a fallback paywall to show in case the user's device is not connected to the internet. This can be any Flutter view e.g. your existing one. It should be defined with subscription and post purchase navigation logic.
+    fallbackPaywall: <your fallback paywall view>
     
     // If set, a custom API endpoint (usually provided by Helium)
     customAPIEndpoint: "https://api-v2.tryhelium.com/on-launch",
@@ -289,7 +289,7 @@ bool paywallsLoaded = await heliumFlutter.paywallsLoaded() ?? false;
 
 ## Presenting Paywalls
 
-There are several ways to present Helium paywalls in your Flutter app:
+There are two ways to show a Helium paywall in your Flutter app:
 
 ### Via Direct Method Call
 
@@ -318,7 +318,7 @@ class ExamplePageWithEmbeddedPaywall extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: HeliumFlutter().getUpsellWidget(trigger: "insert-trigger-here"),
+      body: HeliumFlutter().getUpsellWidget(trigger: 'insert-trigger-here'),
     );
   }
 }
@@ -326,7 +326,7 @@ class ExamplePageWithEmbeddedPaywall extends StatelessWidget {
 
 ### Hiding Paywalls
 
-To programmatically hide a paywall:
+To programmatically hide a paywall that was shown with the `presentUpsell` method:
 
 ```dart
 bool hideResult = await heliumFlutter.hideUpsell() ?? false;
@@ -349,6 +349,9 @@ Future<void> onPaywallEvent(Map<String, dynamic> heliumPaywallEvent) async {
       // Handle custom dismissal logic here
       // For example, navigate back or show a different screen
     }
+  } else if (eventType == 'paywallDismissed') {
+    final triggerName = heliumPaywallEvent['triggerName'];
+    // Manually handle dismissal if paywall was shown via widget integration
   }
 }
 ```
