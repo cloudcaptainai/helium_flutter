@@ -2,7 +2,7 @@
 
 ## GitHub Actions Workflows
 
-This repository uses three automated workflows to automate releases:
+This repository uses two automated workflows to automate releases:
 
 ### 1. Test and Validate (`run-tests.yml`)
 
@@ -28,20 +28,12 @@ This repository uses three automated workflows to automate releases:
     - Runs the test workflow
     - Creates a git tag with the new version
     - Creates a GitHub release with auto-generated notes
+    - Uses the official Dart team's reusable workflow for publishing
+    - Authenticates with pub.dev using OIDC (OpenID Connect)
+    - Publishes the package to pub.dev
 
-This workflow handles the release preparation but does not publish to pub.dev directly.
-
-### 3. Publish to pub.dev (`publish.yml`)
-
-**Triggers:**
-- When a version tag is pushed (format: `1.2.3`)
-
-**What it does:**
-- Uses the official Dart team's reusable workflow for publishing
-- Authenticates with pub.dev using OIDC (OpenID Connect)
-- Publishes the package to pub.dev
-
-This workflow follows the [official Dart automated publishing guide](https://dart.dev/tools/pub/automated-publishing#publishing-packages-using-github-actions) and uses secure, credential-free authentication.
+This workflow handles the release preparation and
+publishes pub.dev directly (see the [official Dart automated publishing guide](https://dart.dev/tools/pub/automated-publishing#publishing-packages-using-github-actions) for more details).
 
 ## Release Process
 
@@ -55,5 +47,4 @@ To release a new version:
     - Release workflow detects version change
     - Runs tests and if successful
     - Creates git tag and GitHub release
-    - Tag creation triggers publish workflow
     - Package is published to pub.dev
