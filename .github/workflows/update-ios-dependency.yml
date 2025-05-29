@@ -30,6 +30,32 @@ jobs:
           # Update the iOS SDK dependency version in the podspec
           sed -i "s/s\.dependency 'Helium', '[^']*'/s.dependency 'Helium', '${{ github.event.client_payload.version || github.event.inputs.version }}'/g" ios/helium_flutter.podspec
 
+      - name: Bump pubspec.yaml version
+        run: |
+          # Get current version and increment patch version
+          CURRENT_VERSION=$(grep '^version:' pubspec.yaml | sed 's/version: //')
+          NEW_VERSION=$(node -e "
+            const semver = require('semver');
+            const current = '$CURRENT_VERSION'.split('+')[0]; // Remove build number if present
+            console.log(semver.inc(current, 'patch'));
+          ")
+          
+          # Update pubspec.yaml with new version
+          sed -i "s/^version: .*/version: $NEW_VERSION/g" pubspec.yaml
+          
+          echo "Bumped version from $CURRENT_VERSION to $NEW_VERSION"
+          echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_ENV
+
+      - name: Update CHANGELOG.md
+        run: |
+          # Add new entry to top of CHANGELOG.md
+          TEMP_FILE=$(mktemp)
+          echo "## $NEW_VERSION" > $TEMP_FILE
+          echo "- Updated helium-swift dependency to ${{ github.event.client_payload.version || github.event.inputs.version }}" >> $TEMP_FILE
+          echo "" >> $TEMP_FILE
+          cat CHANGELOG.md >> $TEMP_FILE
+          mv $TEMP_FILE CHANGELOG.md
+
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v7
         with:
@@ -42,5 +68,7 @@ jobs:
             Changes:
             - Updated Package.swift dependency version
             - Updated podspec dependency version
+            - Bumped pubspec.yaml version (patch increment)
+            - Added changelog entry
             
             This PR was automatically created by the iOS SDK release workflow.
