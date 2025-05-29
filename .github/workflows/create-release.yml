@@ -4,6 +4,7 @@ on:
   push:
     branches: [ main ]
     paths: [ 'pubspec.yaml' ]  # Only trigger when pubspec.yaml is modified
+  workflow_dispatch:  # Allows manual triggering
 
 jobs:
   check-version:
@@ -50,9 +51,10 @@ jobs:
 
   publish:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write # so can create release and create tag
     needs: [check-version, test]
     if: needs.check-version.outputs.version-changed == 'true'
-    environment: pub-dev
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
