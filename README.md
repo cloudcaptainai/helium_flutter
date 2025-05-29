@@ -284,7 +284,7 @@ You can use this to handle different states in your app.
 You can also check if paywalls have been loaded successfully:
 
 ```dart
-bool paywallsLoaded = await heliumFlutter.paywallsLoaded() ?? false;
+bool paywallsLoaded = await heliumFlutter.paywallsLoaded();
 ```
 
 ## Presenting Paywalls
@@ -329,7 +329,7 @@ class ExamplePageWithEmbeddedPaywall extends StatelessWidget {
 To programmatically hide a paywall that was shown with the `presentUpsell` method:
 
 ```dart
-bool hideResult = await heliumFlutter.hideUpsell() ?? false;
+bool hideResult = await heliumFlutter.hideUpsell();
 ```
 
 ### Handling Custom Dismissal Actions

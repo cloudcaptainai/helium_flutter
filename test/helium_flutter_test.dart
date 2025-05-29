@@ -34,7 +34,7 @@ class MockHeliumFlutterPlatform
   }
 
   @override
-  Future<bool?> hideUpsell() {
+  Future<bool> hideUpsell() {
     return Future.value(true);
   }
 
@@ -47,7 +47,7 @@ class MockHeliumFlutterPlatform
   }
 
   @override
-  Future<bool?> paywallsLoaded() {
+  Future<bool> paywallsLoaded() {
     return Future.value(true);
   }
 

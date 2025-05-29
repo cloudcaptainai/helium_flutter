@@ -42,13 +42,13 @@ abstract class HeliumFlutterPlatform extends PlatformInterface {
   Future<String?> presentUpsell({required BuildContext context, required String trigger});
 
   ///Hides view
-  Future<bool?> hideUpsell();
+  Future<bool> hideUpsell();
 
   ///Gets helium user id
   Future<String?> getHeliumUserId();
 
   ///Returns bool based on paywall loaded or not
-  Future<bool?> paywallsLoaded();
+  Future<bool> paywallsLoaded();
 
   ///Overrides user id to given [newUserId]
   Future<String?> overrideUserId({

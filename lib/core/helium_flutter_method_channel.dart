@@ -81,15 +81,15 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
   }
 
   @override
-  Future<bool?> hideUpsell() async {
-    final result = await methodChannel.invokeMethod<bool?>(
+  Future<bool> hideUpsell() async {
+    final result = await methodChannel.invokeMethod<bool>(
       hideUpsellMethodName,
     );
     // Hide fallback sheet if it is displaying
     if (_isFallbackSheetShowing && _fallbackContext != null && _fallbackContext!.mounted) {
       Navigator.of(_fallbackContext!).pop();
     }
-    return result;
+    return result ?? false;
   }
 
   @override
@@ -105,11 +105,11 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
   }
 
   @override
-  Future<bool?> paywallsLoaded() async {
+  Future<bool> paywallsLoaded() async {
     final result = await methodChannel.invokeMethod<bool?>(
       paywallsLoadedMethodName,
     );
-    return result;
+    return result ?? false;
   }
 
   @override
