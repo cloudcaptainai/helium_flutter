@@ -20,12 +20,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Create branch
-        run: |
-          git config --local user.email "actions@github.com"
-          git config --local user.name "GitHub Actions"
-          git checkout -b update-ios-sdk-${{ github.event.client_payload.version || github.event.inputs.version }}
-
       - name: Update Package.swift
         run: |
           # Update just the version part on the from: line
@@ -50,4 +44,3 @@ jobs:
             - Updated podspec dependency version
             
             This PR was automatically created by the iOS SDK release workflow.
-          base: main
