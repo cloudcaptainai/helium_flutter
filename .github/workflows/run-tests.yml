@@ -19,6 +19,14 @@ jobs:
           channel: stable
       - run: flutter --version
 
+      - name: Create .env file
+        run: |
+          cat > example/.env << EOF
+          API_KEY=''
+          CUSTOM_API_END_POINT=''
+          CUSTOM_USER_ID=''
+          EOF
+
       - name: Get dependencies
         run: flutter pub get
 
