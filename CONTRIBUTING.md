@@ -48,3 +48,8 @@ To release a new version:
     - Runs tests and if successful
     - Creates git tag and GitHub release
     - Package is published to pub.dev
+
+## Updates from the helium-swift dependency
+
+A new release from the helium-swift SDK should trigger a workflow that creates a PR in this repo with the new version.
+You can also manually trigger this workflow with specified helium-swift version.
