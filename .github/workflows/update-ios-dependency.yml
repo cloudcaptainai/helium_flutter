@@ -13,6 +13,9 @@ on:
 jobs:
   update-ios-dependency:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -34,9 +37,6 @@ jobs:
           sed -i "s/s\.dependency 'Helium', '[^']*'/s.dependency 'Helium', '${{ github.event.client_payload.version || github.event.inputs.version }}'/g" ios/helium_flutter.podspec
 
       - name: Create Pull Request
-        permissions:
-          contents: write
-          pull-requests: write
         uses: peter-evans/create-pull-request@v7
         with:
           commit-message: "Update iOS SDK dependency to ${{ github.event.client_payload.version || github.event.inputs.version }}"
