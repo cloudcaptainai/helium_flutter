@@ -20,7 +20,7 @@ A Flutter plugin that integrates the Helium SDK for iOS.
   s.dependency 'Flutter'
 
   # note that the dependency in Package.swift is what's actually used... we might be able to remove this but safer to keep in for now
-  s.dependency 'Helium', '2.0.7'
+  s.dependency 'Helium', '3.2.1'
 
   s.platform = :ios, '14.0'
 
