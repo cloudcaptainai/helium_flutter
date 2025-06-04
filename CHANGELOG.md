@@ -1,3 +1,6 @@
+## 0.0.10
+- Updated helium-swift dependency to 2.0.8
+
 ## 0.0.9
 
 - hideUpsell and paywallsLoaded simply return non-optional bools now
