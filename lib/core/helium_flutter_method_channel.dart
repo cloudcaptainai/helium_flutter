@@ -123,7 +123,7 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
       _isFallbackSheetShowing = true;
       _fallbackContext = context;
 
-      await methodChannel.invokeMethod<String?>(
+      methodChannel.invokeMethod<String?>(
         fallbackOpenEventMethodName,
         {'trigger': trigger, 'viewType': 'presented'},
       );
@@ -146,7 +146,7 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
         _isFallbackSheetShowing = false;
         _fallbackContext = null;
 
-        await methodChannel.invokeMethod<String?>(
+        methodChannel.invokeMethod<String?>(
           fallbackCloseEventMethodName,
           {'trigger': trigger, 'viewType': 'presented'},
         );
