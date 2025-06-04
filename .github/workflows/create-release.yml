@@ -96,10 +96,3 @@ jobs:
         run: |
           VERSION="${{ needs.check-version.outputs.new-version || needs.get-current-version.outputs.current-version }}"
           echo "✅ Successfully created release for version $VERSION"
-
-  publish:
-    permissions:
-      id-token: write # Required for authentication using OIDC
-    uses: dart-lang/setup-dart/.github/workflows/publish.yml@v1
-    # with:
-    #   working-directory: path/to/package/within/repository
