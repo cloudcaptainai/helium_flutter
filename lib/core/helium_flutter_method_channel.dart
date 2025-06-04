@@ -123,6 +123,11 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
       _isFallbackSheetShowing = true;
       _fallbackContext = context;
 
+      await methodChannel.invokeMethod<String?>(
+        fallbackOpenEventMethodName,
+        trigger,
+      );
+
       try {
         await showModalBottomSheet(
           context: ctx,
@@ -140,6 +145,11 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
       } finally {
         _isFallbackSheetShowing = false;
         _fallbackContext = null;
+
+        await methodChannel.invokeMethod<String?>(
+          fallbackCloseEventMethodName,
+          trigger,
+        );
       }
     }
 

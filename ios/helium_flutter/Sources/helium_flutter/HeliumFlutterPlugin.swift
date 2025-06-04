@@ -65,6 +65,14 @@ public class HeliumFlutterPlugin: NSObject, FlutterPlugin {
         } else {
             result(FlutterError(code: "BAD_ARGS", message: "Arguments not passed correctly", details: nil))
         }
+    case "fallbackOpenEvent":
+        let trigger = call.arguments as? String
+        fallbackOpenOrCloseEvent(trigger: trigger, isOpen: true)
+        result("fallback open event!")
+    case "fallbackCloseEvent":
+        let trigger = call.arguments as? String
+        fallbackOpenOrCloseEvent(trigger: trigger, isOpen: false)
+        result("fallback close event!")
     default:
       result(FlutterMethodNotImplemented)
     }
@@ -108,6 +116,11 @@ public class HeliumFlutterPlugin: NSObject, FlutterPlugin {
     public func overrideUserId(newUserId: String, traits: HeliumUserTraits? = nil) {
         Helium.shared.overrideUserId(newUserId: newUserId, traits: traits)
     }
+
+    private func fallbackOpenOrCloseEvent(trigger: String?, isOpen: Bool) {
+        HeliumPaywallDelegateWrapper.shared.onFallbackOpenCloseEvent(trigger: trigger, isOpen: isOpen)
+    }
+
 }
 
 class DemoHeliumPaywallDelegate: HeliumPaywallDelegate {
