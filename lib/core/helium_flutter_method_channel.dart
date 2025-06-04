@@ -125,7 +125,7 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
 
       await methodChannel.invokeMethod<String?>(
         fallbackOpenEventMethodName,
-        trigger,
+        {'trigger': trigger, 'viewType': 'presented'},
       );
 
       try {
@@ -148,7 +148,7 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
 
         await methodChannel.invokeMethod<String?>(
           fallbackCloseEventMethodName,
-          trigger,
+          {'trigger': trigger, 'viewType': 'presented'},
         );
       }
     }

@@ -66,13 +66,23 @@ public class HeliumFlutterPlugin: NSObject, FlutterPlugin {
             result(FlutterError(code: "BAD_ARGS", message: "Arguments not passed correctly", details: nil))
         }
     case "fallbackOpenEvent":
-        let trigger = call.arguments as? String
-        fallbackOpenOrCloseEvent(trigger: trigger, isOpen: true)
-        result("fallback open event!")
+        if let args = call.arguments as? [String: Any] {
+            let trigger = args["trigger"] as? String
+            let viewType = args["viewType"] as? String
+            fallbackOpenOrCloseEvent(trigger: trigger, isOpen: true, viewType: viewType)
+            result("fallback open event!")
+        } else {
+            result("fallback open event fail")
+        }
     case "fallbackCloseEvent":
-        let trigger = call.arguments as? String
-        fallbackOpenOrCloseEvent(trigger: trigger, isOpen: false)
-        result("fallback close event!")
+        if let args = call.arguments as? [String: Any] {
+            let trigger = args["trigger"] as? String
+            let viewType = args["viewType"] as? String
+            fallbackOpenOrCloseEvent(trigger: trigger, isOpen: false, viewType: viewType)
+            result("fallback close event!")
+        } else {
+            result("fallback close event fail")
+        }
     default:
       result(FlutterMethodNotImplemented)
     }
@@ -117,8 +127,8 @@ public class HeliumFlutterPlugin: NSObject, FlutterPlugin {
         Helium.shared.overrideUserId(newUserId: newUserId, traits: traits)
     }
 
-    private func fallbackOpenOrCloseEvent(trigger: String?, isOpen: Bool) {
-        HeliumPaywallDelegateWrapper.shared.onFallbackOpenCloseEvent(trigger: trigger, isOpen: isOpen)
+    private func fallbackOpenOrCloseEvent(trigger: String?, isOpen: Bool, viewType: String?) {
+        HeliumPaywallDelegateWrapper.shared.onFallbackOpenCloseEvent(trigger: trigger, isOpen: isOpen, viewType: viewType)
     }
 
 }
