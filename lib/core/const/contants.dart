@@ -15,3 +15,5 @@ const String hideUpsellMethodName = 'hideUpsell';
 const String overrideUserIdMethodName = 'overrideUserId';
 const String paywallsLoadedMethodName = 'paywallsLoaded';
 const String presentUpsellMethodName = 'presentUpsell';
+const String fallbackOpenEventMethodName = 'fallbackOpenEvent';
+const String fallbackCloseEventMethodName = 'fallbackCloseEvent';
