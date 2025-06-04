@@ -181,6 +181,18 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
       trigger: trigger,
       fallbackPaywallWidget: _fallbackPaywallWidget ?? Text("No fallback view provided"),
       downloadStatusFetcher: getDownloadStatus, // Pass the actual async function
+      onFallbackOpened: () async {
+        await methodChannel.invokeMethod<String?>(
+          fallbackOpenEventMethodName,
+          {'trigger': trigger, 'viewType': 'embedded'},
+        );
+      },
+      onFallbackClosed: () async {
+        await methodChannel.invokeMethod<String?>(
+          fallbackCloseEventMethodName,
+          {'trigger': trigger, 'viewType': 'embedded'},
+        );
+      },
     );
   }
 
@@ -193,12 +205,16 @@ class UpsellWrapperWidget extends StatefulWidget {
   final String trigger;
   final Widget fallbackPaywallWidget;
   final Future<String?> Function() downloadStatusFetcher;
+  final VoidCallback? onFallbackOpened;
+  final VoidCallback? onFallbackClosed;
 
   const UpsellWrapperWidget({
     super.key,
     required this.trigger,
     required this.fallbackPaywallWidget,
     required this.downloadStatusFetcher,
+    this.onFallbackOpened,
+    this.onFallbackClosed,
   });
 
   @override
@@ -206,11 +222,27 @@ class UpsellWrapperWidget extends StatefulWidget {
 }
 class _UpsellWrapperWidgetState extends State<UpsellWrapperWidget> {
   late Future<String?> _downloadStatusFuture;
+  bool _fallbackShown = false;
 
   @override
   void initState() {
     super.initState();
     _downloadStatusFuture = widget.downloadStatusFetcher();
+  }
+
+  void _onShowFallback() {
+    if (!_fallbackShown) {
+      _fallbackShown = true;
+      widget.onFallbackOpened?.call();
+    }
+  }
+
+  @override
+  void dispose() {
+    if (_fallbackShown) {
+      widget.onFallbackClosed?.call();
+    }
+    super.dispose();
   }
 
   @override
@@ -224,6 +256,7 @@ class _UpsellWrapperWidgetState extends State<UpsellWrapperWidget> {
         if (snapshot.data == '"downloadSuccess"') {
           return UpsellViewForTrigger(trigger: widget.trigger);
         } else {
+          _onShowFallback();
           return widget.fallbackPaywallWidget;
         }
       },
