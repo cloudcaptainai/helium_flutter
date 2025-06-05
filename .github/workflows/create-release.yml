@@ -1,4 +1,4 @@
-name: Create Release And Publish
+name: Create Tag and Release
 
 on:
   push:
@@ -78,19 +78,19 @@ jobs:
 
       - name: Create tag
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.FLUTTER_TAG_KEY }}
         run: |
           VERSION="${{ needs.check-version.outputs.new-version || needs.get-current-version.outputs.current-version }}"
           git tag "$VERSION"
           git push origin "$VERSION"
 
-      - name: Create GitHub Release
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          VERSION="${{ needs.check-version.outputs.new-version || needs.get-current-version.outputs.current-version }}"
-          gh release create $VERSION \
-            --generate-notes
+#      - name: Create GitHub Release
+#        env:
+#          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+#        run: |
+#          VERSION="${{ needs.check-version.outputs.new-version || needs.get-current-version.outputs.current-version }}"
+#          gh release create $VERSION \
+#            --generate-notes
 
       - name: Success output
         run: |

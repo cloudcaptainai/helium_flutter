@@ -17,7 +17,7 @@ This repository uses three automated workflows to automate releases:
 - Executes tests with `flutter test`
 - Validates publishing readiness with `flutter pub publish --dry-run`
 
-### 2. Create Release and Publish (`create-release.yml`)
+### 2. Create Tag and Release (`create-release.yml`)
 
 **Triggers:**
 - Pushes to `main` branch that modify `pubspec.yaml`
