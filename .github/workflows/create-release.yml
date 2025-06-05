@@ -59,7 +59,7 @@ jobs:
         run: |
           CURRENT_VERSION=$(grep "^version:" pubspec.yaml | sed 's/version: //')
           echo "Current version: $CURRENT_VERSION"
-          echo "version=$CURRENT_VERSION" >> $GITHUB_OUTPUT
+          echo "version=5.6.7" >> $GITHUB_OUTPUT
 
   test:
     needs: [check-version, get-current-version]
