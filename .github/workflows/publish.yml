@@ -9,7 +9,8 @@ on:
 # Publish using the reusable workflow from dart-lang.
 jobs:
   test:
-    - steps:
+    runs-on: ubuntu-latest
+    steps:
       - name: Success output
         run: |
           echo "✅ Successfully triggered!"
