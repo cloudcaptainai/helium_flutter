@@ -77,12 +77,11 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Create tag
-        env:
-          FLUTTER_PAT_TOKEN: ${{ secrets.FLUTTER_TAG_KEY }}
         run: |
           VERSION="${{ needs.check-version.outputs.new-version || needs.get-current-version.outputs.current-version }}"
           git tag "$VERSION"
-          git push "https://x-access-token:${{ env.FLUTTER_PAT_TOKEN }}@github.com/${{ github.repository }}" "$VERSION"
+          git remote set-url origin "https://x-access-token:${{ secrets.FLUTTER_TAG_KEY }}@github.com/${{ github.repository }}.git"
+          git push origin "$VERSION"
 
 #      - name: Create GitHub Release
 #        env:
