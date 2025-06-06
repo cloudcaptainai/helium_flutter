@@ -82,6 +82,7 @@ jobs:
         with:
           github_token: ${{ secrets.FLUTTER_TAG_KEY }}
           custom_tag: ${{ needs.check-version.outputs.new-version || needs.get-current-version.outputs.current-version }}
+          tag_prefix: "" # remove default v prefix
 
 #      - name: Create GitHub Release
 #        env:
