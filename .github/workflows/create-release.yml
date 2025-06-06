@@ -59,7 +59,7 @@ jobs:
         run: |
           CURRENT_VERSION=$(grep "^version:" pubspec.yaml | sed 's/version: //')
           echo "Current version: $CURRENT_VERSION"
-          echo "version=5.6.7" >> $GITHUB_OUTPUT
+          echo "version=$CURRENT_VERSION" >> $GITHUB_OUTPUT
 
   test:
     needs: [check-version, get-current-version]
@@ -84,13 +84,13 @@ jobs:
           custom_tag: ${{ needs.check-version.outputs.new-version || needs.get-current-version.outputs.current-version }}
           tag_prefix: "" # remove default v prefix
 
-#      - name: Create GitHub Release
-#        env:
-#          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-#        run: |
-#          VERSION="${{ needs.check-version.outputs.new-version || needs.get-current-version.outputs.current-version }}"
-#          gh release create $VERSION \
-#            --generate-notes
+      - name: Create GitHub Release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          VERSION="${{ needs.check-version.outputs.new-version || needs.get-current-version.outputs.current-version }}"
+          gh release create $VERSION \
+            --generate-notes
 
       - name: Success output
         run: |
