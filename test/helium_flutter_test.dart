@@ -19,6 +19,7 @@ class MockHeliumFlutterPlatform
     required String customAPIEndpoint,
     String? customUserId,
     Map<String, dynamic>? customUserTraits,
+    String? revenueCatAppUserId,
   }) {
     return Future.value('Initialization started!');
   }
