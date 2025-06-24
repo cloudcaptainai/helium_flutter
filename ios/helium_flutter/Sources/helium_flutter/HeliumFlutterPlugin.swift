@@ -23,13 +23,15 @@ public class HeliumFlutterPlugin: NSObject, FlutterPlugin {
           let customUserId = args["customUserId"] as? String
           let userTraitsMap = args["customUserTraits"] as? [String: Any]
           let customUserTraits = userTraitsMap == nil ? HeliumUserTraits(userTraitsMap!) : nil
-          
+          let revenueCatAppUserId = args["revenueCatAppUserId"] as? String
+
           Task {
             await initializeHelium(
               apiKey: apiKey,
               customAPIEndpoint: customAPIEndpoint,
               customUserId: customUserId,
-              customUserTraits: customUserTraits
+              customUserTraits: customUserTraits,
+              revenueCatAppUserId: revenueCatAppUserId
             )
           }
           result("Initialization started!")
@@ -88,7 +90,8 @@ public class HeliumFlutterPlugin: NSObject, FlutterPlugin {
     }
   }
 
-  private func initializeHelium(apiKey: String, customAPIEndpoint: String, customUserId: String?, customUserTraits: HeliumUserTraits?) {
+  private func initializeHelium(apiKey: String, customAPIEndpoint: String,
+   customUserId: String?, customUserTraits: HeliumUserTraits?, revenueCatAppUserId: String?) {
         Task {
             let delegate = DemoHeliumPaywallDelegate(methodChannel: channel)
             let view = FallbackView()
@@ -99,7 +102,8 @@ public class HeliumFlutterPlugin: NSObject, FlutterPlugin {
               fallbackPaywall: view,
               customUserId: customUserId,
               customAPIEndpoint: customAPIEndpoint,
-              customUserTraits: customUserTraits
+              customUserTraits: customUserTraits,
+              revenueCatAppUserId: revenueCatAppUserId
             )
         }
     }
