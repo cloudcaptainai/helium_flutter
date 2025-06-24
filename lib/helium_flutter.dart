@@ -13,6 +13,7 @@ class HeliumFlutter {
     required String customAPIEndpoint,
     String? customUserId,
     Map<String, dynamic>? customUserTraits,
+    String? revenueCatAppUserId,
   }) async {
     return await HeliumFlutterPlatform.instance.initialize(
       callbacks: callbacks,
@@ -21,6 +22,7 @@ class HeliumFlutter {
       customAPIEndpoint: customAPIEndpoint,
       customUserId: customUserId,
       customUserTraits: customUserTraits,
+      revenueCatAppUserId: revenueCatAppUserId,
     );
   }
 

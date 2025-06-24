@@ -33,6 +33,7 @@ abstract class HeliumFlutterPlatform extends PlatformInterface {
     required String customAPIEndpoint,
     String? customUserId,
     Map<String, dynamic>? customUserTraits,
+    String? revenueCatAppUserId,
   });
 
   ///Download status of paywall

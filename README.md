@@ -238,6 +238,9 @@ void main() {
       "userIntent": "upgrade",
       "numericalValue": 3.0,
     }, // Optional
+    
+    // If using RevenueCat, supply RevenueCat appUserId (and initialize RevenueCat before Helium initialize)
+    revenueCatAppUserId: await Purchases.appUserID,
   );
   
   runApp(const MyApp());

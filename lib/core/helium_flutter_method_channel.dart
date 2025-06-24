@@ -26,6 +26,7 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
     required String customAPIEndpoint,
     String? customUserId,
     Map<String, dynamic>? customUserTraits,
+    String? revenueCatAppUserId,
   }) async {
     _setMethodCallHandlers(callbacks);
     _fallbackPaywallWidget = fallbackPaywall;
@@ -41,6 +42,7 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
       'customUserId': customUserId,
       'customAPIEndpoint': customAPIEndpoint,
       'customUserTraits': customUserTraits,
+      'revenueCatAppUserId': revenueCatAppUserId,
     });
     return result;
   }
