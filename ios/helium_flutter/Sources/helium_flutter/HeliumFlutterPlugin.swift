@@ -98,6 +98,10 @@ public class HeliumFlutterPlugin: NSObject, FlutterPlugin {
         } else {
             result("fallback close event fail")
         }
+    case "getPaywallInfo":
+        let trigger = call.arguments as? String ?? ""
+        let paywallInfo = getPaywallInfo(trigger: trigger)
+        result(paywallInfo)
     default:
       result(FlutterMethodNotImplemented)
     }
@@ -149,6 +153,22 @@ public class HeliumFlutterPlugin: NSObject, FlutterPlugin {
 
     private func fallbackOpenOrCloseEvent(trigger: String?, isOpen: Bool, viewType: String?) {
         HeliumPaywallDelegateWrapper.shared.onFallbackOpenCloseEvent(trigger: trigger, isOpen: isOpen, viewType: viewType)
+    }
+
+    private func getPaywallInfo(trigger: String) -> [String: Any?] {
+        guard let paywallInfo = Helium.shared.getPaywallInfo(trigger: trigger) else {
+            return [
+                "errorMsg": "Invalid trigger or paywalls not ready.",
+                "templateName": nil,
+                "shouldShow": nil
+            ]
+        }
+
+        return [
+            "errorMsg": nil,
+            "templateName": paywallInfo.paywallTemplateName,
+            "shouldShow": paywallInfo.shouldShow
+        ]
     }
 
 }

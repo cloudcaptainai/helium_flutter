@@ -177,6 +177,18 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
     }
   }
 
+  Future<PaywallInfo?> getPaywallInfo(String trigger) async {
+    final result = await channel.invokeMethod('getPaywallInfo', trigger);
+    if (result['errorMsg'] != null) {
+      // Handle error case
+      return null;
+    }
+    return PaywallInfo(
+      paywallTemplateName: result['templateName'],
+      shouldShow: result['shouldShow'],
+    );
+  }
+
   @override
   Widget getUpsellWidget({required String trigger}) {
     return UpsellWrapperWidget(
