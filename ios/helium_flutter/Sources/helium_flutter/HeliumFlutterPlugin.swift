@@ -4,6 +4,21 @@ import Helium
 import SwiftUI
 import Foundation
 
+
+enum PurchaseError: LocalizedError {
+    case unknownStatus(status: String)
+    case purchaseFailed(errorMsg: String)
+
+    var errorDescription: String? {
+        switch self {
+        case let .unknownStatus(status):
+            return "Purchased not successful due to unknown status - \(status)."
+        case let .purchaseFailed(errorMsg):
+            return errorMsg
+        }
+    }
+}
+
 public class HeliumFlutterPlugin: NSObject, FlutterPlugin {
   var channel : FlutterMethodChannel!
   public static func register(with registrar: FlutterPluginRegistrar) {
@@ -164,7 +179,8 @@ class DemoHeliumPaywallDelegate: HeliumPaywallDelegate {
                 case "cancelled": status = .cancelled
                 case "restored":  status = .restored
                 case "pending":   status = .pending
-                default:          status = .failed(PurchaseError.unknownStatus(status: statusString))
+                case "failed":    status = .failed(PurchaseError.purchaseFailed(errorMsg: errorMsg ?? "Unexpected error."))
+                default:          status = .failed(PurchaseError.unknownStatus(status: lowercasedStatus))
                 }
                 
                 print("Purchase status: \(status)")
@@ -172,10 +188,6 @@ class DemoHeliumPaywallDelegate: HeliumPaywallDelegate {
                 continuation.resume(returning: status)
             }
         }
-    }
-    enum PurchaseError: Error {
-        case unknownStatus(status: String)
-        case purchaseFailed
     }
 
         
