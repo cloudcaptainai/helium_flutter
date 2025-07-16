@@ -19,21 +19,19 @@ public class HeliumFlutterPlugin: NSObject, FlutterPlugin {
     case "initialize":
       if let args = call.arguments as? [String: Any] {
           let apiKey = args["apiKey"] as? String ?? ""
-          let customAPIEndpoint = args["customAPIEndpoint"] as? String ?? ""
+          let customAPIEndpoint = args["customAPIEndpoint"] as? String
           let customUserId = args["customUserId"] as? String
           let userTraitsMap = args["customUserTraits"] as? [String: Any]
-          let customUserTraits = userTraitsMap == nil ? HeliumUserTraits(userTraitsMap!) : nil
+          let customUserTraits = userTraitsMap != nil ? HeliumUserTraits(userTraitsMap!) : nil
           let revenueCatAppUserId = args["revenueCatAppUserId"] as? String
 
-          Task {
-            await initializeHelium(
-              apiKey: apiKey,
-              customAPIEndpoint: customAPIEndpoint,
-              customUserId: customUserId,
-              customUserTraits: customUserTraits,
-              revenueCatAppUserId: revenueCatAppUserId
-            )
-          }
+          initializeHelium(
+            apiKey: apiKey,
+            customAPIEndpoint: customAPIEndpoint,
+            customUserId: customUserId,
+            customUserTraits: customUserTraits,
+            revenueCatAppUserId: revenueCatAppUserId
+          )
           result("Initialization started!")
       } else {
             result(FlutterError(code: "BAD_ARGS", message: "Arguments not passed correctly", details: nil))
@@ -90,23 +88,26 @@ public class HeliumFlutterPlugin: NSObject, FlutterPlugin {
     }
   }
 
-  private func initializeHelium(apiKey: String, customAPIEndpoint: String,
-   customUserId: String?, customUserTraits: HeliumUserTraits?, revenueCatAppUserId: String?) {
-        Task {
-            let delegate = DemoHeliumPaywallDelegate(methodChannel: channel)
-            let view = FallbackView()
-            
-            await Helium.shared.initialize(
-              apiKey: apiKey,
-              heliumPaywallDelegate: delegate,
-              fallbackPaywall: view,
-              customUserId: customUserId,
-              customAPIEndpoint: customAPIEndpoint,
-              customUserTraits: customUserTraits,
-              revenueCatAppUserId: revenueCatAppUserId
-            )
-        }
+  private func initializeHelium(
+    apiKey: String, customAPIEndpoint: String?,
+    customUserId: String?, customUserTraits: HeliumUserTraits?,
+    revenueCatAppUserId: String?
+  ) {
+    Task {
+      let delegate = DemoHeliumPaywallDelegate(methodChannel: channel)
+      let view = FallbackView()
+
+      await Helium.shared.initialize(
+        apiKey: apiKey,
+        heliumPaywallDelegate: delegate,
+        fallbackPaywall: view,
+        customUserId: customUserId,
+        customAPIEndpoint: customAPIEndpoint,
+        customUserTraits: customUserTraits,
+        revenueCatAppUserId: revenueCatAppUserId
+      )
     }
+  }
     
     public func presentUpsell(trigger: String, from viewController: UIViewController? = nil) {
         Helium.shared.presentUpsell(trigger: trigger)

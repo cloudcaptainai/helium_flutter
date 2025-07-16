@@ -30,7 +30,7 @@ abstract class HeliumFlutterPlatform extends PlatformInterface {
     required HeliumCallbacks callbacks,
     required Widget fallbackPaywall,
     required String apiKey,
-    required String customAPIEndpoint,
+    String? customAPIEndpoint,
     String? customUserId,
     Map<String, dynamic>? customUserTraits,
     String? revenueCatAppUserId,
