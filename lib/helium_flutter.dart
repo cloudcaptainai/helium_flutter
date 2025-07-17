@@ -10,7 +10,7 @@ class HeliumFlutter {
     required String apiKey,
     required HeliumCallbacks callbacks,
     required Widget fallbackPaywall,
-    required String customAPIEndpoint,
+    String? customAPIEndpoint,
     String? customUserId,
     Map<String, dynamic>? customUserTraits,
     String? revenueCatAppUserId,
