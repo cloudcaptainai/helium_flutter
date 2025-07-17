@@ -250,8 +250,38 @@ class DemoHeliumPaywallDelegate: HeliumPaywallDelegate {
 //     }
 }
 
-struct FallbackView: View {
+fileprivate struct FallbackView: View {
+    @Environment(\.presentationMode) var presentationMode
+
     var body: some View {
-        Text("Hello from DemoView!")
+        VStack(spacing: 20) {
+            Spacer()
+
+            Text("Fallback Paywall")
+                .font(.title)
+                .fontWeight(.bold)
+
+            Text("Something went wrong loading the paywall")
+                .font(.body)
+                .multilineTextAlignment(.center)
+                .foregroundColor(.secondary)
+
+            Spacer()
+
+            Button(action: {
+                presentationMode.wrappedValue.dismiss()
+            }) {
+                Text("Close")
+                    .font(.headline)
+                    .foregroundColor(.white)
+                    .frame(maxWidth: .infinity)
+                    .padding()
+                    .background(Color.blue)
+                    .cornerRadius(10)
+            }
+            .padding(.horizontal, 40)
+            .padding(.bottom, 40)
+        }
+        .padding()
     }
 }
