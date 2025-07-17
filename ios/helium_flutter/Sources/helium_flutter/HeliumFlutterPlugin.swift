@@ -175,51 +175,63 @@ class DemoHeliumPaywallDelegate: HeliumPaywallDelegate {
     
     // Required: Make a purchase
     func makePurchase(productId: String) async -> HeliumPaywallTransactionStatus {
-
         await withCheckedContinuation { continuation in
-            _methodChannel.invokeMethod(
-                "makePurchase",
-                arguments: productId
-            ) { result in
-
-                let status: HeliumPaywallTransactionStatus
-
-                if let resultMap = result as? [String: Any],
-                   let statusString = resultMap["status"] as? String {
-
-                    let lowercasedStatus = statusString.lowercased()
-                    print("Purchase status: \(lowercasedStatus)")
-
-                    switch lowercasedStatus {
-                    case "purchased": status = .purchased
-                    case "cancelled": status = .cancelled
-                    case "restored":  status = .restored
-                    case "pending":   status = .pending
-                    case "failed":
-                        let errorMsg = resultMap["error"] as? String ?? "Unknown purchase error"
-                        status = .failed(PurchaseError.purchaseFailed(errorMsg: errorMsg))
-                    default:
-                        status = .failed(PurchaseError.unknownStatus(status: lowercasedStatus))
-                    }
-                } else {
-                    // Handle case where result is not in expected format
-                    status = .failed(PurchaseError.purchaseFailed(errorMsg: "Invalid response format"))
+            DispatchQueue.main.async { [weak self] in
+                guard let self else {
+                    continuation.resume(returning: .failed(PurchaseError.purchaseFailed(errorMsg: "Plugin instance deallocated")))
+                    return
                 }
 
-                print("Purchase status: \(status)")
-                continuation.resume(returning: status)
+                _methodChannel.invokeMethod(
+                    "makePurchase",
+                    arguments: productId
+                ) { result in
+                    let status: HeliumPaywallTransactionStatus
+
+                    if let resultMap = result as? [String: Any],
+                       let statusString = resultMap["status"] as? String {
+
+                        let lowercasedStatus = statusString.lowercased()
+                        print("Purchase status: \(lowercasedStatus)")
+
+                        switch lowercasedStatus {
+                        case "purchased": status = .purchased
+                        case "cancelled": status = .cancelled
+                        case "restored":  status = .restored
+                        case "pending":   status = .pending
+                        case "failed":
+                            let errorMsg = resultMap["error"] as? String ?? "Unknown purchase error"
+                            status = .failed(PurchaseError.purchaseFailed(errorMsg: errorMsg))
+                        default:
+                            status = .failed(PurchaseError.unknownStatus(status: lowercasedStatus))
+                        }
+                    } else {
+                        // Handle case where result is not in expected format
+                        status = .failed(PurchaseError.purchaseFailed(errorMsg: "Invalid response format"))
+                    }
+
+                    print("Purchase status: \(status)")
+                    continuation.resume(returning: status)
+                }
             }
         }
     }
 
     func restorePurchases() async -> Bool {
         await withCheckedContinuation { continuation in
-            _methodChannel.invokeMethod(
-                "restorePurchases",
-                arguments: nil
-            ) { result in
-                let success = (result as? Bool) ?? false
-                continuation.resume(returning: success)
+            DispatchQueue.main.async { [weak self] in
+                guard let self else {
+                    continuation.resume(returning: false)
+                    return
+                }
+
+                _methodChannel.invokeMethod(
+                    "restorePurchases",
+                    arguments: nil
+                ) { result in
+                    let success = (result as? Bool) ?? false
+                    continuation.resume(returning: success)
+                }
             }
         }
     }
@@ -261,7 +273,7 @@ fileprivate struct FallbackView: View {
                 .font(.title)
                 .fontWeight(.bold)
 
-            Text("Something went wrong loading the paywall")
+            Text("Something went wrong loading the paywall. Make sure you used the right trigger.")
                 .font(.body)
                 .multilineTextAlignment(.center)
                 .foregroundColor(.secondary)

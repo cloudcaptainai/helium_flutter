@@ -86,12 +86,10 @@ class _HomePageState extends State<HomePage> {
             ElevatedButton(
               key: ValueKey('present_upsell'),
               onPressed: () async {
-                final presentResult = await _heliumFlutterPlugin.presentUpsell(
-                      trigger: 'onboarding',
-                      context: context,
-                    ) ??
-                    '';
-                log("presentUpsell result - $presentResult");
+                await _heliumFlutterPlugin.presentUpsell(
+                  trigger: 'onboarding',
+                  context: context,
+                );
               },
               child: Text('Present upsell'),
             ),
