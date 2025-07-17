@@ -54,16 +54,9 @@ public class HeliumFlutterPlugin: NSObject, FlutterPlugin {
     case "getDownloadStatus":
         result(getDownloadStatus())
     case "presentUpsell":
-        do{
-            let trigger = call.arguments as? String ?? ""
-            print(trigger)
-            presentUpsell(trigger: trigger)
-            result("Upsell presented!")
-        }
-        catch let error{
-            result(FlutterError(code: "NATIVE_CRASH", message: error.localizedDescription, details: nil))
-        }
-        
+        let trigger = call.arguments as? String ?? ""
+        presentUpsell(trigger: trigger)
+        result("Upsell presented!")
     case "hideUpsell":
         result(hideUpsell())
     case "getHeliumUserId":
@@ -189,69 +182,76 @@ class DemoHeliumPaywallDelegate: HeliumPaywallDelegate {
                 arguments: productId
             ) { result in
 
-                let statusString = (result as? String)?.lowercased() ?? ""
-                
-                print("Purchase status: \(statusString)")
-
                 let status: HeliumPaywallTransactionStatus
-                switch statusString {
-                case "purchased": status = .purchased
-                case "cancelled": status = .cancelled
-                case "restored":  status = .restored
-                case "pending":   status = .pending
-                case "failed":    status = .failed(PurchaseError.purchaseFailed(errorMsg: errorMsg ?? "Unexpected error."))
-                default:          status = .failed(PurchaseError.unknownStatus(status: lowercasedStatus))
-                }
-                
-                print("Purchase status: \(status)")
 
+                if let resultMap = result as? [String: Any],
+                   let statusString = resultMap["status"] as? String {
+
+                    let lowercasedStatus = statusString.lowercased()
+                    print("Purchase status: \(lowercasedStatus)")
+
+                    switch lowercasedStatus {
+                    case "purchased": status = .purchased
+                    case "cancelled": status = .cancelled
+                    case "restored":  status = .restored
+                    case "pending":   status = .pending
+                    case "failed":
+                        let errorMsg = resultMap["error"] as? String ?? "Unknown purchase error"
+                        status = .failed(PurchaseError.purchaseFailed(errorMsg: errorMsg))
+                    default:
+                        status = .failed(PurchaseError.unknownStatus(status: lowercasedStatus))
+                    }
+                } else {
+                    // Handle case where result is not in expected format
+                    status = .failed(PurchaseError.purchaseFailed(errorMsg: "Invalid response format"))
+                }
+
+                print("Purchase status: \(status)")
                 continuation.resume(returning: status)
             }
         }
     }
 
-        
-        // Optional: Restore purchases (already has default, but we override)
-        func restorePurchases() async -> Bool {
-            // Simulate a restore operation
+    func restorePurchases() async -> Bool {
+        await withCheckedContinuation { continuation in
+            _methodChannel.invokeMethod(
+                "restorePurchases",
+                arguments: nil
+            ) { result in
+                let success = (result as? Bool) ?? false
+                continuation.resume(returning: success)
+            }
+        }
+    }
+
+    func onHeliumPaywallEvent(event: HeliumPaywallEvent) {
+        // Log or handle event
+        do {
+            let jsonEncoder = JSONEncoder()
+            let jsonData = try jsonEncoder.encode(event)
+            let json = String(data: jsonData, encoding: .utf8)
             DispatchQueue.main.async {
                 self._methodChannel.invokeMethod(
-                    "restorePurchases",
-                    arguments: true
+                    "onPaywallEvent",
+                    arguments: json
                 )
             }
-            return true
-        }
-        
-        // Optional: Handle paywall event
-        func onHeliumPaywallEvent(event: HeliumPaywallEvent) {
-            // Log or handle event
-            do {
-                let jsonEncoder = JSONEncoder()
-                let jsonData = try jsonEncoder.encode(event)
-                let json = String(data: jsonData, encoding: .utf8)
-                DispatchQueue.main.async {
-                    self._methodChannel.invokeMethod(
-                        "onPaywallEvent",
-                        arguments: json
-                    )
-                }
-            } catch {
-                print("Failed to encode event: \(error)")
-            }
-        }
-        
-        // Optional: Provide custom variables
-        func getCustomVariableValues() -> [String: Any?] {
-            return [
-                "userType": "testUser",
-                "campaign": "spring_launch"
-            ]
+        } catch {
+            print("Failed to encode event: \(error)")
         }
     }
-    
-    struct FallbackView: View {
-        var body: some View {
-            Text("Hello from DemoView!")
-        }
+
+    // Optional: Provide custom variables (not implemented for now)
+//     func getCustomVariableValues() -> [String: Any?] {
+//         return [
+//             "userType": "testUser",
+//             "campaign": "spring_launch"
+//         ]
+//     }
+}
+
+struct FallbackView: View {
+    var body: some View {
+        Text("Hello from DemoView!")
     }
+}

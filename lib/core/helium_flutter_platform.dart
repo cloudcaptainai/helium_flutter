@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:helium_flutter/core/helium_callbacks.dart';
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 
+import '../types/helium_types.dart';
 import 'helium_flutter_method_channel.dart';
 
 abstract class HeliumFlutterPlatform extends PlatformInterface {
@@ -56,6 +57,8 @@ abstract class HeliumFlutterPlatform extends PlatformInterface {
     required String newUserId,
     required Map<String, dynamic> traits,
   });
+
+  Future<PaywallInfo?> getPaywallInfo(String trigger);
 
   Widget getUpsellWidget({required String trigger});
 
