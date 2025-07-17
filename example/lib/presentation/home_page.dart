@@ -1,5 +1,3 @@
-import 'dart:developer';
-
 import 'package:flutter/material.dart';
 import 'package:helium_flutter/helium_flutter.dart';
 import 'package:helium_flutter_example/presentation/revenue_cat_page.dart';
