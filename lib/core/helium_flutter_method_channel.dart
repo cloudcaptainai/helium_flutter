@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:helium_flutter/core/const/contants.dart';
 import 'package:helium_flutter/core/helium_callbacks.dart';
+import '../types/helium_types.dart';
 import 'helium_flutter_platform.dart';
 
 /// An implementation of [HeliumFlutterPlatform] that uses method channels.
@@ -23,7 +24,7 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
     required HeliumCallbacks callbacks,
     required Widget fallbackPaywall,
     required String apiKey,
-    required String customAPIEndpoint,
+    String? customAPIEndpoint,
     String? customUserId,
     Map<String, dynamic>? customUserTraits,
     String? revenueCatAppUserId,
@@ -51,11 +52,15 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
     methodChannel.setMethodCallHandler((handler) async {
       if (handler.method == makePurchaseMethodName) {
         String id = handler.arguments as String? ?? '';
-        final status = await callbacks.makePurchase(id);
-        return status.name;
+        final result = await callbacks.makePurchase(id);
+
+        return {
+          'status': result.status.name,
+          'error': result.error,
+        };
       } else if (handler.method == restorePurchasesMethodName) {
-        bool status = handler.arguments as bool? ?? false;
-        callbacks.restorePurchases(status);
+        final success = await callbacks.restorePurchases();
+        return success;
       } else if (handler.method == onPaywallEventMethodName) {
         String eventString = handler.arguments as String? ?? '';
         Map<String, dynamic> event = jsonDecode(eventString);
@@ -175,6 +180,25 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
       }
       return "Failed to present upsell: '${e.message}'.";
     }
+  }
+
+  @override
+  Future<PaywallInfo?> getPaywallInfo(String trigger) async {
+    final result = await methodChannel.invokeMethod<Map<dynamic, dynamic>>('getPaywallInfo', trigger);
+
+    if (result == null) {
+      log('[Helium] getPaywallInfo unexpected error.');
+      return null;
+    }
+    if (result['errorMsg'] != null) {
+      log('[Helium] ${result['errorMsg']}');
+      return null;
+    }
+
+    return PaywallInfo(
+      paywallTemplateName: result['templateName'] ?? 'unknown template',
+      shouldShow: result['shouldShow'] ?? true,
+    );
   }
 
   @override

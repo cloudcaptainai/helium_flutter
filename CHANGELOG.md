@@ -1,3 +1,8 @@
+## 0.1.0
+- Updated helium-swift dependency to 2.0.13
+- New getPaywallInfo method available
+- Small changes to makePurchase/restorePurchase delegate methods for better error handling & readability
+
 ## 0.0.12
 - Updated helium-swift dependency to 2.0.11
 

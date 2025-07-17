@@ -1,12 +1,14 @@
 # helium_flutter
 
+### NOTE: For the most up-to-date documentation visit https://docs.tryhelium.com/
+
 ## **Installation**
 
 Run `flutter pub add helium_flutter` or manually add the helium_flutter package to your pubspec.yaml:
 
 ```yaml
 dependencies:
-  helium_flutter: ^0.0.8
+  helium_flutter: ^0.1.0
 ```
 
 Then run:
@@ -48,13 +50,13 @@ To integrate Helium paywalls, create a class that implements the `HeliumCallback
 abstract class HeliumCallbacks {
   // [REQUIRED] - Trigger the purchase of a product with the provided product ID.
   // This method should return a HeliumTransactionStatus enum.
-  Future<HeliumTransactionStatus> makePurchase(String productId);
+  Future<HeliumPurchaseResult> makePurchase(String productId);
 
-  // [OPTIONAL] - Restore any existing subscriptions.
+  // [REQUIRED] - Restore any existing subscriptions.
   // This method should return a boolean indicating whether the restore was successful.
-  Future<bool> restorePurchases(bool status);
+  Future<bool> restorePurchases();
 
-  // [OPTIONAL] - Custom analytics/error logging for paywall/helium related events.
+  // [REQUIRED] - Custom analytics/error logging for paywall/helium related events.
   // By default, events are logged to your analytics service, but you can override 
   // this method to add additional custom logging/handling.
   Future<void> onPaywallEvent(Map<String, dynamic> heliumPaywallEvent);
@@ -85,15 +87,15 @@ import 'dart:developer';
 
 class PaymentCallbacks implements HeliumCallbacks {
   @override
-  Future<HeliumTransactionStatus> makePurchase(String productId) async {
+  Future<HeliumPurchaseResult> makePurchase(String productId) async {
     log('makePurchase: $productId');
     // Implement your purchase logic here
-    return HeliumTransactionStatus.purchased;
+    return HeliumPurchaseResult(status: HeliumTransactionStatus.purchased);
   }
 
   @override
-  Future<bool> restorePurchases(bool status) async {
-    log('restorePurchases: $status');
+  Future<bool> restorePurchases() async {
+    log('restorePurchases');
     // Implement your restore logic here
     return status;
   }
@@ -115,7 +117,7 @@ import 'dart:developer';
 
 class RevenueCatCallbacks implements HeliumCallbacks {
   @override
-  Future<HeliumTransactionStatus> makePurchase(String productId) async {
+  Future<HeliumPurchaseResult> makePurchase(String productId) async {
     try {
       log('RevenueCat making purchase: $productId');
       final offerings = await Purchases.getOfferings();
@@ -172,7 +174,7 @@ class RevenueCatCallbacks implements HeliumCallbacks {
   }
 
   @override
-  Future<bool> restorePurchases(bool status) async {
+  Future<bool> restorePurchases() async {
     try {
       log('RevenueCat restoring purchases');
       final restoredInfo = await Purchases.restorePurchases();
@@ -207,7 +209,7 @@ In your app's initialization code (typically in `main.dart` or your root widget)
 ```dart
 import 'package:helium_flutter/helium_flutter.dart';
 
-void main() {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
   // Create your callbacks implementation
@@ -223,10 +225,10 @@ void main() {
     callbacks: paymentCallbacks,
 
     // [Required] Defines a fallback paywall to show in case the user's device is not connected to the internet. This can be any Flutter view e.g. your existing one. It should be defined with subscription and post purchase navigation logic.
-    fallbackPaywall: <your fallback paywall view>
+    fallbackPaywall: '<your fallback paywall view>',
     
     // If set, a custom API endpoint (usually provided by Helium)
-    customAPIEndpoint: "https://api-v2.tryhelium.com/on-launch",
+    customAPIEndpoint: "https://api-v2.tryhelium.com/on-launch", // Optional
     
     // If set, a custom user ID to use instead of Helium's
     customUserId: "your-custom-user-id", // Optional

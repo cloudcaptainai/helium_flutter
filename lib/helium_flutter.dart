@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:helium_flutter/core/helium_callbacks.dart';
 import 'package:helium_flutter/core/helium_flutter_platform.dart';
+import 'package:helium_flutter/types/helium_types.dart';
 export './core/helium_callbacks.dart';
 export './types/helium_transaction_status.dart';
 
@@ -10,7 +11,7 @@ class HeliumFlutter {
     required String apiKey,
     required HeliumCallbacks callbacks,
     required Widget fallbackPaywall,
-    required String customAPIEndpoint,
+    String? customAPIEndpoint,
     String? customUserId,
     Map<String, dynamic>? customUserTraits,
     String? revenueCatAppUserId,
@@ -53,6 +54,9 @@ class HeliumFlutter {
   ///Presents view based on [trigger]
   Future<String?> presentUpsell({required BuildContext context, required String trigger}) =>
       HeliumFlutterPlatform.instance.presentUpsell(context: context, trigger: trigger);
+
+  Future<PaywallInfo?> getPaywallInfo(String trigger) =>
+      HeliumFlutterPlatform.instance.getPaywallInfo(trigger);
 
   Widget getUpsellWidget({required String trigger}) =>
       HeliumFlutterPlatform.instance.getUpsellWidget(trigger: trigger);

@@ -4,8 +4,10 @@ import 'package:helium_flutter/helium_flutter.dart';
 
 class PaymentCallbacks implements HeliumCallbacks {
   @override
-  Future<HeliumTransactionStatus> makePurchase(String productId) async {
-    return Future.value(HeliumTransactionStatus.purchased);
+  Future<HeliumPurchaseResult> makePurchase(String productId) async {
+    return Future.value(HeliumPurchaseResult(
+      status: HeliumTransactionStatus.purchased,
+    ));
   }
 
   @override
@@ -14,7 +16,7 @@ class PaymentCallbacks implements HeliumCallbacks {
   }
 
   @override
-  Future<bool> restorePurchases(bool status) {
+  Future<bool> restorePurchases() {
     return Future.value(true);
   }
 }
