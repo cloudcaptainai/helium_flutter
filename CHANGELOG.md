@@ -1,3 +1,6 @@
+## 0.1.1
+- Updated helium-swift dependency to 2.0.16
+
 ## 0.1.0
 - Updated helium-swift dependency to 2.0.13
 - New getPaywallInfo method available
