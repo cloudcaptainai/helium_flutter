@@ -21,9 +21,12 @@ enum PurchaseError: LocalizedError {
 
 public class HeliumFlutterPlugin: NSObject, FlutterPlugin {
   var channel : FlutterMethodChannel!
+  var registrar: FlutterPluginRegistrar?
+
   public static func register(with registrar: FlutterPluginRegistrar) {
     let instance = HeliumFlutterPlugin()
     instance.channel = FlutterMethodChannel(name: "helium_flutter", binaryMessenger: registrar.messenger())
+    instance.registrar = registrar
     registrar.addMethodCallDelegate(instance, channel: instance.channel)
     let factory = FLNativeViewFactory(messenger: registrar.messenger())
     registrar.register(factory, withId: "upsellViewForTrigger")
@@ -39,13 +42,15 @@ public class HeliumFlutterPlugin: NSObject, FlutterPlugin {
           let userTraitsMap = args["customUserTraits"] as? [String: Any]
           let customUserTraits = userTraitsMap != nil ? HeliumUserTraits(userTraitsMap!) : nil
           let revenueCatAppUserId = args["revenueCatAppUserId"] as? String
+          let fallbackAssetPath = args["fallbackAssetPath"] as? String
 
           initializeHelium(
             apiKey: apiKey,
             customAPIEndpoint: customAPIEndpoint,
             customUserId: customUserId,
             customUserTraits: customUserTraits,
-            revenueCatAppUserId: revenueCatAppUserId
+            revenueCatAppUserId: revenueCatAppUserId,
+            fallbackAssetPath: fallbackAssetPath
           )
           result("Initialization started!")
       } else {
@@ -100,26 +105,36 @@ public class HeliumFlutterPlugin: NSObject, FlutterPlugin {
     }
   }
 
-  private func initializeHelium(
-    apiKey: String, customAPIEndpoint: String?,
-    customUserId: String?, customUserTraits: HeliumUserTraits?,
-    revenueCatAppUserId: String?
-  ) {
-    Task {
-      let delegate = DemoHeliumPaywallDelegate(methodChannel: channel)
-      let view = FallbackView()
+    private func initializeHelium(
+      apiKey: String, customAPIEndpoint: String?,
+      customUserId: String?, customUserTraits: HeliumUserTraits?,
+      revenueCatAppUserId: String?, fallbackAssetPath: String?
+    ) {
+      Task {
+        let delegate = DemoHeliumPaywallDelegate(methodChannel: channel)
+        let view = FallbackView()
 
-      await Helium.shared.initialize(
-        apiKey: apiKey,
-        heliumPaywallDelegate: delegate,
-        fallbackPaywall: view,
-        customUserId: customUserId,
-        customAPIEndpoint: customAPIEndpoint,
-        customUserTraits: customUserTraits,
-        revenueCatAppUserId: revenueCatAppUserId
-      )
+        var fallbackBundleURL: URL? = nil
+
+        // Get file from Flutter assets
+        if let assetPath = fallbackAssetPath,
+           let key = registrar?.lookupKey(forAsset: assetPath),
+           let path = Bundle.main.path(forResource: key, ofType: nil) {
+            fallbackBundleURL = URL(fileURLWithPath: path)
+        }
+
+        await Helium.shared.initialize(
+          apiKey: apiKey,
+          heliumPaywallDelegate: delegate,
+          fallbackPaywall: view,
+          customUserId: customUserId,
+          customAPIEndpoint: customAPIEndpoint,
+          customUserTraits: customUserTraits,
+          revenueCatAppUserId: revenueCatAppUserId,
+          fallbackBundleURL: fallbackBundleURL
+        )
+      }
     }
-  }
     
     public func presentUpsell(trigger: String, from viewController: UIViewController? = nil) {
         Helium.shared.presentUpsell(trigger: trigger)
