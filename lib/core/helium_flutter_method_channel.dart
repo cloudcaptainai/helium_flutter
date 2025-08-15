@@ -32,9 +32,9 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
   }) async {
     _setMethodCallHandlers(callbacks);
     _fallbackPaywallWidget = fallbackPaywall;
-
+    
     if (_isInitialized) {
-      return "Helium already initialized!";
+      return "[Helium] Already initialized!";
     }
     _isInitialized = true;
 
@@ -68,7 +68,7 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
         Map<String, dynamic> event = jsonDecode(eventString);
         callbacks.onPaywallEvent(event);
       } else {
-        log('Unknown method from MethodChannel: ${handler.method}');
+        log('[Helium] Unknown method from MethodChannel: ${handler.method}');
       }
     });
   }
