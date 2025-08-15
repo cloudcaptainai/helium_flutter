@@ -35,6 +35,7 @@ abstract class HeliumFlutterPlatform extends PlatformInterface {
     String? customUserId,
     Map<String, dynamic>? customUserTraits,
     String? revenueCatAppUserId,
+    String? fallbackBundleAssetPath,
   });
 
   ///Download status of paywall
