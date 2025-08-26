@@ -21,6 +21,7 @@ class MockHeliumFlutterPlatform
     String? customUserId,
     Map<String, dynamic>? customUserTraits,
     String? revenueCatAppUserId,
+    String? fallbackBundleAssetPath,
   }) {
     return Future.value('Initialization started!');
   }

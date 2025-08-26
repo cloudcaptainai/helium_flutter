@@ -28,12 +28,13 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
     String? customUserId,
     Map<String, dynamic>? customUserTraits,
     String? revenueCatAppUserId,
+    String? fallbackBundleAssetPath,
   }) async {
     _setMethodCallHandlers(callbacks);
     _fallbackPaywallWidget = fallbackPaywall;
-
+    
     if (_isInitialized) {
-      return "Helium already initialized!";
+      return "[Helium] Already initialized!";
     }
     _isInitialized = true;
 
@@ -44,6 +45,7 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
       'customAPIEndpoint': customAPIEndpoint,
       'customUserTraits': customUserTraits,
       'revenueCatAppUserId': revenueCatAppUserId,
+      'fallbackAssetPath': fallbackBundleAssetPath,
     });
     return result;
   }
@@ -66,7 +68,7 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
         Map<String, dynamic> event = jsonDecode(eventString);
         callbacks.onPaywallEvent(event);
       } else {
-        log('Unknown method from MethodChannel: ${handler.method}');
+        log('[Helium] Unknown method from MethodChannel: ${handler.method}');
       }
     });
   }
@@ -160,12 +162,20 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
       }
     }
 
-    final downloadStatus = await getDownloadStatus();
-    if (downloadStatus != '"downloadSuccess"') {
+    final canPresentResult = await methodChannel.invokeMethod<Map<dynamic, dynamic>>(
+      'canPresentUpsell',
+      trigger,
+    );
+
+    final bool canPresent = canPresentResult?['canPresent'] ?? false;
+    final String reason = canPresentResult?['reason'] ?? 'method call failed';
+
+    if (!canPresent) {
+      log('[Helium] Cannot present trigger "$trigger". Reason: $reason');
       if (context.mounted) {
         showFallbackSheet(context);
       }
-      return 'Unsuccessful Helium download - $downloadStatus';
+      return 'Cannot present upsell - $reason';
     }
 
     try {
@@ -175,6 +185,7 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
       );
       return result;
     } on PlatformException catch (e) {
+      log('[Helium] Unexpected present upsell error: ${e.message}');
       if (context.mounted) {
         showFallbackSheet(context);
       }

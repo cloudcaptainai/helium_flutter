@@ -15,6 +15,7 @@ class HeliumFlutter {
     String? customUserId,
     Map<String, dynamic>? customUserTraits,
     String? revenueCatAppUserId,
+    String? fallbackBundleAssetPath,
   }) async {
     return await HeliumFlutterPlatform.instance.initialize(
       callbacks: callbacks,
@@ -24,6 +25,7 @@ class HeliumFlutter {
       customUserId: customUserId,
       customUserTraits: customUserTraits,
       revenueCatAppUserId: revenueCatAppUserId,
+      fallbackBundleAssetPath: fallbackBundleAssetPath,
     );
   }
 
