@@ -213,6 +213,12 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
   }
 
   @override
+  Future<bool> handleDeepLink(String uri) async {
+    final result = await methodChannel.invokeMethod<bool>('handleDeepLink', uri);
+    return result ?? false;
+  }
+
+  @override
   Widget getUpsellWidget({required String trigger}) {
     return UpsellWrapperWidget(
       trigger: trigger,

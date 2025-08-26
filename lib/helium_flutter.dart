@@ -60,6 +60,9 @@ class HeliumFlutter {
   Future<PaywallInfo?> getPaywallInfo(String trigger) =>
       HeliumFlutterPlatform.instance.getPaywallInfo(trigger);
 
+  Future<bool> handleDeepLink(String uri) =>
+      HeliumFlutterPlatform.instance.handleDeepLink(uri);
+
   Widget getUpsellWidget({required String trigger}) =>
       HeliumFlutterPlatform.instance.getUpsellWidget(trigger: trigger);
 

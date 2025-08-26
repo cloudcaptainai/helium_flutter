@@ -104,6 +104,9 @@ public class HeliumFlutterPlugin: NSObject, FlutterPlugin {
             let trigger = call.arguments as? String ?? ""
             let canPresentResult = canPresentUpsell(trigger: trigger)
             result(canPresentResult)
+        case "handleDeepLink":
+            let urlString = call.arguments as? String ?? ""
+            result(handleDeepLink(urlString))
         default:
             result(FlutterMethodNotImplemented)
         }
@@ -213,6 +216,14 @@ public class HeliumFlutterPlugin: NSObject, FlutterPlugin {
             "canPresent": canPresent,
             "reason": reason
         ]
+    }
+
+    private func handleDeepLink(_ urlString: String) -> Bool {
+        guard let url = URL(string: urlString) else {
+            return false
+        }
+
+        return Helium.shared.handleDeepLink(url)
     }
 }
 

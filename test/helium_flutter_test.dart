@@ -68,6 +68,11 @@ class MockHeliumFlutterPlatform
   }
 
   @override
+  Future<bool> handleDeepLink(String uri) {
+    return Future.value(false);
+  }
+
+  @override
   Widget getUpsellWidget({required String trigger}) {
     return Text("upsell widget");
   }
