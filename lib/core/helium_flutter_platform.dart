@@ -35,6 +35,7 @@ abstract class HeliumFlutterPlatform extends PlatformInterface {
     String? customUserId,
     Map<String, dynamic>? customUserTraits,
     String? revenueCatAppUserId,
+    String? fallbackBundleAssetPath,
   });
 
   ///Download status of paywall
@@ -59,6 +60,8 @@ abstract class HeliumFlutterPlatform extends PlatformInterface {
   });
 
   Future<PaywallInfo?> getPaywallInfo(String trigger);
+
+  Future<bool> handleDeepLink(String uri);
 
   Widget getUpsellWidget({required String trigger});
 

@@ -15,6 +15,7 @@ class HeliumFlutter {
     String? customUserId,
     Map<String, dynamic>? customUserTraits,
     String? revenueCatAppUserId,
+    String? fallbackBundleAssetPath,
   }) async {
     return await HeliumFlutterPlatform.instance.initialize(
       callbacks: callbacks,
@@ -24,6 +25,7 @@ class HeliumFlutter {
       customUserId: customUserId,
       customUserTraits: customUserTraits,
       revenueCatAppUserId: revenueCatAppUserId,
+      fallbackBundleAssetPath: fallbackBundleAssetPath,
     );
   }
 
@@ -57,6 +59,9 @@ class HeliumFlutter {
 
   Future<PaywallInfo?> getPaywallInfo(String trigger) =>
       HeliumFlutterPlatform.instance.getPaywallInfo(trigger);
+
+  Future<bool> handleDeepLink(String uri) =>
+      HeliumFlutterPlatform.instance.handleDeepLink(uri);
 
   Widget getUpsellWidget({required String trigger}) =>
       HeliumFlutterPlatform.instance.getUpsellWidget(trigger: trigger);

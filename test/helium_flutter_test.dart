@@ -21,6 +21,7 @@ class MockHeliumFlutterPlatform
     String? customUserId,
     Map<String, dynamic>? customUserTraits,
     String? revenueCatAppUserId,
+    String? fallbackBundleAssetPath,
   }) {
     return Future.value('Initialization started!');
   }
@@ -64,6 +65,11 @@ class MockHeliumFlutterPlatform
       paywallTemplateName: 'template',
       shouldShow: true,
     ));
+  }
+
+  @override
+  Future<bool> handleDeepLink(String uri) {
+    return Future.value(false);
   }
 
   @override
