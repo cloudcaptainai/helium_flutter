@@ -48,6 +48,8 @@ void main() {
               return true;
             case presentUpsellMethodName:
               return 'Upsell presented!';
+            case canPresentUpsellMethodName:
+              return { 'canPresent' : true };
             default:
           }
           return null;
@@ -109,7 +111,7 @@ void main() {
 
     expect(
       await platform.presentUpsell(context: context, trigger: 'onboarding'),
-      'Unsuccessful Helium download - Completed',
+      'Upsell presented!',
     );
   });
 }

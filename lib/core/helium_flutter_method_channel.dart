@@ -163,7 +163,7 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
     }
 
     final canPresentResult = await methodChannel.invokeMethod<Map<dynamic, dynamic>>(
-      'canPresentUpsell',
+      canPresentUpsellMethodName,
       trigger,
     );
 
