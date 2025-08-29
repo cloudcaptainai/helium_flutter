@@ -215,6 +215,7 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
   @override
   Future<bool> handleDeepLink(String uri) async {
     final result = await methodChannel.invokeMethod<bool>('handleDeepLink', uri);
+    log('[Helium] Handled deep link: $result');
     return result ?? false;
   }
 
