@@ -152,7 +152,7 @@ public class HeliumFlutterPlugin: NSObject, FlutterPlugin {
     }
 
     public func getDownloadStatus() -> String {
-        return Helium.shared.getDownloadStatus().toString()
+        return Helium.shared.getDownloadStatus().rawValue
     }
 
     public func getHeliumUserId() -> String? {
