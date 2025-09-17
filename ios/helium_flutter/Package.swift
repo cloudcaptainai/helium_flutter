@@ -12,7 +12,7 @@ let package = Package(
         .library(name: "helium-flutter", targets: ["helium_flutter"])
     ],
     dependencies: [
-    .package(url: "https://github.com/cloudcaptainai/helium-swift.git", from: "2.3.0")],
+    .package(url: "https://github.com/cloudcaptainai/helium-swift.git", from: "3.0.0")],
     targets: [
         .target(
             name: "helium_flutter",
