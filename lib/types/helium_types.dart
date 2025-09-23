@@ -166,74 +166,35 @@ class PresentUpsellParams {
 
 // Enhanced HeliumPaywallEvent with new types and deprecated annotations
 class HeliumPaywallEvent {
-  final String type;
-  final String? triggerName;
-  final String? paywallName;
-  /// @deprecated Use `paywallName` instead.
-  final String? paywallTemplateName;
-  final String? productId;
-  /// @deprecated Use `productId` instead.
-  final String? productKey;
-  final String? buttonName;
-  /// @deprecated Use `buttonName` instead.
-  final String? ctaName;
-  final String? configId;
-  final String? impressionId;
-  final int? responseTimeMs;
-  final int? configDownloadTimeMs;
-  final int? fontsDownloadTimeTakenMS;
-  final int? bundleDownloadTimeMS;
-  final bool? dismissAll;
-  final bool? isSecondTry;
-  final String? error;
-  /// @deprecated Use `error` instead.
-  final String? errorDescription;
+  final Map<String, dynamic> _data;
+
+  HeliumPaywallEvent.fromMap(Map<String, dynamic> map) : _data = map;
+
+  // Type-safe getters
+  String get type => _data['type'] ?? '';
+  String? get triggerName => _data['triggerName'];
+  String? get paywallName => _data['paywallName'];
+  String? get productId => _data['productId'];
+  String? get buttonName => _data['buttonName'];
+  String? get configId => _data['configId'];
+  String? get impressionId => _data['impressionId'];
+  int? get responseTimeMs => _data['responseTimeMs'];
+  int? get configDownloadTimeMs => _data['configDownloadTimeMs'];
+  int? get fontsDownloadTimeTakenMS => _data['fontsDownloadTimeTakenMS'];
+  int? get bundleDownloadTimeMS => _data['bundleDownloadTimeMS'];
+  bool? get dismissAll => _data['dismissAll'];
+  bool? get isSecondTry => _data['isSecondTry'];
+  String? get error => _data['error'];
   /// Unix timestamp in seconds
-  final int? timestamp;
+  int? get timestamp => _data['timestamp'];
 
-  HeliumPaywallEvent({
-    required this.type,
-    this.triggerName,
-    this.paywallName,
-    this.paywallTemplateName,
-    this.productId,
-    this.productKey,
-    this.buttonName,
-    this.ctaName,
-    this.configId,
-    this.impressionId,
-    this.responseTimeMs,
-    this.configDownloadTimeMs,
-    this.fontsDownloadTimeTakenMS,
-    this.bundleDownloadTimeMS,
-    this.dismissAll,
-    this.isSecondTry,
-    this.error,
-    this.errorDescription,
-    this.timestamp,
-  });
-
-  factory HeliumPaywallEvent.fromMap(Map<String, dynamic> map) {
-    return HeliumPaywallEvent(
-      type: map['type'] ?? '',
-      triggerName: map['triggerName'],
-      paywallName: map['paywallName'],
-      paywallTemplateName: map['paywallTemplateName'],
-      productId: map['productId'],
-      productKey: map['productKey'],
-      buttonName: map['buttonName'],
-      ctaName: map['ctaName'],
-      configId: map['configId'],
-      impressionId: map['impressionId'],
-      responseTimeMs: map['responseTimeMs'],
-      configDownloadTimeMs: map['configDownloadTimeMs'],
-      fontsDownloadTimeTakenMS: map['fontsDownloadTimeTakenMS'],
-      bundleDownloadTimeMS: map['bundleDownloadTimeMS'],
-      dismissAll: map['dismissAll'],
-      isSecondTry: map['isSecondTry'],
-      error: map['error'],
-      errorDescription: map['errorDescription'],
-      timestamp: map['timestamp'],
-    );
-  }
+  // Deprecated getters for backwards compatibility
+  /// @deprecated Use `paywallName` instead.
+  String? get paywallTemplateName => _data['paywallTemplateName'];
+  /// @deprecated Use `productId` instead.
+  String? get productKey => _data['productKey'];
+  /// @deprecated Use `buttonName` instead.
+  String? get ctaName => _data['ctaName'];
+  /// @deprecated Use `error` instead.
+  String? get errorDescription => _data['errorDescription'];
 }
