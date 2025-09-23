@@ -22,9 +22,9 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
 
   @override
   Future<String?> initialize({
-    required HeliumCallbacks callbacks,
-    required Widget fallbackPaywall,
     required String apiKey,
+    required HeliumCallbacks callbacks,
+    Widget? fallbackPaywall,
     String? customAPIEndpoint,
     String? customUserId,
     Map<String, dynamic>? customUserTraits,
@@ -67,7 +67,8 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
         final success = await callbacks.restorePurchases();
         return success;
       } else if (handler.method == onPaywallEventMethodName) {
-        Map<String, dynamic> event = handler.arguments as Map<String, dynamic>? ?? {};
+        Map<String, dynamic> eventMap = handler.arguments as Map<String, dynamic>? ?? {};
+        HeliumPaywallEvent event = HeliumPaywallEvent.fromMap(eventMap);
         callbacks.onPaywallEvent(event);
       } else if (handler.method == 'onPaywallEventHandler') {
         Map<String, dynamic> eventDict = handler.arguments as Map<String, dynamic>? ?? {};

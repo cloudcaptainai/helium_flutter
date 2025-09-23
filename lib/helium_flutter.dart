@@ -4,13 +4,14 @@ import 'package:helium_flutter/core/helium_flutter_platform.dart';
 import 'package:helium_flutter/types/helium_types.dart';
 export './core/helium_callbacks.dart';
 export './types/helium_transaction_status.dart';
+export './types/helium_types.dart';
 
 class HeliumFlutter {
   ///Initialize helium sdk at the start up of flutter application. It will download custom paywall view
   Future<String?> initialize({
     required String apiKey,
     required HeliumCallbacks callbacks,
-    required Widget fallbackPaywall,
+    Widget? fallbackPaywall,
     String? customAPIEndpoint,
     String? customUserId,
     Map<String, dynamic>? customUserTraits,
@@ -19,9 +20,9 @@ class HeliumFlutter {
     HeliumPaywallLoadingConfig? paywallLoadingConfig,
   }) async {
     return await HeliumFlutterPlatform.instance.initialize(
+      apiKey: apiKey,
       callbacks: callbacks,
       fallbackPaywall: fallbackPaywall,
-      apiKey: apiKey,
       customAPIEndpoint: customAPIEndpoint,
       customUserId: customUserId,
       customUserTraits: customUserTraits,

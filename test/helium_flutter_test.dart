@@ -14,14 +14,15 @@ class MockHeliumFlutterPlatform
     implements HeliumFlutterPlatform {
   @override
   Future<String?> initialize({
-    required HeliumCallbacks callbacks,
-    required Widget fallbackPaywall,
     required String apiKey,
+    required HeliumCallbacks callbacks,
+    Widget? fallbackPaywall,
     String? customAPIEndpoint,
     String? customUserId,
     Map<String, dynamic>? customUserTraits,
     String? revenueCatAppUserId,
     String? fallbackBundleAssetPath,
+    HeliumPaywallLoadingConfig? paywallLoadingConfig,
   }) {
     return Future.value('Initialization started!');
   }
@@ -55,7 +56,7 @@ class MockHeliumFlutterPlatform
   }
 
   @override
-  Future<String?> presentUpsell({required String trigger, required BuildContext context}) {
+  Future<String?> presentUpsell({required BuildContext context, required String trigger, PaywallEventHandlers? eventHandlers, Map<String, dynamic>? customPaywallTraits}) {
     return Future.value('Upsell presented!');
   }
 
