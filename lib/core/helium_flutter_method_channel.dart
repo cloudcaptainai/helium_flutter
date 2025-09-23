@@ -45,7 +45,7 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
       'apiKey': apiKey,
       'customUserId': customUserId,
       'customAPIEndpoint': customAPIEndpoint,
-      'customUserTraits': customUserTraits,
+      'customUserTraits': _convertBooleansToMarkers(customUserTraits),
       'revenueCatAppUserId': revenueCatAppUserId,
       'fallbackAssetPath': fallbackBundleAssetPath,
       'paywallLoadingConfig': paywallLoadingConfig?.toMap(),

@@ -39,7 +39,7 @@ public class HeliumFlutterPlugin: NSObject, FlutterPlugin {
                 let apiKey = args["apiKey"] as? String ?? ""
                 let customAPIEndpoint = args["customAPIEndpoint"] as? String
                 let customUserId = args["customUserId"] as? String
-                let userTraitsMap = args["customUserTraits"] as? [String: Any]
+                let userTraitsMap = convertMarkersToBooleans(args["customUserTraits"] as? [String: Any])
                 let customUserTraits = userTraitsMap != nil ? HeliumUserTraits(userTraitsMap!) : nil
                 let revenueCatAppUserId = args["revenueCatAppUserId"] as? String
                 let fallbackAssetPath = args["fallbackAssetPath"] as? String
