@@ -36,13 +36,19 @@ abstract class HeliumFlutterPlatform extends PlatformInterface {
     Map<String, dynamic>? customUserTraits,
     String? revenueCatAppUserId,
     String? fallbackBundleAssetPath,
+    HeliumPaywallLoadingConfig? paywallLoadingConfig,
   });
 
   ///Download status of paywall
   Future<String?> getDownloadStatus();
 
   ///Presents view based on [trigger]
-  Future<String?> presentUpsell({required BuildContext context, required String trigger});
+  Future<String?> presentUpsell({
+    required BuildContext context,
+    required String trigger,
+    PaywallEventHandlers? eventHandlers,
+    Map<String, dynamic>? customPaywallTraits,
+  });
 
   ///Hides view
   Future<bool> hideUpsell();

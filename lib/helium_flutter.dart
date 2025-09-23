@@ -16,6 +16,7 @@ class HeliumFlutter {
     Map<String, dynamic>? customUserTraits,
     String? revenueCatAppUserId,
     String? fallbackBundleAssetPath,
+    HeliumPaywallLoadingConfig? paywallLoadingConfig,
   }) async {
     return await HeliumFlutterPlatform.instance.initialize(
       callbacks: callbacks,
@@ -26,6 +27,7 @@ class HeliumFlutter {
       customUserTraits: customUserTraits,
       revenueCatAppUserId: revenueCatAppUserId,
       fallbackBundleAssetPath: fallbackBundleAssetPath,
+      paywallLoadingConfig: paywallLoadingConfig,
     );
   }
 
@@ -54,8 +56,18 @@ class HeliumFlutter {
       HeliumFlutterPlatform.instance.paywallsLoaded();
 
   ///Presents view based on [trigger]
-  Future<String?> presentUpsell({required BuildContext context, required String trigger}) =>
-      HeliumFlutterPlatform.instance.presentUpsell(context: context, trigger: trigger);
+  Future<String?> presentUpsell({
+    required BuildContext context,
+    required String trigger,
+    PaywallEventHandlers? eventHandlers,
+    Map<String, dynamic>? customPaywallTraits,
+  }) =>
+      HeliumFlutterPlatform.instance.presentUpsell(
+        context: context,
+        trigger: trigger,
+        eventHandlers: eventHandlers,
+        customPaywallTraits: customPaywallTraits,
+      );
 
   Future<PaywallInfo?> getPaywallInfo(String trigger) =>
       HeliumFlutterPlatform.instance.getPaywallInfo(trigger);

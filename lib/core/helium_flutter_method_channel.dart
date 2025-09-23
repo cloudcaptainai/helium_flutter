@@ -18,6 +18,7 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
   BuildContext? _fallbackContext;
 
   bool _isInitialized = false;
+  PaywallEventHandlers? _currentEventHandlers;
 
   @override
   Future<String?> initialize({
@@ -29,6 +30,7 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
     Map<String, dynamic>? customUserTraits,
     String? revenueCatAppUserId,
     String? fallbackBundleAssetPath,
+    HeliumPaywallLoadingConfig? paywallLoadingConfig,
   }) async {
     _setMethodCallHandlers(callbacks);
     _fallbackPaywallWidget = fallbackPaywall;
@@ -46,6 +48,7 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
       'customUserTraits': customUserTraits,
       'revenueCatAppUserId': revenueCatAppUserId,
       'fallbackAssetPath': fallbackBundleAssetPath,
+      'paywallLoadingConfig': paywallLoadingConfig?.toMap(),
     });
     return result;
   }
@@ -64,9 +67,11 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
         final success = await callbacks.restorePurchases();
         return success;
       } else if (handler.method == onPaywallEventMethodName) {
-        String eventString = handler.arguments as String? ?? '';
-        Map<String, dynamic> event = jsonDecode(eventString);
+        Map<String, dynamic> event = handler.arguments as Map<String, dynamic>? ?? {};
         callbacks.onPaywallEvent(event);
+      } else if (handler.method == 'onPaywallEventHandler') {
+        Map<String, dynamic> eventDict = handler.arguments as Map<String, dynamic>? ?? {};
+        _handlePaywallEventHandlers(eventDict);
       } else {
         log('[Helium] Unknown method from MethodChannel: ${handler.method}');
       }
@@ -125,6 +130,8 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
   Future<String?> presentUpsell({
     required BuildContext context,
     required String trigger,
+    PaywallEventHandlers? eventHandlers,
+    Map<String, dynamic>? customPaywallTraits,
   }) async {
     Future<void> showFallbackSheet(BuildContext ctx) async {
       if (_isFallbackSheetShowing) return; // already showing!
@@ -178,14 +185,21 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
       return 'Cannot present upsell - $reason';
     }
 
+    // Store current event handlers
+    _currentEventHandlers = eventHandlers;
+
     try {
       final result = await methodChannel.invokeMethod<String?>(
         presentUpsellMethodName,
-        trigger,
+        {
+          'trigger': trigger,
+          'customPaywallTraits': customPaywallTraits,
+        },
       );
       return result;
     } on PlatformException catch (e) {
       log('[Helium] Unexpected present upsell error: ${e.message}');
+      _currentEventHandlers = null;
       if (context.mounted) {
         showFallbackSheet(context);
       }
@@ -217,6 +231,58 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
     final result = await methodChannel.invokeMethod<bool>('handleDeepLink', uri);
     log('[Helium] Handled deep link: $result');
     return result ?? false;
+  }
+
+  void _handlePaywallEventHandlers(Map<String, dynamic> eventDict) {
+    if (_currentEventHandlers == null) return;
+
+    final eventType = eventDict['type'] as String?;
+    final triggerName = eventDict['triggerName'] as String? ?? 'unknown';
+    final paywallName = eventDict['paywallName'] as String? ?? 'unknown';
+    final isSecondTry = eventDict['isSecondTry'] as bool? ?? false;
+
+    switch (eventType) {
+      case 'paywallOpen':
+        _currentEventHandlers?.onOpen?.call(PaywallOpenEvent(
+          triggerName: triggerName,
+          paywallName: paywallName,
+          isSecondTry: isSecondTry,
+          viewType: 'presented',
+        ));
+        break;
+      case 'paywallClose':
+        _currentEventHandlers?.onClose?.call(PaywallCloseEvent(
+          triggerName: triggerName,
+          paywallName: paywallName,
+          isSecondTry: isSecondTry,
+        ));
+        if (!isSecondTry) {
+          _currentEventHandlers = null;
+        }
+        break;
+      case 'paywallDismissed':
+        _currentEventHandlers?.onDismissed?.call(PaywallDismissedEvent(
+          triggerName: triggerName,
+          paywallName: paywallName,
+          isSecondTry: isSecondTry,
+        ));
+        break;
+      case 'purchaseSucceeded':
+        final productId = eventDict['productId'] as String? ?? 'unknown';
+        _currentEventHandlers?.onPurchaseSucceeded?.call(PurchaseSucceededEvent(
+          productId: productId,
+          triggerName: triggerName,
+          paywallName: paywallName,
+          isSecondTry: isSecondTry,
+        ));
+        break;
+      case 'paywallSkipped':
+        _currentEventHandlers = null;
+        break;
+      case 'paywallOpenFailed':
+        _currentEventHandlers = null;
+        break;
+    }
   }
 
   @override
