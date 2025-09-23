@@ -205,7 +205,7 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
         presentUpsellMethodName,
         {
           'trigger': trigger,
-          'customPaywallTraits': customPaywallTraits,
+          'customPaywallTraits': _convertBooleansToMarkers(customPaywallTraits),
         },
       );
       return result;
@@ -317,6 +317,32 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
         );
       },
     );
+  }
+
+  /// Recursively converts boolean values to special marker strings to preserve
+  /// type information when passing through platform channels.
+  ///
+  /// Flutter's platform channels convert booleans to NSNumber (0/1), making them
+  /// indistinguishable from actual numeric values. This helper converts:
+  /// - true -> "__helium_flutter_bool_true__"
+  /// - false -> "__helium_flutter_bool_false__"
+  /// - All other values remain unchanged
+  Map<String, dynamic>? _convertBooleansToMarkers(Map<String, dynamic>? input) {
+    if (input == null) return null;
+
+    return input.map((key, value) => MapEntry(key, _convertValueBooleansToMarkers(value)));
+  }
+
+  /// Helper to recursively convert booleans in any value type
+  dynamic _convertValueBooleansToMarkers(dynamic value) {
+    if (value is bool) {
+      return value ? "__helium_flutter_bool_true__" : "__helium_flutter_bool_false__";
+    } else if (value is Map<String, dynamic>) {
+      return _convertBooleansToMarkers(value);
+    } else if (value is List) {
+      return value.map(_convertValueBooleansToMarkers).toList();
+    }
+    return value;
   }
 
 }

@@ -169,6 +169,7 @@ public class HeliumFlutterPlugin: NSObject, FlutterPlugin {
     }
 
     public func presentUpsell(trigger: String, customPaywallTraits: [String: Any]? = nil) {
+        let convertedTraits = convertMarkersToBooleans(customPaywallTraits)
         Helium.shared.presentUpsell(
             trigger: trigger,
             eventHandlers: PaywallEventHandlers.withHandlers(
@@ -185,7 +186,7 @@ public class HeliumFlutterPlugin: NSObject, FlutterPlugin {
                     self?.channel.invokeMethod("onPaywallEventHandler", arguments: event.toDictionary())
                 }
             ),
-            customPaywallTraits: customPaywallTraits
+            customPaywallTraits: convertedTraits
         )
     }
 
@@ -273,6 +274,43 @@ public class HeliumFlutterPlugin: NSObject, FlutterPlugin {
         }
 
         return Helium.shared.handleDeepLink(url)
+    }
+
+    /// Recursively converts special marker strings back to boolean values to restore
+    /// type information that was preserved when passing through platform channels.
+    ///
+    /// Flutter's platform channels convert booleans to NSNumber (0/1), so we use
+    /// special marker strings to preserve the original intent. This helper converts:
+    /// - "__helium_flutter_bool_true__" -> true
+    /// - "__helium_flutter_bool_false__" -> false
+    /// - All other values remain unchanged
+    private func convertMarkersToBooleans(_ input: [String: Any]?) -> [String: Any]? {
+        guard let input = input else { return nil }
+
+        var result: [String: Any] = [:]
+        for (key, value) in input {
+            result[key] = convertValueMarkersToBooleans(value)
+        }
+        return result
+    }
+
+    /// Helper to recursively convert marker strings in any value type
+    private func convertValueMarkersToBooleans(_ value: Any) -> Any {
+        if let stringValue = value as? String {
+            switch stringValue {
+            case "__helium_flutter_bool_true__":
+                return true
+            case "__helium_flutter_bool_false__":
+                return false
+            default:
+                return stringValue
+            }
+        } else if let dictValue = value as? [String: Any] {
+            return convertMarkersToBooleans(dictValue) ?? [:]
+        } else if let arrayValue = value as? [Any] {
+            return arrayValue.map { convertValueMarkersToBooleans($0) }
+        }
+        return value
     }
 }
 
