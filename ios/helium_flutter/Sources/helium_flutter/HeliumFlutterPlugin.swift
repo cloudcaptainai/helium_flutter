@@ -168,7 +168,7 @@ public class HeliumFlutterPlugin: NSObject, FlutterPlugin {
         }
     }
 
-    public func presentUpsell(trigger: String, customPaywallTraits: [String: Any]? = nil, from viewController: UIViewController? = nil) {
+    public func presentUpsell(trigger: String, customPaywallTraits: [String: Any]? = nil) {
         Helium.shared.presentUpsell(
             trigger: trigger,
             eventHandlers: PaywallEventHandlers.withHandlers(

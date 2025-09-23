@@ -67,11 +67,17 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
         final success = await callbacks.restorePurchases();
         return success;
       } else if (handler.method == onPaywallEventMethodName) {
-        Map<String, dynamic> eventMap = handler.arguments as Map<String, dynamic>? ?? {};
+        final dynamic args = handler.arguments;
+        final Map<String, dynamic> eventMap = (args is Map)
+            ? Map<String, dynamic>.from(args)
+            : {};
         HeliumPaywallEvent event = HeliumPaywallEvent.fromMap(eventMap);
         callbacks.onPaywallEvent(event);
-      } else if (handler.method == 'onPaywallEventHandler') {
-        Map<String, dynamic> eventDict = handler.arguments as Map<String, dynamic>? ?? {};
+      } else if (handler.method == onPaywallEventHandlerMethodName) {
+        final dynamic args = handler.arguments;
+        final Map<String, dynamic> eventDict = (args is Map)
+            ? Map<String, dynamic>.from(args)
+            : {};
         _handlePaywallEventHandlers(eventDict);
       } else {
         log('[Helium] Unknown method from MethodChannel: ${handler.method}');
@@ -127,6 +133,43 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
     return result ?? false;
   }
 
+  Future<void> _showFallbackSheet(String trigger) async {
+    if (_isFallbackSheetShowing) return; // already showing!
+    final context = _fallbackContext;
+    if (context == null || !context.mounted) return;
+
+    _isFallbackSheetShowing = true;
+
+    methodChannel.invokeMethod<String?>(
+      fallbackOpenEventMethodName,
+      {'trigger': trigger, 'viewType': 'presented'},
+    );
+
+    try {
+      await showModalBottomSheet(
+        context: context,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.zero,
+        ),
+        isScrollControlled: true,
+        useSafeArea: true,
+        builder: (BuildContext context) {
+          return SizedBox.expand(
+            child: _fallbackPaywallWidget ?? Text("No fallback view provided"),
+          );
+        },
+      );
+    } finally {
+      _isFallbackSheetShowing = false;
+      _fallbackContext = null;
+
+      methodChannel.invokeMethod<String?>(
+        fallbackCloseEventMethodName,
+        {'trigger': trigger, 'viewType': 'presented'},
+      );
+    }
+  }
+
   @override
   Future<String?> presentUpsell({
     required BuildContext context,
@@ -134,41 +177,6 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
     PaywallEventHandlers? eventHandlers,
     Map<String, dynamic>? customPaywallTraits,
   }) async {
-    Future<void> showFallbackSheet(BuildContext ctx) async {
-      if (_isFallbackSheetShowing) return; // already showing!
-
-      _isFallbackSheetShowing = true;
-      _fallbackContext = context;
-
-      methodChannel.invokeMethod<String?>(
-        fallbackOpenEventMethodName,
-        {'trigger': trigger, 'viewType': 'presented'},
-      );
-
-      try {
-        await showModalBottomSheet(
-          context: ctx,
-          shape: const RoundedRectangleBorder(
-            borderRadius: BorderRadius.zero,
-          ),
-          isScrollControlled: true,
-          useSafeArea: true,
-          builder: (BuildContext context) {
-            return SizedBox.expand(
-              child: _fallbackPaywallWidget ?? Text("No fallback view provided"),
-            );
-          },
-        );
-      } finally {
-        _isFallbackSheetShowing = false;
-        _fallbackContext = null;
-
-        methodChannel.invokeMethod<String?>(
-          fallbackCloseEventMethodName,
-          {'trigger': trigger, 'viewType': 'presented'},
-        );
-      }
-    }
 
     final canPresentResult = await methodChannel.invokeMethod<Map<dynamic, dynamic>>(
       canPresentUpsellMethodName,
@@ -180,14 +188,13 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
 
     if (!canPresent) {
       log('[Helium] Cannot present trigger "$trigger". Reason: $reason');
-      if (context.mounted) {
-        showFallbackSheet(context);
-      }
+      _showFallbackSheet(trigger);
       return 'Cannot present upsell - $reason';
     }
 
     // Store current event handlers
     _currentEventHandlers = eventHandlers;
+    _fallbackContext = context; // in case needed later
 
     try {
       final result = await methodChannel.invokeMethod<String?>(
@@ -201,9 +208,7 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
     } on PlatformException catch (e) {
       log('[Helium] Unexpected present upsell error: ${e.message}');
       _currentEventHandlers = null;
-      if (context.mounted) {
-        showFallbackSheet(context);
-      }
+      _showFallbackSheet(trigger);
       return "Failed to present upsell: '${e.message}'.";
     }
   }
@@ -282,6 +287,7 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
         break;
       case 'paywallOpenFailed':
         _currentEventHandlers = null;
+        _showFallbackSheet(triggerName);
         break;
     }
   }

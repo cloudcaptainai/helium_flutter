@@ -9,6 +9,7 @@ const String initializeMethodName = 'initialize';
 const String makePurchaseMethodName = 'makePurchase';
 const String restorePurchasesMethodName = 'restorePurchases';
 const String onPaywallEventMethodName = 'onPaywallEvent';
+const String onPaywallEventHandlerMethodName = 'onPaywallEventHandler';
 const String getDownloadStatusMethodName = 'getDownloadStatus';
 const String getHeliumUserIdMethodName = 'getHeliumUserId';
 const String hideUpsellMethodName = 'hideUpsell';

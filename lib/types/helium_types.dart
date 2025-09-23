@@ -70,24 +70,13 @@ class HeliumPaywallLoadingConfig {
 }
 
 // Event handler types for per-presentation event handling
-abstract class PaywallEventHandlers {
-  void Function(PaywallOpenEvent event)? get onOpen;
-  void Function(PaywallCloseEvent event)? get onClose;
-  void Function(PaywallDismissedEvent event)? get onDismissed;
-  void Function(PurchaseSucceededEvent event)? get onPurchaseSucceeded;
-}
-
-class PaywallEventHandlersImpl implements PaywallEventHandlers {
-  @override
+class PaywallEventHandlers {
   final void Function(PaywallOpenEvent event)? onOpen;
-  @override
   final void Function(PaywallCloseEvent event)? onClose;
-  @override
   final void Function(PaywallDismissedEvent event)? onDismissed;
-  @override
   final void Function(PurchaseSucceededEvent event)? onPurchaseSucceeded;
 
-  PaywallEventHandlersImpl({
+  PaywallEventHandlers({
     this.onOpen,
     this.onClose,
     this.onDismissed,

@@ -6,7 +6,7 @@ import PackageDescription
 let package = Package(
     name: "helium_flutter",
     platforms: [
-        .iOS("14.0")
+        .iOS("15.0")
     ],
     products: [
         .library(name: "helium-flutter", targets: ["helium_flutter"])
