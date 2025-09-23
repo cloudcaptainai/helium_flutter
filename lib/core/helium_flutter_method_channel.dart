@@ -180,22 +180,7 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
     PaywallEventHandlers? eventHandlers,
     Map<String, dynamic>? customPaywallTraits,
   }) async {
-
-    final canPresentResult = await methodChannel.invokeMethod<Map<dynamic, dynamic>>(
-      canPresentUpsellMethodName,
-      trigger,
-    );
-
-    final bool canPresent = canPresentResult?['canPresent'] ?? false;
-    final String reason = canPresentResult?['reason'] ?? 'method call failed';
-
     _fallbackContext = context;
-
-    if (!canPresent) {
-      log('[Helium] Cannot present trigger "$trigger". Reason: $reason');
-      _showFallbackSheet(trigger);
-      return 'Cannot present upsell - $reason';
-    }
 
     // Store current event handlers
     _currentEventHandlers = eventHandlers;

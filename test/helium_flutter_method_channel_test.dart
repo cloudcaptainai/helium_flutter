@@ -48,8 +48,6 @@ void main() {
               return true;
             case presentUpsellMethodName:
               return 'Upsell presented!';
-            case canPresentUpsellMethodName:
-              return { 'canPresent' : true };
             default:
           }
           return null;

@@ -105,10 +105,6 @@ public class HeliumFlutterPlugin: NSObject, FlutterPlugin {
             let trigger = call.arguments as? String ?? ""
             let paywallInfo = getPaywallInfo(trigger: trigger)
             result(paywallInfo)
-        case "canPresentUpsell":
-            let trigger = call.arguments as? String ?? ""
-            let canPresentResult = canPresentUpsell(trigger: trigger)
-            result(canPresentResult)
         case "handleDeepLink":
             let urlString = call.arguments as? String ?? ""
             result(handleDeepLink(urlString))
@@ -227,44 +223,6 @@ public class HeliumFlutterPlugin: NSObject, FlutterPlugin {
             "errorMsg": nil,
             "templateName": paywallInfo.paywallTemplateName,
             "shouldShow": paywallInfo.shouldShow
-        ]
-    }
-
-    private func canPresentUpsell(trigger: String) -> [String: Any] {
-        // Check if paywalls are downloaded successfully
-        let paywallsLoaded = Helium.shared.paywallsLoaded()
-
-        // Check if trigger exists in fetched triggers
-        let triggerNames = HeliumFetchedConfigManager.shared.getFetchedTriggerNames()
-        let hasTrigger = triggerNames.contains(trigger)
-
-        let canPresent: Bool
-        let reason: String
-
-        let useLoading = Helium.shared.loadingStateEnabledFor(trigger: trigger)
-        let downloadInProgress = Helium.shared.getDownloadStatus() == .inProgress
-
-        if paywallsLoaded && hasTrigger {
-            // Normal case - paywall is ready
-            canPresent = true
-            reason = "ready"
-        } else if downloadInProgress && useLoading {
-            // Loading case - paywall still downloading
-            canPresent = true
-            reason = "loading"
-        } else if HeliumFallbackViewManager.shared.getFallbackInfo(trigger: trigger) != nil {
-            // Fallback is available (via downloaded bundle)
-            canPresent = true
-            reason = "fallback_ready"
-        } else {
-            // No paywall and no fallback bundle
-            canPresent = false
-            reason = !paywallsLoaded ? "download status - \(getDownloadStatus())" : "trigger_not_found"
-        }
-
-        return [
-            "canPresent": canPresent,
-            "reason": reason
         ]
     }
 
