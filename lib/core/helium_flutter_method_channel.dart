@@ -136,7 +136,10 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
   Future<void> _showFallbackSheet(String trigger) async {
     if (_isFallbackSheetShowing) return; // already showing!
     final context = _fallbackContext;
-    if (context == null || !context.mounted) return;
+    if (context == null || !context.mounted) {
+      _fallbackContext = null;
+      return;
+    };
 
     _isFallbackSheetShowing = true;
 
@@ -186,6 +189,8 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
     final bool canPresent = canPresentResult?['canPresent'] ?? false;
     final String reason = canPresentResult?['reason'] ?? 'method call failed';
 
+    _fallbackContext = context;
+
     if (!canPresent) {
       log('[Helium] Cannot present trigger "$trigger". Reason: $reason');
       _showFallbackSheet(trigger);
@@ -194,7 +199,6 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
 
     // Store current event handlers
     _currentEventHandlers = eventHandlers;
-    _fallbackContext = context; // in case needed later
 
     try {
       final result = await methodChannel.invokeMethod<String?>(
@@ -264,6 +268,7 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
         ));
         if (!isSecondTry) {
           _currentEventHandlers = null;
+          _fallbackContext = null;
         }
         break;
       case 'paywallDismissed':
@@ -284,6 +289,7 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
         break;
       case 'paywallSkipped':
         _currentEventHandlers = null;
+        _fallbackContext = null;
         break;
       case 'paywallOpenFailed':
         _currentEventHandlers = null;
@@ -370,7 +376,7 @@ class _UpsellWrapperWidgetState extends State<UpsellWrapperWidget> {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const SizedBox.shrink();
         }
-        if (snapshot.data == '"downloadSuccess"') {
+        if (snapshot.data == 'downloadSuccess') {
           return UpsellViewForTrigger(trigger: widget.trigger);
         } else {
           _onShowFallback();
