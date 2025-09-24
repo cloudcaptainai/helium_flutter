@@ -139,7 +139,7 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
     if (context == null || !context.mounted) {
       _fallbackContext = null;
       return;
-    };
+    }
 
     _isFallbackSheetShowing = true;
 

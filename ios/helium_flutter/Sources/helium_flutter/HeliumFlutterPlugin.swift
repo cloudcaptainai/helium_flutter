@@ -66,6 +66,8 @@ public class HeliumFlutterPlugin: NSObject, FlutterPlugin {
                 let customPaywallTraits = args["customPaywallTraits"] as? [String: Any]
                 presentUpsell(trigger: trigger, customPaywallTraits: customPaywallTraits)
                 result("Upsell presented!")
+            } else {
+                result("Upsell not presented - invalid arguments")
             }
         case "hideUpsell":
             result(hideUpsell())

@@ -4,7 +4,6 @@ import 'package:helium_flutter/core/const/contants.dart';
 import 'package:helium_flutter/core/helium_flutter_method_channel.dart';
 import 'package:helium_flutter/core/helium_flutter_platform.dart';
 import 'package:helium_flutter/helium_flutter.dart';
-import 'package:helium_flutter/types/helium_types.dart';
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 
 import 'core/const.dart';
