@@ -48,7 +48,7 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
       'customUserTraits': _convertBooleansToMarkers(customUserTraits),
       'revenueCatAppUserId': revenueCatAppUserId,
       'fallbackAssetPath': fallbackBundleAssetPath,
-      'paywallLoadingConfig': paywallLoadingConfig?.toMap(),
+      'paywallLoadingConfig': _convertBooleansToMarkers(paywallLoadingConfig?.toMap()),
     });
     return result;
   }
@@ -73,6 +73,7 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
             : {};
         HeliumPaywallEvent event = HeliumPaywallEvent.fromMap(eventMap);
         callbacks.onPaywallEvent(event);
+        _handlePaywallEvent(event);
       } else if (handler.method == onPaywallEventHandlerMethodName) {
         final dynamic args = handler.arguments;
         final Map<String, dynamic> eventDict = (args is Map)
@@ -272,13 +273,21 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
           isSecondTry: isSecondTry,
         ));
         break;
+    }
+  }
+
+  void _handlePaywallEvent(HeliumPaywallEvent heliumPaywallEvent) {
+    final trigger = heliumPaywallEvent.triggerName;
+    switch (heliumPaywallEvent.type) {
       case 'paywallSkipped':
         _currentEventHandlers = null;
         _fallbackContext = null;
         break;
       case 'paywallOpenFailed':
         _currentEventHandlers = null;
-        _showFallbackSheet(triggerName);
+        if (trigger != null) {
+          _showFallbackSheet(trigger);
+        }
         break;
     }
   }

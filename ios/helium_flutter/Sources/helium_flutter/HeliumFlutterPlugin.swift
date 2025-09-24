@@ -43,7 +43,7 @@ public class HeliumFlutterPlugin: NSObject, FlutterPlugin {
                 let customUserTraits = userTraitsMap != nil ? HeliumUserTraits(userTraitsMap!) : nil
                 let revenueCatAppUserId = args["revenueCatAppUserId"] as? String
                 let fallbackAssetPath = args["fallbackAssetPath"] as? String
-                let paywallLoadingConfig = args["paywallLoadingConfig"] as? [String: Any]
+                let paywallLoadingConfig = convertMarkersToBooleans(args["paywallLoadingConfig"] as? [String: Any])
 
                 initializeHelium(
                     apiKey: apiKey,
