@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -72,8 +71,8 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
             ? Map<String, dynamic>.from(args)
             : {};
         HeliumPaywallEvent event = HeliumPaywallEvent.fromMap(eventMap);
-        callbacks.onPaywallEvent(event);
         _handlePaywallEvent(event);
+        callbacks.onPaywallEvent(event);
       } else if (handler.method == onPaywallEventHandlerMethodName) {
         final dynamic args = handler.arguments;
         final Map<String, dynamic> eventDict = (args is Map)
@@ -286,7 +285,10 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
       case 'paywallOpenFailed':
         _currentEventHandlers = null;
         if (trigger != null) {
-          _showFallbackSheet(trigger);
+          // Dispatch on next frame since fallback can trigger new event/s
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            _showFallbackSheet(trigger);
+          });
         }
         break;
     }
