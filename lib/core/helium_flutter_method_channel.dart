@@ -329,7 +329,7 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
       },
     );
   }
-`
+
   /// Recursively converts boolean values to special marker strings to preserve
   /// type information when passing through platform channels.
   ///
