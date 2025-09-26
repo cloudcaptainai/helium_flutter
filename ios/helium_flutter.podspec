@@ -22,7 +22,7 @@ A Flutter plugin that integrates the Helium SDK for iOS.
   # note that the dependency in Package.swift is what's actually used... we might be able to remove this but safer to keep in for now
   s.dependency 'Helium', '3.0.4'
 
-  s.platform = :ios, '14.0'
+  s.platform = :ios, '15.0'
 
   # Flutter.framework does not contain a i386 slice.
   s.pod_target_xcconfig = { 'DEFINES_MODULE' => 'YES', 'EXCLUDED_ARCHS[sdk=iphonesimulator*]' => 'i386' }

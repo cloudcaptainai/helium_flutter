@@ -11,7 +11,7 @@ class PaymentCallbacks implements HeliumCallbacks {
   }
 
   @override
-  Future<void> onPaywallEvent(Map<String, dynamic> heliumPaywallEvent) async {
+  Future<void> onPaywallEvent(HeliumPaywallEvent heliumPaywallEvent) async {
     log('On paywall event');
   }
 

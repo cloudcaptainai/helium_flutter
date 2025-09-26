@@ -12,8 +12,8 @@ class PaymentCallbacks implements HeliumCallbacks {
   }
 
   @override
-  Future<void> onPaywallEvent(Map<String, dynamic> heliumPaywallEvent) async {
-    log('onPaywallEvent: $heliumPaywallEvent');
+  Future<void> onPaywallEvent(HeliumPaywallEvent heliumPaywallEvent) async {
+    log('onPaywallEvent: ${heliumPaywallEvent.type} - trigger: ${heliumPaywallEvent.triggerName}');
   }
 
   @override
@@ -97,15 +97,15 @@ class RevenueCatCallbacks implements HeliumCallbacks {
   }
 
   @override
-  Future<void> onPaywallEvent(Map<String, dynamic> heliumPaywallEvent) async {
-    log('RevenueCat paywall event: $heliumPaywallEvent');
+  Future<void> onPaywallEvent(HeliumPaywallEvent heliumPaywallEvent) async {
+    log('RevenueCat paywall event: ${heliumPaywallEvent.type}');
     // Handle specific events as needed
-    final eventType = heliumPaywallEvent['type'];
+    final eventType = heliumPaywallEvent.type;
 
-    if (eventType == 'subscriptionSucceeded') {
+    if (eventType == 'purchaseSucceeded') {
       // Handle successful subscription
-      final productId = heliumPaywallEvent['productKey'];
-      log('Subscription succeeded for product: $productId');
+      final productId = heliumPaywallEvent.productId;
+      log('Purchase succeeded for product: $productId');
 
       // Add your custom analytics tracking here
     }
