@@ -398,7 +398,7 @@ fileprivate class DefaultPurchaseDelegate: StoreKitDelegate {
         _methodChannel = methodChannel
     }
 
-    func onPaywallEvent(_ event: any HeliumEvent) {
+    override func onPaywallEvent(_ event: any HeliumEvent) {
         // Log or handle event
         DispatchQueue.main.async {
             var eventDict = event.toDictionary()

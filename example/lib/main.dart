@@ -22,7 +22,6 @@ Future<void> initializeHeliumSwift() async {
   await dotenv.load(fileName: ".env");
   final apiKey = dotenv.env['API_KEY'] ?? '';
   final customUserId = dotenv.env['CUSTOM_USER_ID'];
-  PaymentCallbacks paymentCallbacks = PaymentCallbacks();
   // Platform messages may fail, so we use a try/catch PlatformException.
   // We also handle the message potentially returning null.
   try {
