@@ -29,8 +29,8 @@ Future<void> initializeHeliumSwift() async {
     await heliumFlutterPlugin.initialize(
       apiKey: apiKey,
       fallbackPaywall: Text("fallback view here..."),
-      callbacks: paymentCallbacks,
       customUserId: customUserId,
+      callbacks: LogCallbacks(),
       customUserTraits: {
         'exampleUserTrait': 'test_value',
         'somethingElse': 'somethingElse',

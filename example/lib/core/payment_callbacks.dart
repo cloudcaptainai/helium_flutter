@@ -4,16 +4,18 @@ import 'package:flutter/services.dart';
 import 'package:helium_flutter/helium_flutter.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
 
-class PaymentCallbacks implements HeliumCallbacks {
+class LogCallbacks implements HeliumCallbacks {
+  @override
+  Future<void> onPaywallEvent(HeliumPaywallEvent heliumPaywallEvent) async {
+    log('onPaywallEvent: ${heliumPaywallEvent.type} - trigger: ${heliumPaywallEvent.triggerName}');
+  }
+}
+
+class PaymentCallbacks implements HeliumPurchaseDelegate {
   @override
   Future<HeliumPurchaseResult> makePurchase(String productId) async {
     log('makePurchase: $productId');
     return HeliumPurchaseResult(status: HeliumTransactionStatus.cancelled);
-  }
-
-  @override
-  Future<void> onPaywallEvent(HeliumPaywallEvent heliumPaywallEvent) async {
-    log('onPaywallEvent: ${heliumPaywallEvent.type} - trigger: ${heliumPaywallEvent.triggerName}');
   }
 
   @override
@@ -22,7 +24,7 @@ class PaymentCallbacks implements HeliumCallbacks {
   }
 }
 
-class RevenueCatCallbacks implements HeliumCallbacks {
+class RevenueCatCallbacks implements HeliumPurchaseDelegate {
   @override
   Future<HeliumPurchaseResult> makePurchase(String productId) async {
     try {
@@ -93,21 +95,6 @@ class RevenueCatCallbacks implements HeliumCallbacks {
     } catch (e) {
       log('RevenueCat restore error: $e');
       return false;
-    }
-  }
-
-  @override
-  Future<void> onPaywallEvent(HeliumPaywallEvent heliumPaywallEvent) async {
-    log('RevenueCat paywall event: ${heliumPaywallEvent.type}');
-    // Handle specific events as needed
-    final eventType = heliumPaywallEvent.type;
-
-    if (eventType == 'purchaseSucceeded') {
-      // Handle successful subscription
-      final productId = heliumPaywallEvent.productId;
-      log('Purchase succeeded for product: $productId');
-
-      // Add your custom analytics tracking here
     }
   }
 }

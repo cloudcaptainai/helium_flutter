@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:helium_flutter/core/const/contants.dart';
 import 'package:helium_flutter/core/helium_callbacks.dart';
+import '../types/helium_transaction_status.dart';
 import '../types/helium_types.dart';
 import 'helium_flutter_platform.dart';
 
@@ -22,7 +23,8 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
   @override
   Future<String?> initialize({
     required String apiKey,
-    required HeliumCallbacks callbacks,
+    HeliumCallbacks? callbacks,
+    HeliumPurchaseDelegate? purchaseDelegate,
     Widget? fallbackPaywall,
     String? customAPIEndpoint,
     String? customUserId,
@@ -31,9 +33,9 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
     String? fallbackBundleAssetPath,
     HeliumPaywallLoadingConfig? paywallLoadingConfig,
   }) async {
-    _setMethodCallHandlers(callbacks);
+    _setMethodCallHandlers(callbacks, purchaseDelegate);
     _fallbackPaywallWidget = fallbackPaywall;
-    
+
     if (_isInitialized) {
       return "[Helium] Already initialized!";
     }
@@ -48,22 +50,35 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
       'revenueCatAppUserId': revenueCatAppUserId,
       'fallbackAssetPath': fallbackBundleAssetPath,
       'paywallLoadingConfig': _convertBooleansToMarkers(paywallLoadingConfig?.toMap()),
+      'useDefaultDelegate': purchaseDelegate == null,
     });
     return result;
   }
 
-  void _setMethodCallHandlers(HeliumCallbacks callbacks) {
+  void _setMethodCallHandlers(
+    HeliumCallbacks? callbacks,
+    HeliumPurchaseDelegate? purchaseDelegate,
+  ) {
     methodChannel.setMethodCallHandler((handler) async {
       if (handler.method == makePurchaseMethodName) {
+        if (purchaseDelegate == null) {
+          return {
+            'status': HeliumTransactionStatus.failed,
+            'error': 'No purchase delegate found.',
+          };
+        }
         String id = handler.arguments as String? ?? '';
-        final result = await callbacks.makePurchase(id);
+        final result = await purchaseDelegate.makePurchase(id);
 
         return {
           'status': result.status.name,
           'error': result.error,
         };
       } else if (handler.method == restorePurchasesMethodName) {
-        final success = await callbacks.restorePurchases();
+        if (purchaseDelegate == null) {
+          return false;
+        }
+        final success = await purchaseDelegate.restorePurchases();
         return success;
       } else if (handler.method == onPaywallEventMethodName) {
         final dynamic args = handler.arguments;
@@ -72,7 +87,7 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
             : {};
         HeliumPaywallEvent event = HeliumPaywallEvent.fromMap(eventMap);
         _handlePaywallEvent(event);
-        callbacks.onPaywallEvent(event);
+        callbacks?.onPaywallEvent(event);
       } else if (handler.method == onPaywallEventHandlerMethodName) {
         final dynamic args = handler.arguments;
         final Map<String, dynamic> eventDict = (args is Map)
@@ -314,7 +329,7 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
       },
     );
   }
-
+`
   /// Recursively converts boolean values to special marker strings to preserve
   /// type information when passing through platform channels.
   ///

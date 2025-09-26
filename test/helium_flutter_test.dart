@@ -14,7 +14,8 @@ class MockHeliumFlutterPlatform
   @override
   Future<String?> initialize({
     required String apiKey,
-    required HeliumCallbacks callbacks,
+    HeliumCallbacks? callbacks,
+    HeliumPurchaseDelegate? purchaseDelegate,
     Widget? fallbackPaywall,
     String? customAPIEndpoint,
     String? customUserId,
