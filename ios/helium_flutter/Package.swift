@@ -6,13 +6,13 @@ import PackageDescription
 let package = Package(
     name: "helium_flutter",
     platforms: [
-        .iOS("14.0")
+        .iOS("15.0")
     ],
     products: [
         .library(name: "helium-flutter", targets: ["helium_flutter"])
     ],
     dependencies: [
-    .package(url: "https://github.com/cloudcaptainai/helium-swift.git", from: "2.3.0")],
+    .package(url: "https://github.com/cloudcaptainai/helium-swift.git", from: "3.0.3")],
     targets: [
         .target(
             name: "helium_flutter",

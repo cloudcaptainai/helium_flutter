@@ -39,10 +39,11 @@ public class HeliumFlutterPlugin: NSObject, FlutterPlugin {
                 let apiKey = args["apiKey"] as? String ?? ""
                 let customAPIEndpoint = args["customAPIEndpoint"] as? String
                 let customUserId = args["customUserId"] as? String
-                let userTraitsMap = args["customUserTraits"] as? [String: Any]
+                let userTraitsMap = convertMarkersToBooleans(args["customUserTraits"] as? [String: Any])
                 let customUserTraits = userTraitsMap != nil ? HeliumUserTraits(userTraitsMap!) : nil
                 let revenueCatAppUserId = args["revenueCatAppUserId"] as? String
                 let fallbackAssetPath = args["fallbackAssetPath"] as? String
+                let paywallLoadingConfig = convertMarkersToBooleans(args["paywallLoadingConfig"] as? [String: Any])
 
                 initializeHelium(
                     apiKey: apiKey,
@@ -50,7 +51,8 @@ public class HeliumFlutterPlugin: NSObject, FlutterPlugin {
                     customUserId: customUserId,
                     customUserTraits: customUserTraits,
                     revenueCatAppUserId: revenueCatAppUserId,
-                    fallbackAssetPath: fallbackAssetPath
+                    fallbackAssetPath: fallbackAssetPath,
+                    paywallLoadingConfig: paywallLoadingConfig
                 )
                 result("Initialization started!")
             } else {
@@ -59,9 +61,14 @@ public class HeliumFlutterPlugin: NSObject, FlutterPlugin {
         case "getDownloadStatus":
             result(getDownloadStatus())
         case "presentUpsell":
-            let trigger = call.arguments as? String ?? ""
-            presentUpsell(trigger: trigger)
-            result("Upsell presented!")
+            if let args = call.arguments as? [String: Any] {
+                let trigger = args["trigger"] as? String ?? ""
+                let customPaywallTraits = args["customPaywallTraits"] as? [String: Any]
+                presentUpsell(trigger: trigger, customPaywallTraits: customPaywallTraits)
+                result("Upsell presented!")
+            } else {
+                result("Upsell not presented - invalid arguments")
+            }
         case "hideUpsell":
             result(hideUpsell())
         case "getHeliumUserId":
@@ -100,10 +107,6 @@ public class HeliumFlutterPlugin: NSObject, FlutterPlugin {
             let trigger = call.arguments as? String ?? ""
             let paywallInfo = getPaywallInfo(trigger: trigger)
             result(paywallInfo)
-        case "canPresentUpsell":
-            let trigger = call.arguments as? String ?? ""
-            let canPresentResult = canPresentUpsell(trigger: trigger)
-            result(canPresentResult)
         case "handleDeepLink":
             let urlString = call.arguments as? String ?? ""
             result(handleDeepLink(urlString))
@@ -115,11 +118,11 @@ public class HeliumFlutterPlugin: NSObject, FlutterPlugin {
     private func initializeHelium(
         apiKey: String, customAPIEndpoint: String?,
         customUserId: String?, customUserTraits: HeliumUserTraits?,
-        revenueCatAppUserId: String?, fallbackAssetPath: String?
+        revenueCatAppUserId: String?, fallbackAssetPath: String?,
+        paywallLoadingConfig: [String: Any]?
     ) {
         Task {
             let delegate = DemoHeliumPaywallDelegate(methodChannel: channel)
-            let view = FallbackView()
 
             var fallbackBundleURL: URL? = nil
 
@@ -130,21 +133,59 @@ public class HeliumFlutterPlugin: NSObject, FlutterPlugin {
                 fallbackBundleURL = URL(fileURLWithPath: path)
             }
 
+            // Parse loading configuration
+            let useLoadingState = paywallLoadingConfig?["useLoadingState"] as? Bool ?? true
+            let loadingBudget = paywallLoadingConfig?["loadingBudget"] as? TimeInterval ?? 2.0
+
+            var perTriggerLoadingConfig: [String: TriggerLoadingConfig]? = nil
+            if let perTriggerDict = paywallLoadingConfig?["perTriggerLoadingConfig"] as? [String: [String: Any]] {
+                var triggerConfigs: [String: TriggerLoadingConfig] = [:]
+                for (trigger, config) in perTriggerDict {
+                    triggerConfigs[trigger] = TriggerLoadingConfig(
+                        useLoadingState: config["useLoadingState"] as? Bool,
+                        loadingBudget: config["loadingBudget"] as? TimeInterval
+                    )
+                }
+                perTriggerLoadingConfig = triggerConfigs
+            }
+
             await Helium.shared.initialize(
                 apiKey: apiKey,
                 heliumPaywallDelegate: delegate,
-                fallbackPaywall: view,
+                fallbackConfig: HeliumFallbackConfig.withMultipleFallbacks(
+                    fallbackBundle: fallbackBundleURL,
+                    useLoadingState: useLoadingState,
+                    loadingBudget: loadingBudget,
+                    perTriggerLoadingConfig: perTriggerLoadingConfig
+                ),
                 customUserId: customUserId,
                 customAPIEndpoint: customAPIEndpoint,
                 customUserTraits: customUserTraits,
-                revenueCatAppUserId: revenueCatAppUserId,
-                fallbackBundleURL: fallbackBundleURL
+                revenueCatAppUserId: revenueCatAppUserId
             )
         }
     }
 
-    public func presentUpsell(trigger: String, from viewController: UIViewController? = nil) {
-        Helium.shared.presentUpsell(trigger: trigger)
+    public func presentUpsell(trigger: String, customPaywallTraits: [String: Any]? = nil) {
+        let convertedTraits = convertMarkersToBooleans(customPaywallTraits)
+        Helium.shared.presentUpsell(
+            trigger: trigger,
+            eventHandlers: PaywallEventHandlers.withHandlers(
+                onOpen: { [weak self] event in
+                    self?.channel.invokeMethod("onPaywallEventHandler", arguments: event.toDictionary())
+                },
+                onClose: { [weak self] event in
+                    self?.channel.invokeMethod("onPaywallEventHandler", arguments: event.toDictionary())
+                },
+                onDismissed: { [weak self] event in
+                    self?.channel.invokeMethod("onPaywallEventHandler", arguments: event.toDictionary())
+                },
+                onPurchaseSucceeded: { [weak self] event in
+                    self?.channel.invokeMethod("onPaywallEventHandler", arguments: event.toDictionary())
+                }
+            ),
+            customPaywallTraits: convertedTraits
+        )
     }
 
     public func hideUpsell() -> Bool {
@@ -187,43 +228,49 @@ public class HeliumFlutterPlugin: NSObject, FlutterPlugin {
         ]
     }
 
-    private func canPresentUpsell(trigger: String) -> [String: Any] {
-        // Check if paywalls are downloaded successfully
-        let paywallsLoaded = Helium.shared.paywallsLoaded()
-
-        // Check if trigger exists in fetched triggers
-        let triggerNames = HeliumFetchedConfigManager.shared.getFetchedTriggerNames()
-        let hasTrigger = triggerNames.contains(trigger)
-
-        let canPresent: Bool
-        let reason: String
-
-        if paywallsLoaded && hasTrigger {
-            // Normal case - paywall is ready
-            canPresent = true
-            reason = "ready"
-        } else if HeliumFallbackViewManager.shared.getFallbackInfo(trigger: trigger) != nil {
-            // Fallback is available (via downloaded bundle)
-            canPresent = true
-            reason = "fallback_ready"
-        } else {
-            // No paywall and no fallback bundle
-            canPresent = false
-            reason = !paywallsLoaded ? "download status - \(getDownloadStatus())" : "trigger_not_found"
-        }
-
-        return [
-            "canPresent": canPresent,
-            "reason": reason
-        ]
-    }
-
     private func handleDeepLink(_ urlString: String) -> Bool {
         guard let url = URL(string: urlString) else {
             return false
         }
 
         return Helium.shared.handleDeepLink(url)
+    }
+
+    /// Recursively converts special marker strings back to boolean values to restore
+    /// type information that was preserved when passing through platform channels.
+    ///
+    /// Flutter's platform channels convert booleans to NSNumber (0/1), so we use
+    /// special marker strings to preserve the original intent. This helper converts:
+    /// - "__helium_flutter_bool_true__" -> true
+    /// - "__helium_flutter_bool_false__" -> false
+    /// - All other values remain unchanged
+    private func convertMarkersToBooleans(_ input: [String: Any]?) -> [String: Any]? {
+        guard let input = input else { return nil }
+
+        var result: [String: Any] = [:]
+        for (key, value) in input {
+            result[key] = convertValueMarkersToBooleans(value)
+        }
+        return result
+    }
+
+    /// Helper to recursively convert marker strings in any value type
+    private func convertValueMarkersToBooleans(_ value: Any) -> Any {
+        if let stringValue = value as? String {
+            switch stringValue {
+            case "__helium_flutter_bool_true__":
+                return true
+            case "__helium_flutter_bool_false__":
+                return false
+            default:
+                return stringValue
+            }
+        } else if let dictValue = value as? [String: Any] {
+            return convertMarkersToBooleans(dictValue) ?? [:]
+        } else if let arrayValue = value as? [Any] {
+            return arrayValue.map { convertValueMarkersToBooleans($0) }
+        }
+        return value
     }
 }
 
@@ -301,20 +348,28 @@ class DemoHeliumPaywallDelegate: HeliumPaywallDelegate {
         }
     }
 
-    func onHeliumPaywallEvent(event: HeliumPaywallEvent) {
+    func onPaywallEvent(_ event: any HeliumEvent) {
         // Log or handle event
-        do {
-            let jsonEncoder = JSONEncoder()
-            let jsonData = try jsonEncoder.encode(event)
-            let json = String(data: jsonData, encoding: .utf8)
-            DispatchQueue.main.async {
-                self._methodChannel.invokeMethod(
-                    "onPaywallEvent",
-                    arguments: json
-                )
+        DispatchQueue.main.async {
+            var eventDict = event.toDictionary()
+            // Add deprecated fields for backwards compatibility
+            if let paywallName = eventDict["paywallName"] {
+                eventDict["paywallTemplateName"] = paywallName
             }
-        } catch {
-            print("Failed to encode event: \(error)")
+            if let error = eventDict["error"] {
+                eventDict["errorDescription"] = error
+            }
+            if let productId = eventDict["productId"] {
+                eventDict["productKey"] = productId
+            }
+            if let buttonName = eventDict["buttonName"] {
+                eventDict["ctaName"] = buttonName
+            }
+
+            self._methodChannel.invokeMethod(
+                "onPaywallEvent",
+                arguments: eventDict
+            )
         }
     }
 
@@ -327,38 +382,3 @@ class DemoHeliumPaywallDelegate: HeliumPaywallDelegate {
     // }
 }
 
-fileprivate struct FallbackView: View {
-    @Environment(\.presentationMode) var presentationMode
-
-    var body: some View {
-        VStack(spacing: 20) {
-            Spacer()
-
-            Text("Fallback Paywall")
-                .font(.title)
-                .fontWeight(.bold)
-
-            Text("Something went wrong loading the paywall. Make sure you used the right trigger.")
-                .font(.body)
-                .multilineTextAlignment(.center)
-                .foregroundColor(.secondary)
-
-            Spacer()
-
-            Button(action: {
-                presentationMode.wrappedValue.dismiss()
-            }) {
-                Text("Close")
-                    .font(.headline)
-                    .foregroundColor(.white)
-                    .frame(maxWidth: .infinity)
-                    .padding()
-                    .background(Color.blue)
-                    .cornerRadius(10)
-            }
-            .padding(.horizontal, 40)
-            .padding(.bottom, 40)
-        }
-        .padding()
-    }
-}
