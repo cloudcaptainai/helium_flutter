@@ -14,7 +14,8 @@ class MockHeliumFlutterPlatform
   @override
   Future<String?> initialize({
     required String apiKey,
-    required HeliumCallbacks callbacks,
+    HeliumCallbacks? callbacks,
+    HeliumPurchaseDelegate? purchaseDelegate,
     Widget? fallbackPaywall,
     String? customAPIEndpoint,
     String? customUserId,
@@ -90,7 +91,6 @@ void main() {
   setUp(() {
     initializeValue = InitializeValue(
       apiKey: 'sk-your-api-key',
-      callbacks: PaymentCallbacks(),
       customAPIEndpoint: 'https://example.com',
       customUserId: 'customUserId',
       customUserTraits: {
@@ -109,7 +109,6 @@ void main() {
   test(initializeMethodName, () async {
     expect(
       await heliumFlutterPlugin.initialize(
-        callbacks: initializeValue.callbacks,
         fallbackPaywall: Text("Test"),
         apiKey: initializeValue.apiKey,
         customUserId: initializeValue.customUserId,

@@ -20,7 +20,6 @@ void main() {
   setUp(() {
     initializeValue = InitializeValue(
       apiKey: 'sk-your-api-key',
-      callbacks: PaymentCallbacks(),
       customAPIEndpoint: 'https://example.com',
       customUserId: 'customUserId',
       customUserTraits: {
@@ -62,7 +61,6 @@ void main() {
   test(initializeMethodName, () async {
     expect(
       await platform.initialize(
-        callbacks: initializeValue.callbacks,
         fallbackPaywall: Text('Test'),
         apiKey: initializeValue.apiKey,
         customUserId: initializeValue.customUserId,
