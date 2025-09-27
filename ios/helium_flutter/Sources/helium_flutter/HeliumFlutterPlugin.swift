@@ -45,6 +45,8 @@ public class HeliumFlutterPlugin: NSObject, FlutterPlugin {
                 let fallbackAssetPath = args["fallbackAssetPath"] as? String
                 let paywallLoadingConfig = convertMarkersToBooleans(args["paywallLoadingConfig"] as? [String: Any])
 
+                let useDefaultDelegate = args["useDefaultDelegate"] as? Bool ?? false
+
                 initializeHelium(
                     apiKey: apiKey,
                     customAPIEndpoint: customAPIEndpoint,
@@ -52,7 +54,8 @@ public class HeliumFlutterPlugin: NSObject, FlutterPlugin {
                     customUserTraits: customUserTraits,
                     revenueCatAppUserId: revenueCatAppUserId,
                     fallbackAssetPath: fallbackAssetPath,
-                    paywallLoadingConfig: paywallLoadingConfig
+                    paywallLoadingConfig: paywallLoadingConfig,
+                    useDefaultDelegate: useDefaultDelegate
                 )
                 result("Initialization started!")
             } else {
@@ -119,10 +122,16 @@ public class HeliumFlutterPlugin: NSObject, FlutterPlugin {
         apiKey: String, customAPIEndpoint: String?,
         customUserId: String?, customUserTraits: HeliumUserTraits?,
         revenueCatAppUserId: String?, fallbackAssetPath: String?,
-        paywallLoadingConfig: [String: Any]?
+        paywallLoadingConfig: [String: Any]?,
+        useDefaultDelegate: Bool
     ) {
         Task {
-            let delegate = DemoHeliumPaywallDelegate(methodChannel: channel)
+            let delegate: HeliumPaywallDelegate
+            if useDefaultDelegate {
+                delegate = DefaultPurchaseDelegate(methodChannel: channel)
+            } else {
+                delegate = DemoHeliumPaywallDelegate(methodChannel: channel)
+            }
 
             var fallbackBundleURL: URL? = nil
 
@@ -380,5 +389,38 @@ class DemoHeliumPaywallDelegate: HeliumPaywallDelegate {
     //         "campaign": "spring_launch"
     //     ]
     // }
+}
+
+fileprivate class DefaultPurchaseDelegate: StoreKitDelegate {
+    let _methodChannel: FlutterMethodChannel
+
+    init(methodChannel: FlutterMethodChannel) {
+        _methodChannel = methodChannel
+    }
+
+    override func onPaywallEvent(_ event: any HeliumEvent) {
+        // Log or handle event
+        DispatchQueue.main.async {
+            var eventDict = event.toDictionary()
+            // Add deprecated fields for backwards compatibility
+            if let paywallName = eventDict["paywallName"] {
+                eventDict["paywallTemplateName"] = paywallName
+            }
+            if let error = eventDict["error"] {
+                eventDict["errorDescription"] = error
+            }
+            if let productId = eventDict["productId"] {
+                eventDict["productKey"] = productId
+            }
+            if let buttonName = eventDict["buttonName"] {
+                eventDict["ctaName"] = buttonName
+            }
+
+            self._methodChannel.invokeMethod(
+                "onPaywallEvent",
+                arguments: eventDict
+            )
+        }
+    }
 }
 

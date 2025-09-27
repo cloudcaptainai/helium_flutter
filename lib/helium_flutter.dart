@@ -10,7 +10,8 @@ class HeliumFlutter {
   ///Initialize helium sdk at the start up of flutter application. It will download custom paywall view
   Future<String?> initialize({
     required String apiKey,
-    required HeliumCallbacks callbacks,
+    HeliumCallbacks? callbacks,
+    HeliumPurchaseDelegate? purchaseDelegate,
     Widget? fallbackPaywall,
     String? customAPIEndpoint,
     String? customUserId,
@@ -22,6 +23,7 @@ class HeliumFlutter {
     return await HeliumFlutterPlatform.instance.initialize(
       apiKey: apiKey,
       callbacks: callbacks,
+      purchaseDelegate: purchaseDelegate,
       fallbackPaywall: fallbackPaywall,
       customAPIEndpoint: customAPIEndpoint,
       customUserId: customUserId,

@@ -22,15 +22,14 @@ Future<void> initializeHeliumSwift() async {
   await dotenv.load(fileName: ".env");
   final apiKey = dotenv.env['API_KEY'] ?? '';
   final customUserId = dotenv.env['CUSTOM_USER_ID'];
-  PaymentCallbacks paymentCallbacks = PaymentCallbacks();
   // Platform messages may fail, so we use a try/catch PlatformException.
   // We also handle the message potentially returning null.
   try {
     await heliumFlutterPlugin.initialize(
       apiKey: apiKey,
       fallbackPaywall: Text("fallback view here..."),
-      callbacks: paymentCallbacks,
       customUserId: customUserId,
+      callbacks: LogCallbacks(),
       customUserTraits: {
         'exampleUserTrait': 'test_value',
         'somethingElse': 'somethingElse',

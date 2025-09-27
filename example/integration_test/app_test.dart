@@ -16,7 +16,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:helium_flutter/helium_flutter.dart';
 import 'package:helium_flutter_example/main.dart';
 import 'package:integration_test/integration_test.dart';
-import 'core/const.dart';
 
 Future<void> main() async {
   final binding = IntegrationTestWidgetsFlutterBinding.ensureInitialized();
@@ -75,14 +74,12 @@ Future<void> initializeHeliumSwift() async {
   final apiKey = dotenv.env['API_KEY'] ?? '';
   final customAPIEndpoint = dotenv.env['CUSTOM_API_END_POINT'] ?? '';
   final customUserId = dotenv.env['CUSTOM_USER_ID'] ?? '';
-  PaymentCallbacks paymentCallbacks = PaymentCallbacks();
   // Platform messages may fail, so we use a try/catch PlatformException.
   // We also handle the message potentially returning null.
   try {
     await heliumFlutterPlugin.initialize(
       apiKey: apiKey,
       fallbackPaywall: Text("test fallback"),
-      callbacks: paymentCallbacks,
       customAPIEndpoint: customAPIEndpoint,
       customUserId: customUserId,
       customUserTraits: {
