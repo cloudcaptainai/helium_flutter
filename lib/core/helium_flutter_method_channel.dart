@@ -266,10 +266,6 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
           paywallName: paywallName,
           isSecondTry: isSecondTry,
         ));
-        if (!isSecondTry) {
-          _currentEventHandlers = null;
-          _fallbackContext = null;
-        }
         break;
       case 'paywallDismissed':
         _currentEventHandlers?.onDismissed?.call(PaywallDismissedEvent(
@@ -293,6 +289,12 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
   void _handlePaywallEvent(HeliumPaywallEvent heliumPaywallEvent) {
     final trigger = heliumPaywallEvent.triggerName;
     switch (heliumPaywallEvent.type) {
+      case 'paywallClose':
+        if (heliumPaywallEvent.isSecondTry != true) {
+          _currentEventHandlers = null;
+          _fallbackContext = null;
+        }
+        break;
       case 'paywallSkipped':
         _currentEventHandlers = null;
         _fallbackContext = null;
