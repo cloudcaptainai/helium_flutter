@@ -78,6 +78,16 @@ class MockHeliumFlutterPlatform
     return Text("upsell widget");
   }
 
+  @override
+  Future<bool> hasAnyActiveSubscription() {
+    return Future.value(true);
+  }
+
+  @override
+  Future<bool> hasAnyEntitlement() {
+    return Future.value(true);
+  }
+
 }
 
 void main() {
@@ -157,5 +167,11 @@ void main() {
       await heliumFlutterPlugin.presentUpsell(context: context, trigger: 'onboarding'),
       'Upsell presented!',
     );
+  });
+  test(hasAnyActiveSubscriptionMethodName, () async {
+    expect(await heliumFlutterPlugin.hasAnyActiveSubscription(), true);
+  });
+  test(hasAnyEntitlementMethodName, () async {
+    expect(await heliumFlutterPlugin.hasAnyEntitlement(), true);
   });
 }

@@ -113,6 +113,16 @@ public class HeliumFlutterPlugin: NSObject, FlutterPlugin {
         case "handleDeepLink":
             let urlString = call.arguments as? String ?? ""
             result(handleDeepLink(urlString))
+        case "hasAnyActiveSubscription":
+            Task {
+                let hasSubscription = await hasAnyActiveSubscription()
+                result(hasSubscription)
+            }
+        case "hasAnyEntitlement":
+            Task {
+                let hasEntitlement = await hasAnyEntitlement()
+                result(hasEntitlement)
+            }
         default:
             result(FlutterMethodNotImplemented)
         }
@@ -243,6 +253,14 @@ public class HeliumFlutterPlugin: NSObject, FlutterPlugin {
         }
 
         return Helium.shared.handleDeepLink(url)
+    }
+
+    private func hasAnyActiveSubscription() async -> Bool {
+        return await Helium.shared.hasAnyActiveSubscription()
+    }
+
+    private func hasAnyEntitlement() async -> Bool {
+        return await Helium.shared.hasAnyEntitlement()
     }
 
     /// Recursively converts special marker strings back to boolean values to restore

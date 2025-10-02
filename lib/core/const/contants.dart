@@ -18,3 +18,5 @@ const String paywallsLoadedMethodName = 'paywallsLoaded';
 const String presentUpsellMethodName = 'presentUpsell';
 const String fallbackOpenEventMethodName = 'fallbackOpenEvent';
 const String fallbackCloseEventMethodName = 'fallbackCloseEvent';
+const String hasAnyActiveSubscriptionMethodName = 'hasAnyActiveSubscription';
+const String hasAnyEntitlementMethodName = 'hasAnyEntitlement';
