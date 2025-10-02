@@ -72,7 +72,7 @@ abstract class HeliumFlutterPlatform extends PlatformInterface {
 
   Widget getUpsellWidget({required String trigger});
 
-  Future<bool?> hasEntitlementForPaywall(String trigger);
+  // Future<bool?> hasEntitlementForPaywall(String trigger);
 
   Future<bool> hasAnyActiveSubscription();
 

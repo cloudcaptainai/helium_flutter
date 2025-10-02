@@ -78,10 +78,10 @@ class MockHeliumFlutterPlatform
     return Text("upsell widget");
   }
 
-  @override
-  Future<bool?> hasEntitlementForPaywall(String trigger) {
-    return Future.value(true);
-  }
+  // @override
+  // Future<bool?> hasEntitlementForPaywall(String trigger) {
+  //   return Future.value(true);
+  // }
 
   @override
   Future<bool> hasAnyActiveSubscription() {
