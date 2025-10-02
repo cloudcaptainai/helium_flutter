@@ -78,11 +78,6 @@ class MockHeliumFlutterPlatform
     return Text("upsell widget");
   }
 
-  // @override
-  // Future<bool?> hasEntitlementForPaywall(String trigger) {
-  //   return Future.value(true);
-  // }
-
   @override
   Future<bool> hasAnyActiveSubscription() {
     return Future.value(true);
@@ -173,9 +168,6 @@ void main() {
       'Upsell presented!',
     );
   });
-  // test(hasEntitlementForPaywallMethodName, () async {
-  //   expect(await heliumFlutterPlugin.hasEntitlementForPaywall('onboarding'), true);
-  // });
   test(hasAnyActiveSubscriptionMethodName, () async {
     expect(await heliumFlutterPlugin.hasAnyActiveSubscription(), true);
   });

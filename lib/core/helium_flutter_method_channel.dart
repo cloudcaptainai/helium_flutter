@@ -243,15 +243,6 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
     return result ?? false;
   }
 
-  // @override
-  // Future<bool?> hasEntitlementForPaywall(String trigger) async {
-  //   final result = await methodChannel.invokeMethod<bool?>(
-  //     hasEntitlementForPaywallMethodName,
-  //     trigger,
-  //   );
-  //   return result;
-  // }
-
   @override
   Future<bool> hasAnyActiveSubscription() async {
     final result = await methodChannel.invokeMethod<bool?>(

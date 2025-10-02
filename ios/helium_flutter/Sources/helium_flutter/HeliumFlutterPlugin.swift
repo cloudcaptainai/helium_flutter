@@ -113,13 +113,6 @@ public class HeliumFlutterPlugin: NSObject, FlutterPlugin {
         case "handleDeepLink":
             let urlString = call.arguments as? String ?? ""
             result(handleDeepLink(urlString))
-        case "hasEntitlementForPaywall":
-            result(false) // todo fix this
-//             let trigger = call.arguments as? String ?? ""
-//             Task {
-//                 let hasEntitlement = await hasEntitlementForPaywall(trigger: trigger)
-//                 result(hasEntitlement)
-//             }
         case "hasAnyActiveSubscription":
             Task {
                 let hasSubscription = await hasAnyActiveSubscription()
@@ -261,10 +254,6 @@ public class HeliumFlutterPlugin: NSObject, FlutterPlugin {
 
         return Helium.shared.handleDeepLink(url)
     }
-
-//     private func hasEntitlementForPaywall(trigger: String) async -> Bool? {
-//         return await Helium.shared.hasEntitlementForPaywall(trigger: trigger)
-//     }
 
     private func hasAnyActiveSubscription() async -> Bool {
         return await Helium.shared.hasAnyActiveSubscription()
