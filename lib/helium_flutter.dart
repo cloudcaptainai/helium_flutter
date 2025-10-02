@@ -81,4 +81,16 @@ class HeliumFlutter {
   Widget getUpsellWidget({required String trigger}) =>
       HeliumFlutterPlatform.instance.getUpsellWidget(trigger: trigger);
 
+  /// Checks if the user has an active entitlement for any product attached to the paywall that will show for provided trigger.
+  // Future<bool?> hasEntitlementForPaywall(String trigger) =>
+  //     HeliumFlutterPlatform.instance.hasEntitlementForPaywall(trigger);
+
+  /// Checks if the user has any active subscription (including non-renewable)
+  Future<bool> hasAnyActiveSubscription() =>
+      HeliumFlutterPlatform.instance.hasAnyActiveSubscription();
+
+  /// Checks if the user has any entitlement
+  Future<bool> hasAnyEntitlement() =>
+      HeliumFlutterPlatform.instance.hasAnyEntitlement();
+
 }

@@ -6,8 +6,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/cloudcaptainai/helium-swift.git",
       "state" : {
-        "revision" : "4f2b8da35a4fae204fed6642a812cf1623db6545",
-        "version" : "3.0.4"
+        "revision" : "cd0feebe5f0206cdf3162d2a75a7a885571c6660",
+        "version" : "3.0.6"
       }
     },
     {
@@ -15,8 +15,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/RevenueCat/purchases-ios-spm",
       "state" : {
-        "revision" : "9cb74af9c5e9b4e9c22a511d8df4481fa7e3de16",
-        "version" : "5.32.0"
+        "revision" : "a315ca87fcec9fa6290c538e88e2f0a62f796458",
+        "version" : "5.40.0"
       }
     }
   ],
