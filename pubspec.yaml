@@ -2,7 +2,7 @@ name: helium_flutter
 description: "Flutter Paywall SDK for Helium. Remotely build and auto-optimize paywalls (tryhelium.com)"
 
 # Remember to update CHANGELOG.md when releasing a new version!!! (see CONTRIBUTING.md)
-version: 3.0.6
+version: 3.0.7
 
 homepage: https://tryhelium.com
 license: MIT

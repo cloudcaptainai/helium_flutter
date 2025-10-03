@@ -1,3 +1,6 @@
+## 3.0.7
+- Remove hard requirement for fallback bundle
+
 ## 3.0.6
 - Updated helium-swift dependency to 3.0.6
 
