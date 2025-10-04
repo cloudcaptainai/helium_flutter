@@ -172,7 +172,9 @@ public class HeliumFlutterPlugin: NSObject, FlutterPlugin {
                 apiKey: apiKey,
                 heliumPaywallDelegate: delegate,
                 fallbackConfig: HeliumFallbackConfig.withMultipleFallbacks(
-                    fallbackView: FallbackView(),
+                    // As a workaround for required fallback check in iOS, supply empty fallbackPerTrigger
+                    // since currently iOS requires some type of fallback but RN does not.
+                    fallbackPerTrigger: [:],
                     fallbackBundle: fallbackBundleURL,
                     useLoadingState: useLoadingState,
                     loadingBudget: loadingBudget,
@@ -410,41 +412,6 @@ class DemoHeliumPaywallDelegate: HeliumPaywallDelegate {
     // }
 }
 
-fileprivate struct FallbackView: View {
-    @Environment(\.presentationMode) var presentationMode
-
-    var body: some View {
-        VStack(spacing: 20) {
-            Spacer()
-
-            Text("Fallback Paywall")
-                .font(.title)
-                .fontWeight(.bold)
-
-            Text("Something went wrong loading the paywall. Make sure you used the right trigger.")
-                .font(.body)
-                .multilineTextAlignment(.center)
-                .foregroundColor(.secondary)
-
-            Spacer()
-
-            Button(action: {
-                presentationMode.wrappedValue.dismiss()
-            }) {
-                Text("Close")
-                    .font(.headline)
-                    .foregroundColor(.white)
-                    .frame(maxWidth: .infinity)
-                    .padding()
-                    .background(Color.blue)
-                    .cornerRadius(10)
-            }
-            .padding(.horizontal, 40)
-            .padding(.bottom, 40)
-        }
-        .padding()
-    }
-}
 fileprivate class DefaultPurchaseDelegate: StoreKitDelegate {
     let _methodChannel: FlutterMethodChannel
 

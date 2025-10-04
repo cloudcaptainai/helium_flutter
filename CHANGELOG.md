@@ -1,3 +1,6 @@
+## 3.0.8
+- Fix for usage of Flutter fallback view
+
 ## 3.0.7
 - Remove hard requirement for fallback bundle
 
