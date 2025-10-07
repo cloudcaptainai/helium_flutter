@@ -1,3 +1,6 @@
+## 3.0.9
+- Updated helium-swift dependency to 3.0.8
+
 ## 3.0.8
 - Fix for usage of Flutter fallback view
 
