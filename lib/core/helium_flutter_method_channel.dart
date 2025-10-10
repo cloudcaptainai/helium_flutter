@@ -297,7 +297,7 @@ class _UpsellWrapperWidgetState extends State<UpsellWrapperWidget> {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const SizedBox.shrink();
         }
-        if (snapshot.data == '"downloadSuccess"') {
+        if (snapshot.data == 'downloadSuccess') {
           return UpsellViewForTrigger(trigger: widget.trigger);
         } else {
           _onShowFallback();
