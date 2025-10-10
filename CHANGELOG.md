@@ -1,3 +1,6 @@
+## 0.1.4
+- Fix a bug with `getUpsellWidget`
+
 ## 0.1.3
 - Updated helium-swift dependency to 2.3.0
 
