@@ -149,7 +149,12 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
   }
 
   Future<void> _showFallbackSheet(String trigger) async {
-    if (_isFallbackSheetShowing) return; // already showing!
+    if (_isFallbackSheetShowing) {
+      return; // already showing!
+    }
+    if (_fallbackPaywallWidget == null) {
+      return; // no fallback provided, don't show anything
+    }
     final context = _fallbackContext;
     if (context == null || !context.mounted) {
       _fallbackContext = null;
@@ -317,7 +322,8 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
         break;
       case 'paywallOpenFailed':
         _currentEventHandlers = null;
-        if (trigger != null) {
+        final errorReason = heliumPaywallEvent.error;
+        if (trigger != null && errorReason != "A paywall is already being presented.") {
           // Dispatch on next frame since fallback can trigger new event/s
           WidgetsBinding.instance.addPostFrameCallback((_) {
             _showFallbackSheet(trigger);

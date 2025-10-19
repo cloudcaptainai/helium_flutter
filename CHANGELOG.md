@@ -1,3 +1,6 @@
+## 3.0.9
+- Ensure fallback not triggered if presenting a paywall while another already presented
+
 ## 3.0.8
 - Fix for usage of Flutter fallback view
 
