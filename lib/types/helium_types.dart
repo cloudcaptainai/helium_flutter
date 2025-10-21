@@ -9,6 +9,16 @@ class PaywallInfo {
   });
 }
 
+class CanPresentUpsellResult {
+  final Map<String, dynamic> _data;
+
+  CanPresentUpsellResult.fromMap(Map<String, dynamic> map) : _data = map;
+
+  bool get canShow => _data['canShow'] as bool? ?? false;
+  bool? get isFallback => _data['isFallback'] as bool?;
+  String? get paywallUnavailableReason => _data['paywallUnavailableReason'] as String?;
+}
+
 class TriggerLoadingConfig {
   /// Whether to show loading state for this trigger. Set to null to use the global `useLoadingState` setting.
   final bool? useLoadingState;

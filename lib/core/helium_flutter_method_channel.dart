@@ -232,13 +232,15 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
     );
   }
 
-  @override
-  Future<bool> canPresentUpsell(String trigger) async {
-    final result = await methodChannel.invokeMethod<bool>(
+  Future<CanPresentUpsellResult?> canPresentUpsell(String trigger) async {
+    final result = await methodChannel.invokeMethod<Map<dynamic, dynamic>>(
       canPresentUpsellMethodName,
       trigger,
     );
-    return result ?? false;
+    if (result == null) {
+      return null;
+    }
+    return CanPresentUpsellResult.fromMap(Map<String, dynamic>.from(result));
   }
 
   @override
@@ -403,16 +405,23 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
       trigger: trigger,
       fallbackPaywallWidget: _fallbackPaywallWidget ?? Text("No fallback view provided"),
       availabilityChecker: () => canPresentUpsell(trigger),
-      onFallbackOpened: () async {
+      onFallbackOpened: (String? paywallUnavailableReason) async {
         await methodChannel.invokeMethod<String?>(
           fallbackOpenEventMethodName,
-          {'trigger': trigger, 'viewType': 'embedded'},
+          {
+            'trigger': trigger,
+            'viewType': 'embedded',
+            'paywallUnavailableReason': paywallUnavailableReason,
+          },
         );
       },
       onFallbackClosed: () async {
         await methodChannel.invokeMethod<String?>(
           fallbackCloseEventMethodName,
-          {'trigger': trigger, 'viewType': 'embedded'},
+          {
+            'trigger': trigger,
+            'viewType': 'embedded',
+          },
         );
       },
       cleanUp: () {
@@ -455,8 +464,8 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
 class UpsellWrapperWidget extends StatefulWidget {
   final String trigger;
   final Widget fallbackPaywallWidget;
-  final Future<bool> Function() availabilityChecker;
-  final VoidCallback? onFallbackOpened;
+  final Future<CanPresentUpsellResult?> Function() availabilityChecker;
+  final void Function(String? paywallUnavailableReason)? onFallbackOpened;
   final VoidCallback? onFallbackClosed;
   final VoidCallback? cleanUp;
 
@@ -474,7 +483,7 @@ class UpsellWrapperWidget extends StatefulWidget {
   State<UpsellWrapperWidget> createState() => _UpsellWrapperWidgetState();
 }
 class _UpsellWrapperWidgetState extends State<UpsellWrapperWidget> {
-  late Future<bool> _availabilityFuture;
+  late Future<CanPresentUpsellResult?> _availabilityFuture;
   bool _fallbackShown = false;
 
   @override
@@ -483,10 +492,10 @@ class _UpsellWrapperWidgetState extends State<UpsellWrapperWidget> {
     _availabilityFuture = widget.availabilityChecker();
   }
 
-  void _onShowFallback() {
+  void _onShowFallback(String? paywallUnavailableReason) {
     if (!_fallbackShown) {
       _fallbackShown = true;
-      widget.onFallbackOpened?.call();
+      widget.onFallbackOpened?.call(paywallUnavailableReason);
     }
   }
 
@@ -501,16 +510,16 @@ class _UpsellWrapperWidgetState extends State<UpsellWrapperWidget> {
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<bool>(
+    return FutureBuilder<CanPresentUpsellResult?>(
       future: _availabilityFuture,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const SizedBox.shrink();
         }
-        if (snapshot.data == true) {
+        if (snapshot.data?.canShow == true) {
           return UpsellViewForTrigger(trigger: widget.trigger);
         } else {
-          _onShowFallback();
+          _onShowFallback(snapshot.data?.paywallUnavailableReason);
           return widget.fallbackPaywallWidget;
         }
       },

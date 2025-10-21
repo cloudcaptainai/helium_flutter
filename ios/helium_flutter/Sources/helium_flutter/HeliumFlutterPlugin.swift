@@ -92,7 +92,8 @@ public class HeliumFlutterPlugin: NSObject, FlutterPlugin {
             if let args = call.arguments as? [String: Any] {
                 let trigger = args["trigger"] as? String
                 let viewType = args["viewType"] as? String
-                fallbackOpenOrCloseEvent(trigger: trigger, isOpen: true, viewType: viewType)
+                let paywallUnavailableReason = args["paywallUnavailableReason"] as? String
+                fallbackOpenOrCloseEvent(trigger: trigger, isOpen: true, viewType: viewType, paywallUnavailableReason: paywallUnavailableReason)
                 result("fallback open event!")
             } else {
                 result("fallback open event fail")
@@ -101,7 +102,8 @@ public class HeliumFlutterPlugin: NSObject, FlutterPlugin {
             if let args = call.arguments as? [String: Any] {
                 let trigger = args["trigger"] as? String
                 let viewType = args["viewType"] as? String
-                fallbackOpenOrCloseEvent(trigger: trigger, isOpen: false, viewType: viewType)
+                let paywallUnavailableReason = args["paywallUnavailableReason"] as? String
+                fallbackOpenOrCloseEvent(trigger: trigger, isOpen: false, viewType: viewType, paywallUnavailableReason: paywallUnavailableReason)
                 result("fallback close event!")
             } else {
                 result("fallback close event fail")
@@ -263,8 +265,8 @@ public class HeliumFlutterPlugin: NSObject, FlutterPlugin {
         Helium.shared.overrideUserId(newUserId: newUserId, traits: traits)
     }
 
-    private func fallbackOpenOrCloseEvent(trigger: String?, isOpen: Bool, viewType: String?) {
-        HeliumPaywallDelegateWrapper.shared.onFallbackOpenCloseEvent(trigger: trigger, isOpen: isOpen, viewType: viewType)
+    private func fallbackOpenOrCloseEvent(trigger: String?, isOpen: Bool, viewType: String?, paywallUnavailableReason: String?) {
+        HeliumPaywallDelegateWrapper.shared.onFallbackOpenCloseEvent(trigger: trigger, isOpen: isOpen, viewType: viewType, fallbackReason: paywallUnavailableReason)
     }
 
     private func getPaywallInfo(trigger: String) -> [String: Any?] {
@@ -283,12 +285,12 @@ public class HeliumFlutterPlugin: NSObject, FlutterPlugin {
         ]
     }
 
-    private func canPresentUpsell(trigger: String) -> Bool {
+    private func canPresentUpsell(trigger: String) -> [String: Any] {
         let result = Helium.shared.canShowPaywallFor(trigger: trigger)
         return [
             "canShow": result.canShow,
             "isFallback": result.isFallback,
-            "paywallUnavailableReason": result.paywallUnavailableReason
+            "paywallUnavailableReason": result.paywallUnavailableReason.rawValue
         ]
     }
 
