@@ -9,6 +9,16 @@ class PaywallInfo {
   });
 }
 
+class CanPresentUpsellResult {
+  final Map<String, dynamic> _data;
+
+  CanPresentUpsellResult.fromMap(Map<String, dynamic> map) : _data = map;
+
+  bool get canShow => _data['canShow'] as bool? ?? false;
+  bool? get isFallback => _data['isFallback'] as bool?;
+  String? get paywallUnavailableReason => _data['paywallUnavailableReason'] as String?;
+}
+
 class TriggerLoadingConfig {
   /// Whether to show loading state for this trigger. Set to null to use the global `useLoadingState` setting.
   final bool? useLoadingState;
@@ -75,12 +85,16 @@ class PaywallEventHandlers {
   final void Function(PaywallCloseEvent event)? onClose;
   final void Function(PaywallDismissedEvent event)? onDismissed;
   final void Function(PurchaseSucceededEvent event)? onPurchaseSucceeded;
+  final void Function(PaywallOpenFailedEvent event)? onOpenFailed;
+  final void Function(CustomPaywallActionEvent event)? onCustomPaywallAction;
 
   PaywallEventHandlers({
     this.onOpen,
     this.onClose,
     this.onDismissed,
     this.onPurchaseSucceeded,
+    this.onOpenFailed,
+    this.onCustomPaywallAction,
   });
 }
 
@@ -141,6 +155,40 @@ class PurchaseSucceededEvent {
   });
 }
 
+class PaywallOpenFailedEvent {
+  final String type = 'paywallOpenFailed';
+  final String triggerName;
+  final String paywallName;
+  final String error;
+  final String? paywallUnavailableReason;
+  final bool isSecondTry;
+
+  PaywallOpenFailedEvent({
+    required this.triggerName,
+    required this.paywallName,
+    required this.error,
+    required this.paywallUnavailableReason,
+    required this.isSecondTry,
+  });
+}
+
+class CustomPaywallActionEvent {
+  final String type = 'customPaywallAction';
+  final String triggerName;
+  final String paywallName;
+  final String actionName;
+  final Map<String, dynamic> params;
+  final bool isSecondTry;
+
+  CustomPaywallActionEvent({
+    required this.triggerName,
+    required this.paywallName,
+    required this.actionName,
+    required this.params,
+    required this.isSecondTry,
+  });
+}
+
 class PresentUpsellParams {
   final String triggerName;
   final PaywallEventHandlers? eventHandlers;
@@ -160,6 +208,7 @@ class HeliumPaywallEvent {
   HeliumPaywallEvent.fromMap(Map<String, dynamic> map) : _data = map;
 
   // Type-safe getters
+  Map<String, dynamic> get rawData => _data;
   String get type => _data['type'] ?? '';
   String? get triggerName => _data['triggerName'];
   String? get paywallName => _data['paywallName'];
@@ -174,6 +223,9 @@ class HeliumPaywallEvent {
   bool? get dismissAll => _data['dismissAll'];
   bool? get isSecondTry => _data['isSecondTry'];
   String? get error => _data['error'];
+  String? get paywallUnavailableReason => _data['paywallUnavailableReason'];
+  String? get customPaywallActionName => _data['actionName'];
+  Map<String, dynamic>? get customPaywallActionParams => _data['params'];
   /// Unix timestamp in seconds
   int? get timestamp => _data['timestamp'];
 

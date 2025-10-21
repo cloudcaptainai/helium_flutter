@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:helium_flutter/core/const/contants.dart';
 import 'package:helium_flutter/core/helium_callbacks.dart';
+import '../types/experiment_info.dart';
 import '../types/helium_transaction_status.dart';
 import '../types/helium_types.dart';
 import 'helium_flutter_platform.dart';
@@ -93,7 +94,7 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
         final Map<String, dynamic> eventDict = (args is Map)
             ? Map<String, dynamic>.from(args)
             : {};
-        _handlePaywallEventHandlers(eventDict);
+        _handlePaywallEventHandlers(HeliumPaywallEvent.fromMap(eventDict));
       } else {
         log('[Helium] Unknown method from MethodChannel: ${handler.method}');
       }
@@ -163,11 +164,6 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
 
     _isFallbackSheetShowing = true;
 
-    methodChannel.invokeMethod<String?>(
-      fallbackOpenEventMethodName,
-      {'trigger': trigger, 'viewType': 'presented'},
-    );
-
     try {
       await showModalBottomSheet(
         context: context,
@@ -185,11 +181,6 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
     } finally {
       _isFallbackSheetShowing = false;
       _fallbackContext = null;
-
-      methodChannel.invokeMethod<String?>(
-        fallbackCloseEventMethodName,
-        {'trigger': trigger, 'viewType': 'presented'},
-      );
     }
   }
 
@@ -241,6 +232,17 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
     );
   }
 
+  Future<CanPresentUpsellResult?> canPresentUpsell(String trigger) async {
+    final result = await methodChannel.invokeMethod<Map<dynamic, dynamic>>(
+      canPresentUpsellMethodName,
+      trigger,
+    );
+    if (result == null) {
+      return null;
+    }
+    return CanPresentUpsellResult.fromMap(Map<String, dynamic>.from(result));
+  }
+
   @override
   Future<bool> handleDeepLink(String uri) async {
     final result = await methodChannel.invokeMethod<bool>('handleDeepLink', uri);
@@ -264,13 +266,55 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
     return result ?? false;
   }
 
-  void _handlePaywallEventHandlers(Map<String, dynamic> eventDict) {
+  @override
+  Future<ExperimentInfo?> getExperimentInfoForTrigger(String trigger) async {
+    final result = await methodChannel.invokeMethod<Map<dynamic, dynamic>>(
+      getExperimentInfoForTriggerMethodName,
+      trigger,
+    );
+    if (result == null) {
+      return null;
+    }
+    return ExperimentInfo.fromMap(Map<String, dynamic>.from(result));
+  }
+
+  @override
+  void disableRestoreFailedDialog() {
+    methodChannel.invokeMethod<void>(
+      disableRestoreFailedDialogMethodName,
+    );
+  }
+
+  @override
+  void setCustomRestoreFailedStrings({
+    String? customTitle,
+    String? customMessage,
+    String? customCloseButtonText,
+  }) {
+    methodChannel.invokeMethod<void>(
+      setCustomRestoreFailedStringsMethodName,
+      {
+        'customTitle': customTitle,
+        'customMessage': customMessage,
+        'customCloseButtonText': customCloseButtonText,
+      },
+    );
+  }
+
+  @override
+  void resetHelium() {
+    methodChannel.invokeMethod<void>(
+      resetHeliumMethodName,
+    );
+  }
+
+  void _handlePaywallEventHandlers(HeliumPaywallEvent event) {
     if (_currentEventHandlers == null) return;
 
-    final eventType = eventDict['type'] as String?;
-    final triggerName = eventDict['triggerName'] as String? ?? 'unknown';
-    final paywallName = eventDict['paywallName'] as String? ?? 'unknown';
-    final isSecondTry = eventDict['isSecondTry'] as bool? ?? false;
+    final eventType = event.type;
+    final triggerName = event.triggerName ?? 'unknown';
+    final paywallName = event.paywallName ?? 'unknown';
+    final isSecondTry = event.isSecondTry ?? false;
 
     switch (eventType) {
       case 'paywallOpen':
@@ -296,12 +340,30 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
         ));
         break;
       case 'purchaseSucceeded':
-        final productId = eventDict['productId'] as String? ?? 'unknown';
+        final productId = event.productId ?? 'unknown';
         _currentEventHandlers?.onPurchaseSucceeded?.call(PurchaseSucceededEvent(
           productId: productId,
           triggerName: triggerName,
           paywallName: paywallName,
           isSecondTry: isSecondTry,
+        ));
+        break;
+      case 'paywallOpenFailed':
+        _currentEventHandlers?.onOpenFailed?.call(PaywallOpenFailedEvent(
+          triggerName: triggerName,
+          paywallName: paywallName,
+          isSecondTry: isSecondTry,
+          error: event.error ?? '',
+          paywallUnavailableReason: event.paywallUnavailableReason ?? '',
+        ));
+        break;
+      case 'customPaywallAction':
+        _currentEventHandlers?.onCustomPaywallAction?.call(CustomPaywallActionEvent(
+          triggerName: triggerName,
+          paywallName: paywallName,
+          isSecondTry: isSecondTry,
+          actionName: event.customPaywallActionName ?? '',
+          params: event.customPaywallActionParams ?? {},
         ));
         break;
     }
@@ -334,22 +396,36 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
   }
 
   @override
-  Widget getUpsellWidget({required String trigger}) {
+  Widget getUpsellWidget({
+    required String trigger,
+    PaywallEventHandlers? eventHandlers,
+  }) {
+    _currentEventHandlers = eventHandlers;
     return UpsellWrapperWidget(
       trigger: trigger,
       fallbackPaywallWidget: _fallbackPaywallWidget ?? Text("No fallback view provided"),
-      downloadStatusFetcher: getDownloadStatus, // Pass the actual async function
-      onFallbackOpened: () async {
+      availabilityChecker: () => canPresentUpsell(trigger),
+      onFallbackOpened: (String? paywallUnavailableReason) async {
         await methodChannel.invokeMethod<String?>(
           fallbackOpenEventMethodName,
-          {'trigger': trigger, 'viewType': 'embedded'},
+          {
+            'trigger': trigger,
+            'viewType': 'embedded',
+            'paywallUnavailableReason': paywallUnavailableReason,
+          },
         );
       },
       onFallbackClosed: () async {
         await methodChannel.invokeMethod<String?>(
           fallbackCloseEventMethodName,
-          {'trigger': trigger, 'viewType': 'embedded'},
+          {
+            'trigger': trigger,
+            'viewType': 'embedded',
+          },
         );
+      },
+      cleanUp: () {
+        _currentEventHandlers = null;
       },
     );
   }
@@ -388,36 +464,38 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
 class UpsellWrapperWidget extends StatefulWidget {
   final String trigger;
   final Widget fallbackPaywallWidget;
-  final Future<String?> Function() downloadStatusFetcher;
-  final VoidCallback? onFallbackOpened;
+  final Future<CanPresentUpsellResult?> Function() availabilityChecker;
+  final void Function(String? paywallUnavailableReason)? onFallbackOpened;
   final VoidCallback? onFallbackClosed;
+  final VoidCallback? cleanUp;
 
   const UpsellWrapperWidget({
     super.key,
     required this.trigger,
     required this.fallbackPaywallWidget,
-    required this.downloadStatusFetcher,
+    required this.availabilityChecker,
     this.onFallbackOpened,
     this.onFallbackClosed,
+    this.cleanUp,
   });
 
   @override
   State<UpsellWrapperWidget> createState() => _UpsellWrapperWidgetState();
 }
 class _UpsellWrapperWidgetState extends State<UpsellWrapperWidget> {
-  late Future<String?> _downloadStatusFuture;
+  late Future<CanPresentUpsellResult?> _availabilityFuture;
   bool _fallbackShown = false;
 
   @override
   void initState() {
     super.initState();
-    _downloadStatusFuture = widget.downloadStatusFetcher();
+    _availabilityFuture = widget.availabilityChecker();
   }
 
-  void _onShowFallback() {
+  void _onShowFallback(String? paywallUnavailableReason) {
     if (!_fallbackShown) {
       _fallbackShown = true;
-      widget.onFallbackOpened?.call();
+      widget.onFallbackOpened?.call(paywallUnavailableReason);
     }
   }
 
@@ -426,21 +504,22 @@ class _UpsellWrapperWidgetState extends State<UpsellWrapperWidget> {
     if (_fallbackShown) {
       widget.onFallbackClosed?.call();
     }
+    widget.cleanUp?.call();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<String?>(
-      future: _downloadStatusFuture,
+    return FutureBuilder<CanPresentUpsellResult?>(
+      future: _availabilityFuture,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const SizedBox.shrink();
         }
-        if (snapshot.data == 'downloadSuccess') {
+        if (snapshot.data?.canShow == true) {
           return UpsellViewForTrigger(trigger: widget.trigger);
         } else {
-          _onShowFallback();
+          _onShowFallback(snapshot.data?.paywallUnavailableReason);
           return widget.fallbackPaywallWidget;
         }
       },
