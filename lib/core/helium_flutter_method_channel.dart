@@ -427,9 +427,6 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
           },
         );
       },
-      cleanUp: () {
-        _currentEventHandlers = null;
-      },
     );
   }
 
@@ -470,7 +467,6 @@ class UpsellWrapperWidget extends StatefulWidget {
   final Future<CanPresentUpsellResult?> Function() availabilityChecker;
   final void Function(String? paywallUnavailableReason)? onFallbackOpened;
   final VoidCallback? onFallbackClosed;
-  final VoidCallback? cleanUp;
 
   const UpsellWrapperWidget({
     super.key,
@@ -479,7 +475,6 @@ class UpsellWrapperWidget extends StatefulWidget {
     required this.availabilityChecker,
     this.onFallbackOpened,
     this.onFallbackClosed,
-    this.cleanUp,
   });
 
   @override
@@ -507,7 +502,6 @@ class _UpsellWrapperWidgetState extends State<UpsellWrapperWidget> {
     if (_fallbackShown) {
       widget.onFallbackClosed?.call();
     }
-    widget.cleanUp?.call();
     super.dispose();
   }
 
@@ -532,16 +526,16 @@ class _UpsellWrapperWidgetState extends State<UpsellWrapperWidget> {
 
 ///This widget used to present view based on [trigger]
 class UpsellViewForTrigger extends StatelessWidget {
-  const UpsellViewForTrigger({super.key, this.trigger});
+  const UpsellViewForTrigger({super.key, required this.trigger});
   final String viewType = upsellViewForTrigger;
-  final String? trigger;
+  final String trigger;
 
   @override
   Widget build(BuildContext context) {
     return UiKitView(
       viewType: viewType,
       layoutDirection: TextDirection.ltr,
-      creationParams: trigger != null ? {'trigger': trigger} : {},
+      creationParams: {'trigger': trigger},
       creationParamsCodec: const StandardMessageCodec(),
     );
   }

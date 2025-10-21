@@ -4,6 +4,10 @@ import Helium
 import SwiftUI
 import Foundation
 
+// Notification name for paywall events
+extension NSNotification.Name {
+    static let paywallEventHandlerDispatch = NSNotification.Name("paywallEventHandlerDispatch")
+}
 
 enum PurchaseError: LocalizedError {
     case unknownStatus(status: String)
@@ -28,7 +32,16 @@ public class HeliumFlutterPlugin: NSObject, FlutterPlugin {
         instance.channel = FlutterMethodChannel(name: "helium_flutter", binaryMessenger: registrar.messenger())
         instance.registrar = registrar
         registrar.addMethodCallDelegate(instance, channel: instance.channel)
-        let factory = FLNativeViewFactory(messenger: registrar.messenger())
+
+        // Set up NotificationCenter observer for paywall events
+        NotificationCenter.default.addObserver(
+            instance,
+            selector: #selector(instance.handlePaywallEventNotification(_:)),
+            name: .paywallEventHandlerDispatch,
+            object: nil
+        )
+
+        let factory = FLNativeViewFactory()
         registrar.register(factory, withId: "upsellViewForTrigger")
     }
 
@@ -344,6 +357,14 @@ public class HeliumFlutterPlugin: NSObject, FlutterPlugin {
 
     private func resetHelium() {
         Helium.resetHelium()
+    }
+
+    /// Handler for paywall event notifications posted via NotificationCenter
+    @objc private func handlePaywallEventNotification(_ notification: Notification) {
+        guard let eventDict = notification.userInfo?["event"] as? [String: Any] else {
+            return
+        }
+        channel.invokeMethod("onPaywallEventHandler", arguments: eventDict)
     }
 
     /// Recursively converts special marker strings back to boolean values to restore

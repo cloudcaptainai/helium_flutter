@@ -3,14 +3,16 @@ import UIKit
 import Helium
 import SwiftUI
 
+/// Helper function to post paywall events via NotificationCenter
+private func postPaywallEvent(_ event: any HeliumEvent) {
+    NotificationCenter.default.post(
+        name: .paywallEventHandlerDispatch,
+        object: nil,
+        userInfo: ["event": event.toDictionary()]
+    )
+}
+
 class FLNativeViewFactory: NSObject, FlutterPlatformViewFactory {
-    private var messenger: FlutterBinaryMessenger
-
-    init(messenger: FlutterBinaryMessenger) {
-        self.messenger = messenger
-        super.init()
-    }
-
     func create(
         withFrame frame: CGRect,
         viewIdentifier viewId: Int64,
@@ -19,8 +21,7 @@ class FLNativeViewFactory: NSObject, FlutterPlatformViewFactory {
         return FLNativeView(
             frame: frame,
             viewIdentifier: viewId,
-            arguments: args,
-            binaryMessenger: messenger)
+            arguments: args)
     }
 
     // Implementing this method is only necessary when the `arguments` in `createWithFrame` is not `nil`.
@@ -31,7 +32,6 @@ class FLNativeViewFactory: NSObject, FlutterPlatformViewFactory {
 
 class FLNativeView: NSObject, FlutterPlatformView {
     let arguments: Any?
-    private var channel: FlutterMethodChannel
     private lazy var _view: UIView = {
         let trigger: String = (arguments as? [String: Any])?["trigger"] as? String ?? ""
         return upsellViewForTrigger(trigger: trigger)
@@ -40,11 +40,9 @@ class FLNativeView: NSObject, FlutterPlatformView {
     init(
         frame: CGRect,
         viewIdentifier viewId: Int64,
-        arguments args: Any?,
-        binaryMessenger messenger: FlutterBinaryMessenger?
+        arguments args: Any?
     ) {
         arguments = args
-        channel = FlutterMethodChannel(name: "helium_flutter", binaryMessenger: messenger!)
         super.init()
     }
 
@@ -56,24 +54,12 @@ class FLNativeView: NSObject, FlutterPlatformView {
         let swiftUIView = Helium.shared.upsellViewForTrigger(
             trigger: trigger,
             eventHandlers: PaywallEventHandlers.withHandlers(
-                onOpen: { [weak self] event in
-                    self?.channel.invokeMethod("onPaywallEventHandler", arguments: event.toDictionary())
-                },
-                onClose: { [weak self] event in
-                    self?.channel.invokeMethod("onPaywallEventHandler", arguments: event.toDictionary())
-                },
-                onDismissed: { [weak self] event in
-                    self?.channel.invokeMethod("onPaywallEventHandler", arguments: event.toDictionary())
-                },
-                onPurchaseSucceeded: { [weak self] event in
-                    self?.channel.invokeMethod("onPaywallEventHandler", arguments: event.toDictionary())
-                },
-                onOpenFailed: { [weak self] event in
-                    self?.channel.invokeMethod("onPaywallEventHandler", arguments: event.toDictionary())
-                },
-                onCustomPaywallAction: { [weak self] event in
-                    self?.channel.invokeMethod("onPaywallEventHandler", arguments: event.toDictionary())
-                }
+                onOpen: postPaywallEvent,
+                onClose: postPaywallEvent,
+                onDismissed: postPaywallEvent,
+                onPurchaseSucceeded: postPaywallEvent,
+                onOpenFailed: postPaywallEvent,
+                onCustomPaywallAction: postPaywallEvent
             )
         )
         guard let swiftUIView else {
