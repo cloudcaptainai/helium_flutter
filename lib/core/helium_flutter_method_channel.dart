@@ -164,11 +164,6 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
 
     _isFallbackSheetShowing = true;
 
-    methodChannel.invokeMethod<String?>(
-      fallbackOpenEventMethodName,
-      {'trigger': trigger, 'viewType': 'presented'},
-    );
-
     try {
       await showModalBottomSheet(
         context: context,
@@ -186,11 +181,6 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
     } finally {
       _isFallbackSheetShowing = false;
       _fallbackContext = null;
-
-      methodChannel.invokeMethod<String?>(
-        fallbackCloseEventMethodName,
-        {'trigger': trigger, 'viewType': 'presented'},
-      );
     }
   }
 
@@ -240,6 +230,15 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
       paywallTemplateName: result['templateName'] ?? 'unknown template',
       shouldShow: result['shouldShow'] ?? true,
     );
+  }
+
+  @override
+  Future<bool> canPresentUpsell(String trigger) async {
+    final result = await methodChannel.invokeMethod<bool>(
+      canPresentUpsellMethodName,
+      trigger,
+    );
+    return result ?? false;
   }
 
   @override
@@ -403,7 +402,7 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
     return UpsellWrapperWidget(
       trigger: trigger,
       fallbackPaywallWidget: _fallbackPaywallWidget ?? Text("No fallback view provided"),
-      downloadStatusFetcher: getDownloadStatus, // Pass the actual async function
+      availabilityChecker: () => canPresentUpsell(trigger),
       onFallbackOpened: () async {
         await methodChannel.invokeMethod<String?>(
           fallbackOpenEventMethodName,
@@ -456,7 +455,7 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
 class UpsellWrapperWidget extends StatefulWidget {
   final String trigger;
   final Widget fallbackPaywallWidget;
-  final Future<String?> Function() downloadStatusFetcher;
+  final Future<bool> Function() availabilityChecker;
   final VoidCallback? onFallbackOpened;
   final VoidCallback? onFallbackClosed;
   final VoidCallback? cleanUp;
@@ -465,7 +464,7 @@ class UpsellWrapperWidget extends StatefulWidget {
     super.key,
     required this.trigger,
     required this.fallbackPaywallWidget,
-    required this.downloadStatusFetcher,
+    required this.availabilityChecker,
     this.onFallbackOpened,
     this.onFallbackClosed,
     this.cleanUp,
@@ -475,13 +474,13 @@ class UpsellWrapperWidget extends StatefulWidget {
   State<UpsellWrapperWidget> createState() => _UpsellWrapperWidgetState();
 }
 class _UpsellWrapperWidgetState extends State<UpsellWrapperWidget> {
-  late Future<String?> _downloadStatusFuture;
+  late Future<bool> _availabilityFuture;
   bool _fallbackShown = false;
 
   @override
   void initState() {
     super.initState();
-    _downloadStatusFuture = widget.downloadStatusFetcher();
+    _availabilityFuture = widget.availabilityChecker();
   }
 
   void _onShowFallback() {
@@ -502,13 +501,13 @@ class _UpsellWrapperWidgetState extends State<UpsellWrapperWidget> {
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<String?>(
-      future: _downloadStatusFuture,
+    return FutureBuilder<bool>(
+      future: _availabilityFuture,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const SizedBox.shrink();
         }
-        if (snapshot.data == 'downloadSuccess') {
+        if (snapshot.data == true) {
           return UpsellViewForTrigger(trigger: widget.trigger);
         } else {
           _onShowFallback();

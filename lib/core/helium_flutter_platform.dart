@@ -69,6 +69,8 @@ abstract class HeliumFlutterPlatform extends PlatformInterface {
 
   Future<PaywallInfo?> getPaywallInfo(String trigger);
 
+  Future<bool> canPresentUpsell(String trigger);
+
   Future<bool> handleDeepLink(String uri);
 
   Widget getUpsellWidget({

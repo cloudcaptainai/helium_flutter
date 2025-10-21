@@ -83,6 +83,8 @@ class PaywallEventHandlers {
     this.onClose,
     this.onDismissed,
     this.onPurchaseSucceeded,
+    this.onOpenFailed,
+    this.onCustomPaywallAction,
   });
 }
 

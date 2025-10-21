@@ -110,6 +110,9 @@ public class HeliumFlutterPlugin: NSObject, FlutterPlugin {
             let trigger = call.arguments as? String ?? ""
             let paywallInfo = getPaywallInfo(trigger: trigger)
             result(paywallInfo)
+        case "canPresentUpsell":
+            let trigger = call.arguments as? String ?? ""
+            result(canPresentUpsell(trigger: trigger))
         case "handleDeepLink":
             let urlString = call.arguments as? String ?? ""
             result(handleDeepLink(urlString))
@@ -277,6 +280,15 @@ public class HeliumFlutterPlugin: NSObject, FlutterPlugin {
             "errorMsg": nil,
             "templateName": paywallInfo.paywallTemplateName,
             "shouldShow": paywallInfo.shouldShow
+        ]
+    }
+
+    private func canPresentUpsell(trigger: String) -> Bool {
+        let result = Helium.shared.canShowPaywallFor(trigger: trigger)
+        return [
+            "canShow": result.canShow,
+            "isFallback": result.isFallback,
+            "paywallUnavailableReason": result.paywallUnavailableReason
         ]
     }
 
