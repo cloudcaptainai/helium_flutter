@@ -123,6 +123,10 @@ public class HeliumFlutterPlugin: NSObject, FlutterPlugin {
                 let hasEntitlement = await hasAnyEntitlement()
                 result(hasEntitlement)
             }
+        case "getExperimentInfoForTrigger":
+            let trigger = call.arguments as? String ?? ""
+            let experimentInfo = getExperimentInfoForTrigger(trigger: trigger)
+            result(experimentInfo)
         case "disableRestoreFailedDialog":
             disableRestoreFailedDialog()
             result("Restore failed dialog disabled!")

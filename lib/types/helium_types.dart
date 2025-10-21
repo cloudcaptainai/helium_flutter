@@ -9,10 +9,6 @@ class PaywallInfo {
   });
 }
 
-class ExperimentInfo {
-  // todo
-}
-
 class TriggerLoadingConfig {
   /// Whether to show loading state for this trigger. Set to null to use the global `useLoadingState` setting.
   final bool? useLoadingState;
@@ -178,6 +174,9 @@ class HeliumPaywallEvent {
   bool? get dismissAll => _data['dismissAll'];
   bool? get isSecondTry => _data['isSecondTry'];
   String? get error => _data['error'];
+  String? get paywallUnavailableReason => _data['paywallUnavailableReason'];
+  String? get customPaywallActionName => _data['actionName'];
+  Map<String, dynamic>? get customPaywallActionParams => _data['params'];
   /// Unix timestamp in seconds
   int? get timestamp => _data['timestamp'];
 

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:helium_flutter/core/const/contants.dart';
 import 'package:helium_flutter/core/helium_callbacks.dart';
+import '../types/experiment_info.dart';
 import '../types/helium_transaction_status.dart';
 import '../types/helium_types.dart';
 import 'helium_flutter_platform.dart';
@@ -262,6 +263,18 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
       hasAnyEntitlementMethodName,
     );
     return result ?? false;
+  }
+
+  @override
+  Future<ExperimentInfo?> getExperimentInfoForTrigger(String trigger) async {
+    final result = await methodChannel.invokeMethod<Map<dynamic, dynamic>>(
+      getExperimentInfoForTriggerMethodName,
+      trigger,
+    );
+    if (result == null) {
+      return null;
+    }
+    return ExperimentInfo.fromMap(Map<String, dynamic>.from(result));
   }
 
   @override

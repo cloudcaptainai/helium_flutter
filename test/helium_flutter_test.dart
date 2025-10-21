@@ -88,6 +88,24 @@ class MockHeliumFlutterPlatform
     return Future.value(true);
   }
 
+  @override
+  Future<ExperimentInfo?> getExperimentInfoForTrigger(String trigger) {
+    return Future.value(null);
+  }
+
+  @override
+  void disableRestoreFailedDialog() {}
+
+  @override
+  void setCustomRestoreFailedStrings({
+    String? customTitle,
+    String? customMessage,
+    String? customCloseButtonText,
+  }) {}
+
+  @override
+  void resetHelium() {}
+
 }
 
 void main() {

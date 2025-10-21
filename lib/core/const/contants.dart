@@ -20,6 +20,7 @@ const String fallbackOpenEventMethodName = 'fallbackOpenEvent';
 const String fallbackCloseEventMethodName = 'fallbackCloseEvent';
 const String hasAnyActiveSubscriptionMethodName = 'hasAnyActiveSubscription';
 const String hasAnyEntitlementMethodName = 'hasAnyEntitlement';
+const String getExperimentInfoForTriggerMethodName = 'getExperimentInfoForTrigger';
 const String disableRestoreFailedDialogMethodName = 'disableRestoreFailedDialog';
 const String setCustomRestoreFailedStringsMethodName = 'setCustomRestoreFailedStrings';
 const String resetHeliumMethodName = 'resetHelium';
