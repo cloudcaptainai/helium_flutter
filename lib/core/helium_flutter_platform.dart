@@ -76,4 +76,15 @@ abstract class HeliumFlutterPlatform extends PlatformInterface {
 
   Future<bool> hasAnyEntitlement();
 
+  Future<ExperimentInfo?> getExperimentInfoForTrigger(String trigger);
+
+  void disableRestoreFailedDialog();
+
+  void setCustomRestoreFailedStrings({
+    String? customTitle,
+    String? customMessage,
+    String? customCloseButtonText,
+  });
+
+  void resetHelium();
 }

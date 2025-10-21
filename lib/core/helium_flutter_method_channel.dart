@@ -264,6 +264,36 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
     return result ?? false;
   }
 
+  @override
+  void disableRestoreFailedDialog() {
+    methodChannel.invokeMethod<void>(
+      disableRestoreFailedDialogMethodName,
+    );
+  }
+
+  @override
+  void setCustomRestoreFailedStrings({
+    String? customTitle,
+    String? customMessage,
+    String? customCloseButtonText,
+  }) {
+    methodChannel.invokeMethod<void>(
+      setCustomRestoreFailedStringsMethodName,
+      {
+        'customTitle': customTitle,
+        'customMessage': customMessage,
+        'customCloseButtonText': customCloseButtonText,
+      },
+    );
+  }
+
+  @override
+  void resetHelium() {
+    methodChannel.invokeMethod<void>(
+      resetHeliumMethodName,
+    );
+  }
+
   void _handlePaywallEventHandlers(Map<String, dynamic> eventDict) {
     if (_currentEventHandlers == null) return;
 

@@ -89,19 +89,32 @@ class HeliumFlutter {
   Future<bool> hasAnyEntitlement() =>
       HeliumFlutterPlatform.instance.hasAnyEntitlement();
 
+  /// Get experiment allocation info for a specific trigger
+  ///
+  /// - Parameter trigger: The trigger name to get experiment info for
+  /// - Returns: ExperimentInfo if the trigger has experiment data, nil otherwise
   Future<ExperimentInfo?> getExperimentInfoForTrigger(String trigger) =>
       HeliumFlutterPlatform.instance.getExperimentInfoForTrigger(trigger);
 
+  /// Disable the default dialog that Helium will display if a "Restore Purchases" action is not successful.
+  /// You can handle this yourself if desired by listening for the PurchaseRestoreFailedEvent.
   void disableRestoreFailedDialog() =>
       HeliumFlutterPlatform.instance.disableRestoreFailedDialog();
 
+  /// Set custom strings to show in the dialog that Helium will display if a "Restore Purchases" action is not successful.
+  /// Note that these strings will not be localized by Helium for you.
   void setCustomRestoreFailedStrings({
     String? customTitle,
     String? customMessage,
     String? customCloseButtonText,
   }) =>
-      HeliumFlutterPlatform.instance.disableRestoreFailedDialog();
+      HeliumFlutterPlatform.instance.setCustomRestoreFailedStrings(
+        customTitle: customTitle,
+        customMessage: customMessage,
+        customCloseButtonText: customCloseButtonText,
+      );
 
+  /// Reset Helium entirely so you can call initialize again. Only for advanced use cases.
   void resetHelium() => HeliumFlutterPlatform.instance.resetHelium();
 
 }

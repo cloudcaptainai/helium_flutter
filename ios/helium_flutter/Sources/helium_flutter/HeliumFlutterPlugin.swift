@@ -123,6 +123,26 @@ public class HeliumFlutterPlugin: NSObject, FlutterPlugin {
                 let hasEntitlement = await hasAnyEntitlement()
                 result(hasEntitlement)
             }
+        case "disableRestoreFailedDialog":
+            disableRestoreFailedDialog()
+            result("Restore failed dialog disabled!")
+        case "setCustomRestoreFailedStrings":
+            if let args = call.arguments as? [String: Any] {
+                let customTitle = args["customTitle"] as? String
+                let customMessage = args["customMessage"] as? String
+                let customCloseButtonText = args["customCloseButtonText"] as? String
+                setCustomRestoreFailedStrings(
+                    customTitle: customTitle,
+                    customMessage: customMessage,
+                    customCloseButtonText: customCloseButtonText
+                )
+                result("Custom restore failed strings set!")
+            } else {
+                result(FlutterError(code: "BAD_ARGS", message: "Arguments not passed correctly", details: nil))
+            }
+        case "resetHelium":
+            resetHelium()
+            result("Helium reset!")
         default:
             result(FlutterMethodNotImplemented)
         }
@@ -279,7 +299,11 @@ public class HeliumFlutterPlugin: NSObject, FlutterPlugin {
         customMessage: String?,
         customCloseButtonText: String?
     ) {
-        Helium.restorePurchaseConfig.setCustomRestoreFailedStrings()
+        Helium.restorePurchaseConfig.setCustomRestoreFailedStrings(
+            customTitle: customTitle,
+            customMessage: customMessage,
+            customCloseButtonText: customCloseButtonText
+        )
     }
 
     private func resetHelium() {
