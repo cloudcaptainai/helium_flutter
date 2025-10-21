@@ -74,7 +74,10 @@ class MockHeliumFlutterPlatform
   }
 
   @override
-  Widget getUpsellWidget({required String trigger}) {
+  Widget getUpsellWidget({
+    required String trigger,
+    PaywallEventHandlers? eventHandlers,
+  }) {
     return Text("upsell widget");
   }
 

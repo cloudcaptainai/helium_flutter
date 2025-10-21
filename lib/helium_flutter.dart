@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:helium_flutter/core/helium_callbacks.dart';
 import 'package:helium_flutter/core/helium_flutter_platform.dart';
+import 'package:helium_flutter/types/experiment_info.dart';
 import 'package:helium_flutter/types/helium_types.dart';
 export './core/helium_callbacks.dart';
 export './types/experiment_info.dart';
@@ -79,7 +80,10 @@ class HeliumFlutter {
   Future<bool> handleDeepLink(String uri) =>
       HeliumFlutterPlatform.instance.handleDeepLink(uri);
 
-  Widget getUpsellWidget({required String trigger}) =>
+  Widget getUpsellWidget({
+    required String trigger,
+    PaywallEventHandlers? eventHandlers,
+  }) =>
       HeliumFlutterPlatform.instance.getUpsellWidget(trigger: trigger);
 
   /// Checks if the user has any active subscription (including non-renewable)

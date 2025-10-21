@@ -71,7 +71,10 @@ abstract class HeliumFlutterPlatform extends PlatformInterface {
 
   Future<bool> handleDeepLink(String uri);
 
-  Widget getUpsellWidget({required String trigger});
+  Widget getUpsellWidget({
+    required String trigger,
+    PaywallEventHandlers? eventHandlers,
+  });
 
   Future<bool> hasAnyActiveSubscription();
 

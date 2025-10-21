@@ -377,7 +377,11 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
   }
 
   @override
-  Widget getUpsellWidget({required String trigger}) {
+  Widget getUpsellWidget({
+    required String trigger,
+    PaywallEventHandlers? eventHandlers,
+  }) {
+    _currentEventHandlers = eventHandlers;
     return UpsellWrapperWidget(
       trigger: trigger,
       fallbackPaywallWidget: _fallbackPaywallWidget ?? Text("No fallback view provided"),
@@ -393,6 +397,9 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
           fallbackCloseEventMethodName,
           {'trigger': trigger, 'viewType': 'embedded'},
         );
+      },
+      cleanUp: () {
+        _currentEventHandlers = null;
       },
     );
   }
@@ -434,6 +441,7 @@ class UpsellWrapperWidget extends StatefulWidget {
   final Future<String?> Function() downloadStatusFetcher;
   final VoidCallback? onFallbackOpened;
   final VoidCallback? onFallbackClosed;
+  final VoidCallback? cleanUp;
 
   const UpsellWrapperWidget({
     super.key,
@@ -442,6 +450,7 @@ class UpsellWrapperWidget extends StatefulWidget {
     required this.downloadStatusFetcher,
     this.onFallbackOpened,
     this.onFallbackClosed,
+    this.cleanUp,
   });
 
   @override
@@ -469,6 +478,7 @@ class _UpsellWrapperWidgetState extends State<UpsellWrapperWidget> {
     if (_fallbackShown) {
       widget.onFallbackClosed?.call();
     }
+    widget.cleanUp?.call();
     super.dispose();
   }
 
