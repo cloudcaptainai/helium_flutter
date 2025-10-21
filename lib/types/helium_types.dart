@@ -75,6 +75,8 @@ class PaywallEventHandlers {
   final void Function(PaywallCloseEvent event)? onClose;
   final void Function(PaywallDismissedEvent event)? onDismissed;
   final void Function(PurchaseSucceededEvent event)? onPurchaseSucceeded;
+  final void Function(PaywallOpenFailedEvent event)? onOpenFailed;
+  final void Function(CustomPaywallActionEvent event)? onCustomPaywallAction;
 
   PaywallEventHandlers({
     this.onOpen,
@@ -137,6 +139,40 @@ class PurchaseSucceededEvent {
     required this.productId,
     required this.triggerName,
     required this.paywallName,
+    required this.isSecondTry,
+  });
+}
+
+class PaywallOpenFailedEvent {
+  final String type = 'paywallOpenFailed';
+  final String triggerName;
+  final String paywallName;
+  final String error;
+  final String? paywallUnavailableReason;
+  final bool isSecondTry;
+
+  PaywallOpenFailedEvent({
+    required this.triggerName,
+    required this.paywallName,
+    required this.error,
+    required this.paywallUnavailableReason,
+    required this.isSecondTry,
+  });
+}
+
+class CustomPaywallActionEvent {
+  final String type = 'customPaywallAction';
+  final String triggerName;
+  final String paywallName;
+  final String actionName;
+  final Map<String, dynamic> params;
+  final bool isSecondTry;
+
+  CustomPaywallActionEvent({
+    required this.triggerName,
+    required this.paywallName,
+    required this.actionName,
+    required this.params,
     required this.isSecondTry,
   });
 }

@@ -228,6 +228,12 @@ public class HeliumFlutterPlugin: NSObject, FlutterPlugin {
                 },
                 onPurchaseSucceeded: { [weak self] event in
                     self?.channel.invokeMethod("onPaywallEventHandler", arguments: event.toDictionary())
+                },
+                onOpenFailed: { [weak self] event in
+                    self?.channel.invokeMethod("onPaywallEventHandler", arguments: event.toDictionary())
+                },
+                onCustomPaywallAction: { [weak self] event in
+                    self?.channel.invokeMethod("onPaywallEventHandler", arguments: event.toDictionary())
                 }
             ),
             customPaywallTraits: convertedTraits
@@ -290,8 +296,19 @@ public class HeliumFlutterPlugin: NSObject, FlutterPlugin {
         return await Helium.shared.hasAnyEntitlement()
     }
 
-    private func getExperimentInfoForTrigger(trigger: String) -> [String: Any?] {
-        return Helium.shared.getExperimentInfoForTrigger(trigger)
+    private func getExperimentInfoForTrigger(trigger: String) -> [String: Any?]? {
+        guard let experimentInfo = Helium.shared.getExperimentInfoForTrigger(trigger) else {
+            return nil
+        }
+
+        // Convert ExperimentInfo to dictionary using JSONEncoder
+        let encoder = JSONEncoder()
+        guard let jsonData = try? encoder.encode(experimentInfo),
+              let dictionary = try? JSONSerialization.jsonObject(with: jsonData, options: []) as? [String: Any] else {
+            return nil
+        }
+
+        return dictionary
     }
 
     private func disableRestoreFailedDialog() {

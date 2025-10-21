@@ -94,7 +94,7 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
         final Map<String, dynamic> eventDict = (args is Map)
             ? Map<String, dynamic>.from(args)
             : {};
-        _handlePaywallEventHandlers(eventDict);
+        _handlePaywallEventHandlers(HeliumPaywallEvent.fromMap(eventDict));
       } else {
         log('[Helium] Unknown method from MethodChannel: ${handler.method}');
       }
@@ -307,13 +307,13 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
     );
   }
 
-  void _handlePaywallEventHandlers(Map<String, dynamic> eventDict) {
+  void _handlePaywallEventHandlers(HeliumPaywallEvent event) {
     if (_currentEventHandlers == null) return;
 
-    final eventType = eventDict['type'] as String?;
-    final triggerName = eventDict['triggerName'] as String? ?? 'unknown';
-    final paywallName = eventDict['paywallName'] as String? ?? 'unknown';
-    final isSecondTry = eventDict['isSecondTry'] as bool? ?? false;
+    final eventType = event.type;
+    final triggerName = event.triggerName ?? 'unknown';
+    final paywallName = event.paywallName ?? 'unknown';
+    final isSecondTry = event.isSecondTry ?? false;
 
     switch (eventType) {
       case 'paywallOpen':
@@ -339,12 +339,30 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
         ));
         break;
       case 'purchaseSucceeded':
-        final productId = eventDict['productId'] as String? ?? 'unknown';
+        final productId = event.productId ?? 'unknown';
         _currentEventHandlers?.onPurchaseSucceeded?.call(PurchaseSucceededEvent(
           productId: productId,
           triggerName: triggerName,
           paywallName: paywallName,
           isSecondTry: isSecondTry,
+        ));
+        break;
+      case 'paywallOpenFailed':
+        _currentEventHandlers?.onOpenFailed?.call(PaywallOpenFailedEvent(
+          triggerName: triggerName,
+          paywallName: paywallName,
+          isSecondTry: isSecondTry,
+          error: event.error ?? '',
+          paywallUnavailableReason: event.paywallUnavailableReason ?? '',
+        ));
+        break;
+      case 'customPaywallAction':
+        _currentEventHandlers?.onCustomPaywallAction?.call(CustomPaywallActionEvent(
+          triggerName: triggerName,
+          paywallName: paywallName,
+          isSecondTry: isSecondTry,
+          actionName: event.customPaywallActionName ?? '',
+          params: event.customPaywallActionParams ?? {},
         ));
         break;
     }
