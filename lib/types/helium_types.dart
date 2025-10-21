@@ -9,6 +9,10 @@ class PaywallInfo {
   });
 }
 
+class ExperimentInfo {
+  // todo
+}
+
 class TriggerLoadingConfig {
   /// Whether to show loading state for this trigger. Set to null to use the global `useLoadingState` setting.
   final bool? useLoadingState;

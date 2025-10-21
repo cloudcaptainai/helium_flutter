@@ -266,6 +266,26 @@ public class HeliumFlutterPlugin: NSObject, FlutterPlugin {
         return await Helium.shared.hasAnyEntitlement()
     }
 
+    private func getExperimentInfoForTrigger(trigger: String) -> [String: Any?] {
+        return Helium.shared.getExperimentInfoForTrigger(trigger)
+    }
+
+    private func disableRestoreFailedDialog() {
+        Helium.restorePurchaseConfig.disableRestoreFailedDialog()
+    }
+
+    private func setCustomRestoreFailedStrings(
+        customTitle: String?,
+        customMessage: String?,
+        customCloseButtonText: String?
+    ) {
+        Helium.restorePurchaseConfig.setCustomRestoreFailedStrings()
+    }
+
+    private func resetHelium() {
+        Helium.resetHelium()
+    }
+
     /// Recursively converts special marker strings back to boolean values to restore
     /// type information that was preserved when passing through platform channels.
     ///

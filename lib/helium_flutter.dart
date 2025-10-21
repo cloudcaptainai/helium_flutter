@@ -89,4 +89,19 @@ class HeliumFlutter {
   Future<bool> hasAnyEntitlement() =>
       HeliumFlutterPlatform.instance.hasAnyEntitlement();
 
+  Future<ExperimentInfo?> getExperimentInfoForTrigger(String trigger) =>
+      HeliumFlutterPlatform.instance.getExperimentInfoForTrigger(trigger);
+
+  void disableRestoreFailedDialog() =>
+      HeliumFlutterPlatform.instance.disableRestoreFailedDialog();
+
+  void setCustomRestoreFailedStrings({
+    String? customTitle,
+    String? customMessage,
+    String? customCloseButtonText,
+  }) =>
+      HeliumFlutterPlatform.instance.disableRestoreFailedDialog();
+
+  void resetHelium() => HeliumFlutterPlatform.instance.resetHelium();
+
 }
