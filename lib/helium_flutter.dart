@@ -84,7 +84,7 @@ class HeliumFlutter {
     required String trigger,
     PaywallEventHandlers? eventHandlers,
   }) =>
-      HeliumFlutterPlatform.instance.getUpsellWidget(trigger: trigger);
+      HeliumFlutterPlatform.instance.getUpsellWidget(trigger: trigger, eventHandlers: eventHandlers);
 
   /// Checks if the user has any active subscription (including non-renewable)
   Future<bool> hasAnyActiveSubscription() =>

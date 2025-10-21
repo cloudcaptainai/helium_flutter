@@ -208,6 +208,7 @@ class HeliumPaywallEvent {
   HeliumPaywallEvent.fromMap(Map<String, dynamic> map) : _data = map;
 
   // Type-safe getters
+  Map<String, dynamic> get rawData => _data;
   String get type => _data['type'] ?? '';
   String? get triggerName => _data['triggerName'];
   String? get paywallName => _data['paywallName'];

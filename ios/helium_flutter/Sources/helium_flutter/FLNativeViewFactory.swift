@@ -78,7 +78,7 @@ class FLNativeView: NSObject, FlutterPlatformView {
         )
         guard let swiftUIView else {
             // this should never happen because we check canPresentUpsell before creating this view
-            return Text("")
+            return UITextField()
         }
         let hostingController = UIHostingController(rootView: swiftUIView)
         hostingController.view.backgroundColor = .clear
