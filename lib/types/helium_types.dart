@@ -207,6 +207,31 @@ class HeliumPaywallEvent {
 
   HeliumPaywallEvent.fromMap(Map<String, dynamic> map) : _data = map;
 
+  Map<String, dynamic>? getSafeData(dynamic paramsData) {
+    if (paramsData == null) {
+      return null;
+    }
+    if (paramsData is Map<String, dynamic>) {
+      return paramsData;
+    }
+    if (paramsData is Map) {
+      try {
+        // Use collection's DelegatingMap for deep casting
+        return paramsData.cast<String, dynamic>();
+      } catch (e) {
+        // If cast fails (note - only one level deep)
+        final result = <String, dynamic>{};
+        paramsData.forEach((key, value) {
+          if (key is String) {
+            result[key] = value;
+          }
+        });
+        return result;
+      }
+    }
+    return null;
+  }
+
   // Type-safe getters
   Map<String, dynamic> get rawData => _data;
   String get type => _data['type'] ?? '';
@@ -225,7 +250,7 @@ class HeliumPaywallEvent {
   String? get error => _data['error'];
   String? get paywallUnavailableReason => _data['paywallUnavailableReason'];
   String? get customPaywallActionName => _data['actionName'];
-  Map<String, dynamic>? get customPaywallActionParams => _data['params'];
+  Map<String, dynamic>? get customPaywallActionParams => getSafeData(_data['params']);
   /// Unix timestamp in seconds
   int? get timestamp => _data['timestamp'];
 

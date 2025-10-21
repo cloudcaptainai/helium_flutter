@@ -384,9 +384,12 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
         break;
       case 'paywallOpenFailed':
         _currentEventHandlers = null;
-        final errorReason = heliumPaywallEvent.error;
-        if (trigger != null && errorReason != "A paywall is already being presented.") {
-          // Dispatch on next frame since fallback can trigger new event/s
+        final unavailableReason = heliumPaywallEvent.paywallUnavailableReason;
+        if (trigger != null
+            && unavailableReason != "alreadyPresented"
+            && unavailableReason != "secondTryNoMatch"
+        ) {
+          // Dispatch on next frame to let event handling finish processing
           WidgetsBinding.instance.addPostFrameCallback((_) {
             _showFallbackSheet(trigger);
           });

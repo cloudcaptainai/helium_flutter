@@ -286,7 +286,7 @@ public class HeliumFlutterPlugin: NSObject, FlutterPlugin {
         ]
     }
 
-    private func canPresentUpsell(trigger: String) -> [String: Any] {
+    private func canPresentUpsell(trigger: String) -> [String: Any?] {
         let result = Helium.shared.canShowPaywallFor(trigger: trigger)
         return [
             "canShow": result.canShow,
