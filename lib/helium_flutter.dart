@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:helium_flutter/core/helium_callbacks.dart';
 import 'package:helium_flutter/core/helium_flutter_platform.dart';
+import 'package:helium_flutter/types/experiment_info.dart';
 import 'package:helium_flutter/types/helium_types.dart';
 export './core/helium_callbacks.dart';
+export './types/experiment_info.dart';
 export './types/helium_transaction_status.dart';
 export './types/helium_types.dart';
 
@@ -78,8 +80,11 @@ class HeliumFlutter {
   Future<bool> handleDeepLink(String uri) =>
       HeliumFlutterPlatform.instance.handleDeepLink(uri);
 
-  Widget getUpsellWidget({required String trigger}) =>
-      HeliumFlutterPlatform.instance.getUpsellWidget(trigger: trigger);
+  Widget getUpsellWidget({
+    required String trigger,
+    PaywallEventHandlers? eventHandlers,
+  }) =>
+      HeliumFlutterPlatform.instance.getUpsellWidget(trigger: trigger, eventHandlers: eventHandlers);
 
   /// Checks if the user has any active subscription (including non-renewable)
   Future<bool> hasAnyActiveSubscription() =>
@@ -88,5 +93,33 @@ class HeliumFlutter {
   /// Checks if the user has any entitlement
   Future<bool> hasAnyEntitlement() =>
       HeliumFlutterPlatform.instance.hasAnyEntitlement();
+
+  /// Get experiment allocation info for a specific trigger
+  ///
+  /// - Parameter trigger: The trigger name to get experiment info for
+  /// - Returns: ExperimentInfo if the trigger has experiment data, nil otherwise
+  Future<ExperimentInfo?> getExperimentInfoForTrigger(String trigger) =>
+      HeliumFlutterPlatform.instance.getExperimentInfoForTrigger(trigger);
+
+  /// Disable the default dialog that Helium will display if a "Restore Purchases" action is not successful.
+  /// You can handle this yourself if desired by listening for the PurchaseRestoreFailedEvent.
+  void disableRestoreFailedDialog() =>
+      HeliumFlutterPlatform.instance.disableRestoreFailedDialog();
+
+  /// Set custom strings to show in the dialog that Helium will display if a "Restore Purchases" action is not successful.
+  /// Note that these strings will not be localized by Helium for you.
+  void setCustomRestoreFailedStrings({
+    String? customTitle,
+    String? customMessage,
+    String? customCloseButtonText,
+  }) =>
+      HeliumFlutterPlatform.instance.setCustomRestoreFailedStrings(
+        customTitle: customTitle,
+        customMessage: customMessage,
+        customCloseButtonText: customCloseButtonText,
+      );
+
+  /// Reset Helium entirely so you can call initialize again. Only for advanced use cases.
+  void resetHelium() => HeliumFlutterPlatform.instance.resetHelium();
 
 }

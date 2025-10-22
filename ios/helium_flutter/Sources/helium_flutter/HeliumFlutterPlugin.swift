@@ -4,6 +4,10 @@ import Helium
 import SwiftUI
 import Foundation
 
+// Notification name for paywall events
+extension NSNotification.Name {
+    static let paywallEventHandlerDispatch = NSNotification.Name("paywallEventHandlerDispatch")
+}
 
 enum PurchaseError: LocalizedError {
     case unknownStatus(status: String)
@@ -28,7 +32,16 @@ public class HeliumFlutterPlugin: NSObject, FlutterPlugin {
         instance.channel = FlutterMethodChannel(name: "helium_flutter", binaryMessenger: registrar.messenger())
         instance.registrar = registrar
         registrar.addMethodCallDelegate(instance, channel: instance.channel)
-        let factory = FLNativeViewFactory(messenger: registrar.messenger())
+
+        // Set up NotificationCenter observer for paywall events
+        NotificationCenter.default.addObserver(
+            instance,
+            selector: #selector(instance.handlePaywallEventNotification(_:)),
+            name: .paywallEventHandlerDispatch,
+            object: nil
+        )
+
+        let factory = FLNativeViewFactory()
         registrar.register(factory, withId: "upsellViewForTrigger")
     }
 
@@ -92,7 +105,8 @@ public class HeliumFlutterPlugin: NSObject, FlutterPlugin {
             if let args = call.arguments as? [String: Any] {
                 let trigger = args["trigger"] as? String
                 let viewType = args["viewType"] as? String
-                fallbackOpenOrCloseEvent(trigger: trigger, isOpen: true, viewType: viewType)
+                let paywallUnavailableReason = args["paywallUnavailableReason"] as? String
+                fallbackOpenOrCloseEvent(trigger: trigger, isOpen: true, viewType: viewType, paywallUnavailableReason: paywallUnavailableReason)
                 result("fallback open event!")
             } else {
                 result("fallback open event fail")
@@ -101,7 +115,8 @@ public class HeliumFlutterPlugin: NSObject, FlutterPlugin {
             if let args = call.arguments as? [String: Any] {
                 let trigger = args["trigger"] as? String
                 let viewType = args["viewType"] as? String
-                fallbackOpenOrCloseEvent(trigger: trigger, isOpen: false, viewType: viewType)
+                let paywallUnavailableReason = args["paywallUnavailableReason"] as? String
+                fallbackOpenOrCloseEvent(trigger: trigger, isOpen: false, viewType: viewType, paywallUnavailableReason: paywallUnavailableReason)
                 result("fallback close event!")
             } else {
                 result("fallback close event fail")
@@ -110,6 +125,9 @@ public class HeliumFlutterPlugin: NSObject, FlutterPlugin {
             let trigger = call.arguments as? String ?? ""
             let paywallInfo = getPaywallInfo(trigger: trigger)
             result(paywallInfo)
+        case "canPresentUpsell":
+            let trigger = call.arguments as? String ?? ""
+            result(canPresentUpsell(trigger: trigger))
         case "handleDeepLink":
             let urlString = call.arguments as? String ?? ""
             result(handleDeepLink(urlString))
@@ -123,6 +141,30 @@ public class HeliumFlutterPlugin: NSObject, FlutterPlugin {
                 let hasEntitlement = await hasAnyEntitlement()
                 result(hasEntitlement)
             }
+        case "getExperimentInfoForTrigger":
+            let trigger = call.arguments as? String ?? ""
+            let experimentInfo = getExperimentInfoForTrigger(trigger: trigger)
+            result(experimentInfo)
+        case "disableRestoreFailedDialog":
+            disableRestoreFailedDialog()
+            result("Restore failed dialog disabled!")
+        case "setCustomRestoreFailedStrings":
+            if let args = call.arguments as? [String: Any] {
+                let customTitle = args["customTitle"] as? String
+                let customMessage = args["customMessage"] as? String
+                let customCloseButtonText = args["customCloseButtonText"] as? String
+                setCustomRestoreFailedStrings(
+                    customTitle: customTitle,
+                    customMessage: customMessage,
+                    customCloseButtonText: customCloseButtonText
+                )
+                result("Custom restore failed strings set!")
+            } else {
+                result(FlutterError(code: "BAD_ARGS", message: "Arguments not passed correctly", details: nil))
+            }
+        case "resetHelium":
+            resetHelium()
+            result("Helium reset!")
         default:
             result(FlutterMethodNotImplemented)
         }
@@ -204,6 +246,12 @@ public class HeliumFlutterPlugin: NSObject, FlutterPlugin {
                 },
                 onPurchaseSucceeded: { [weak self] event in
                     self?.channel.invokeMethod("onPaywallEventHandler", arguments: event.toDictionary())
+                },
+                onOpenFailed: { [weak self] event in
+                    self?.channel.invokeMethod("onPaywallEventHandler", arguments: event.toDictionary())
+                },
+                onCustomPaywallAction: { [weak self] event in
+                    self?.channel.invokeMethod("onPaywallEventHandler", arguments: event.toDictionary())
                 }
             ),
             customPaywallTraits: convertedTraits
@@ -230,8 +278,9 @@ public class HeliumFlutterPlugin: NSObject, FlutterPlugin {
         Helium.shared.overrideUserId(newUserId: newUserId, traits: traits)
     }
 
-    private func fallbackOpenOrCloseEvent(trigger: String?, isOpen: Bool, viewType: String?) {
-        HeliumPaywallDelegateWrapper.shared.onFallbackOpenCloseEvent(trigger: trigger, isOpen: isOpen, viewType: viewType)
+    private func fallbackOpenOrCloseEvent(trigger: String?, isOpen: Bool, viewType: String?, paywallUnavailableReason: String?) {
+        let fallbackReason = paywallUnavailableReason != nil ? PaywallUnavailableReason(rawValue: paywallUnavailableReason!) : nil
+        HeliumPaywallDelegateWrapper.shared.onFallbackOpenCloseEvent(trigger: trigger, isOpen: isOpen, viewType: viewType, fallbackReason: fallbackReason)
     }
 
     private func getPaywallInfo(trigger: String) -> [String: Any?] {
@@ -250,6 +299,15 @@ public class HeliumFlutterPlugin: NSObject, FlutterPlugin {
         ]
     }
 
+    private func canPresentUpsell(trigger: String) -> [String: Any?] {
+        let result = Helium.shared.canShowPaywallFor(trigger: trigger)
+        return [
+            "canShow": result.canShow,
+            "isFallback": result.isFallback,
+            "paywallUnavailableReason": result.paywallUnavailableReason?.rawValue
+        ]
+    }
+
     private func handleDeepLink(_ urlString: String) -> Bool {
         guard let url = URL(string: urlString) else {
             return false
@@ -264,6 +322,49 @@ public class HeliumFlutterPlugin: NSObject, FlutterPlugin {
 
     private func hasAnyEntitlement() async -> Bool {
         return await Helium.shared.hasAnyEntitlement()
+    }
+
+    private func getExperimentInfoForTrigger(trigger: String) -> [String: Any?]? {
+        guard let experimentInfo = Helium.shared.getExperimentInfoForTrigger(trigger) else {
+            return nil
+        }
+
+        // Convert ExperimentInfo to dictionary using JSONEncoder
+        let encoder = JSONEncoder()
+        guard let jsonData = try? encoder.encode(experimentInfo),
+              let dictionary = try? JSONSerialization.jsonObject(with: jsonData, options: []) as? [String: Any] else {
+            return nil
+        }
+
+        return dictionary
+    }
+
+    private func disableRestoreFailedDialog() {
+        Helium.restorePurchaseConfig.disableRestoreFailedDialog()
+    }
+
+    private func setCustomRestoreFailedStrings(
+        customTitle: String?,
+        customMessage: String?,
+        customCloseButtonText: String?
+    ) {
+        Helium.restorePurchaseConfig.setCustomRestoreFailedStrings(
+            customTitle: customTitle,
+            customMessage: customMessage,
+            customCloseButtonText: customCloseButtonText
+        )
+    }
+
+    private func resetHelium() {
+        Helium.resetHelium()
+    }
+
+    /// Handler for paywall event notifications posted via NotificationCenter
+    @objc private func handlePaywallEventNotification(_ notification: Notification) {
+        guard let eventDict = notification.userInfo?["event"] as? [String: Any] else {
+            return
+        }
+        channel.invokeMethod("onPaywallEventHandler", arguments: eventDict)
     }
 
     /// Recursively converts special marker strings back to boolean values to restore
