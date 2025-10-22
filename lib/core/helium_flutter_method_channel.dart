@@ -208,6 +208,14 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
     } on PlatformException catch (e) {
       log('[Helium] Unexpected present upsell error: ${e.message}');
       _currentEventHandlers = null;
+      await methodChannel.invokeMethod<String?>(
+        fallbackOpenEventMethodName,
+        {
+          'trigger': trigger,
+          'viewType': 'presented',
+          'paywallUnavailableReason': 'bridgingError',
+        },
+      );
       _showFallbackSheet(trigger);
       return "Failed to present upsell: '${e.message}'.";
     }
