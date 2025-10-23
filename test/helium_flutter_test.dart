@@ -74,7 +74,10 @@ class MockHeliumFlutterPlatform
   }
 
   @override
-  Widget getUpsellWidget({required String trigger}) {
+  Widget getUpsellWidget({
+    required String trigger,
+    PaywallEventHandlers? eventHandlers,
+  }) {
     return Text("upsell widget");
   }
 
@@ -87,6 +90,24 @@ class MockHeliumFlutterPlatform
   Future<bool> hasAnyEntitlement() {
     return Future.value(true);
   }
+
+  @override
+  Future<ExperimentInfo?> getExperimentInfoForTrigger(String trigger) {
+    return Future.value(null);
+  }
+
+  @override
+  void disableRestoreFailedDialog() {}
+
+  @override
+  void setCustomRestoreFailedStrings({
+    String? customTitle,
+    String? customMessage,
+    String? customCloseButtonText,
+  }) {}
+
+  @override
+  void resetHelium() {}
 
 }
 

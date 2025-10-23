@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:helium_flutter/core/helium_callbacks.dart';
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 
+import '../types/experiment_info.dart';
 import '../types/helium_types.dart';
 import 'helium_flutter_method_channel.dart';
 
@@ -70,10 +71,24 @@ abstract class HeliumFlutterPlatform extends PlatformInterface {
 
   Future<bool> handleDeepLink(String uri);
 
-  Widget getUpsellWidget({required String trigger});
+  Widget getUpsellWidget({
+    required String trigger,
+    PaywallEventHandlers? eventHandlers,
+  });
 
   Future<bool> hasAnyActiveSubscription();
 
   Future<bool> hasAnyEntitlement();
 
+  Future<ExperimentInfo?> getExperimentInfoForTrigger(String trigger);
+
+  void disableRestoreFailedDialog();
+
+  void setCustomRestoreFailedStrings({
+    String? customTitle,
+    String? customMessage,
+    String? customCloseButtonText,
+  });
+
+  void resetHelium();
 }

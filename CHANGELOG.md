@@ -1,3 +1,6 @@
+## 3.0.12
+- Updated helium-swift dependency to 3.0.12
+
 ## 3.0.9
 - Ensure fallback not triggered if presenting a paywall while another already presented
 
