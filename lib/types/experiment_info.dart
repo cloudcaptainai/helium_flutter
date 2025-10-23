@@ -55,13 +55,7 @@ class ExperimentInfo {
   String? get experimentType => _data['experimentType'];
 
   /// Additional experiment metadata
-  Map<String, dynamic>? get experimentMetadata {
-    final metadata = _data['experimentMetadata'];
-    if (metadata is Map) {
-      return Map<String, dynamic>.from(metadata);
-    }
-    return null;
-  }
+  dynamic get experimentMetadata => _data['experimentMetadata'];
 
   /// When the experiment started (ISO8601 string)
   String? get startDate => _data['startDate'];
