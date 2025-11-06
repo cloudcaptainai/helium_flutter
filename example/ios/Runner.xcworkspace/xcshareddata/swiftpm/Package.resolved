@@ -1,13 +1,12 @@
 {
-  "originHash" : "50a943b2ae9b6546a29e99b2ebde483b58c11792923058962b2ffcf5d911bdf1",
   "pins" : [
     {
       "identity" : "helium-swift",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/cloudcaptainai/helium-swift.git",
       "state" : {
-        "revision" : "24c2b4c02a84be12f803a20cbdd43b583724f458",
-        "version" : "3.0.12"
+        "revision" : "7da734719b0ac57c56c683de8285c0d75a6494fa",
+        "version" : "3.0.15"
       }
     },
     {
@@ -15,10 +14,10 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/RevenueCat/purchases-ios-spm",
       "state" : {
-        "revision" : "a315ca87fcec9fa6290c538e88e2f0a62f796458",
-        "version" : "5.40.0"
+        "revision" : "1821dc954cbd3fdc27a28f3356eb1a3d77642f04",
+        "version" : "5.44.1"
       }
     }
   ],
-  "version" : 3
+  "version" : 2
 }
