@@ -50,6 +50,7 @@ abstract class HeliumFlutterPlatform extends PlatformInterface {
     required String trigger,
     PaywallEventHandlers? eventHandlers,
     Map<String, dynamic>? customPaywallTraits,
+    bool? dontShowIfAlreadyEntitled,
   });
 
   ///Hides view

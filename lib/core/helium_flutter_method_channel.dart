@@ -136,7 +136,7 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
   }) async {
     final result = await methodChannel.invokeMethod<String?>(
       overrideUserIdMethodName,
-      {'newUserId': newUserId, 'traits': traits},
+      {'newUserId': newUserId, 'traits': _convertBooleansToMarkers(traits)},
     );
     return result;
   }
@@ -190,6 +190,7 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
     required String trigger,
     PaywallEventHandlers? eventHandlers,
     Map<String, dynamic>? customPaywallTraits,
+    bool? dontShowIfAlreadyEntitled,
   }) async {
     _fallbackContext = context;
 
@@ -202,6 +203,7 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
         {
           'trigger': trigger,
           'customPaywallTraits': _convertBooleansToMarkers(customPaywallTraits),
+          'dontShowIfAlreadyEntitled': dontShowIfAlreadyEntitled,
         },
       );
       return result;

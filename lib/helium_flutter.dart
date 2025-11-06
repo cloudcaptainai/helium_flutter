@@ -66,12 +66,14 @@ class HeliumFlutter {
     required String trigger,
     PaywallEventHandlers? eventHandlers,
     Map<String, dynamic>? customPaywallTraits,
+    bool? dontShowIfAlreadyEntitled,
   }) =>
       HeliumFlutterPlatform.instance.presentUpsell(
         context: context,
         trigger: trigger,
         eventHandlers: eventHandlers,
         customPaywallTraits: customPaywallTraits,
+        dontShowIfAlreadyEntitled: dontShowIfAlreadyEntitled,
       );
 
   Future<PaywallInfo?> getPaywallInfo(String trigger) =>

@@ -80,7 +80,8 @@ public class HeliumFlutterPlugin: NSObject, FlutterPlugin {
             if let args = call.arguments as? [String: Any] {
                 let trigger = args["trigger"] as? String ?? ""
                 let customPaywallTraits = args["customPaywallTraits"] as? [String: Any]
-                presentUpsell(trigger: trigger, customPaywallTraits: customPaywallTraits)
+                let dontShowIfAlreadyEntitled = args["dontShowIfAlreadyEntitled"] as? Bool
+                presentUpsell(trigger: trigger, customPaywallTraits: customPaywallTraits, dontShowIfAlreadyEntitled: dontShowIfAlreadyEntitled)
                 result("Upsell presented!")
             } else {
                 result("Upsell not presented - invalid arguments")
@@ -94,8 +95,8 @@ public class HeliumFlutterPlugin: NSObject, FlutterPlugin {
         case "overrideUserId":
             if let args = call.arguments as? [String: Any] {
                 let newUserId = args["newUserId"] as? String ?? ""
-                let userTraitsMap = args["traits"] as? [String: Any] ?? [:]
-                let traits = HeliumUserTraits(userTraitsMap)
+                let userTraitsMap = convertMarkersToBooleans(args["traits"] as? [String: Any])
+                let traits = userTraitsMap != nil ? HeliumUserTraits(userTraitsMap!) : nil
                 overrideUserId(newUserId: newUserId, traits: traits)
                 result("User id is updated!")
             } else {
@@ -230,7 +231,7 @@ public class HeliumFlutterPlugin: NSObject, FlutterPlugin {
         }
     }
 
-    public func presentUpsell(trigger: String, customPaywallTraits: [String: Any]? = nil) {
+    public func presentUpsell(trigger: String, customPaywallTraits: [String: Any]? = nil, dontShowIfAlreadyEntitled: Bool? = nil) {
         let convertedTraits = convertMarkersToBooleans(customPaywallTraits)
         Helium.shared.presentUpsell(
             trigger: trigger,
@@ -254,7 +255,8 @@ public class HeliumFlutterPlugin: NSObject, FlutterPlugin {
                     self?.channel.invokeMethod("onPaywallEventHandler", arguments: event.toDictionary())
                 }
             ),
-            customPaywallTraits: convertedTraits
+            customPaywallTraits: convertedTraits,
+            dontShowIfAlreadyEntitled: dontShowIfAlreadyEntitled ?? false
         )
     }
 
