@@ -81,6 +81,8 @@ abstract class HeliumFlutterPlatform extends PlatformInterface {
 
   Future<bool> hasAnyEntitlement();
 
+  Future<bool?> hasEntitlementForPaywall(String trigger);
+
   Future<ExperimentInfo?> getExperimentInfoForTrigger(String trigger);
 
   void disableRestoreFailedDialog();
@@ -92,4 +94,6 @@ abstract class HeliumFlutterPlatform extends PlatformInterface {
   });
 
   void resetHelium();
+
+  void setLightDarkModeOverride(HeliumLightDarkMode mode);
 }

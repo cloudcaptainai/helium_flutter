@@ -277,6 +277,15 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
   }
 
   @override
+  Future<bool?> hasEntitlementForPaywall(String trigger) async {
+    final result = await methodChannel.invokeMethod<bool?>(
+      hasEntitlementForPaywallMethodName,
+      trigger,
+    );
+    return result;
+  }
+
+  @override
   Future<ExperimentInfo?> getExperimentInfoForTrigger(String trigger) async {
     final result = await methodChannel.invokeMethod<Map<dynamic, dynamic>>(
       getExperimentInfoForTriggerMethodName,
@@ -315,6 +324,14 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
   void resetHelium() {
     methodChannel.invokeMethod<void>(
       resetHeliumMethodName,
+    );
+  }
+
+  @override
+  void setLightDarkModeOverride(HeliumLightDarkMode mode) {
+    methodChannel.invokeMethod<void>(
+      setLightDarkModeOverrideMethodName,
+      mode.name,
     );
   }
 

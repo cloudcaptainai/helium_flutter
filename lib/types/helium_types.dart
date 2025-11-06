@@ -1,3 +1,12 @@
+/// Light/dark mode override for Helium paywalls
+enum HeliumLightDarkMode {
+  /// Force light mode
+  light,
+  /// Force dark mode
+  dark,
+  /// Use system setting (default)
+  system,
+}
 
 class PaywallInfo {
   final String paywallTemplateName;

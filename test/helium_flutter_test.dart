@@ -56,7 +56,13 @@ class MockHeliumFlutterPlatform
   }
 
   @override
-  Future<String?> presentUpsell({required BuildContext context, required String trigger, PaywallEventHandlers? eventHandlers, Map<String, dynamic>? customPaywallTraits}) {
+  Future<String?> presentUpsell({
+    required BuildContext context,
+    required String trigger,
+    PaywallEventHandlers? eventHandlers,
+    Map<String, dynamic>? customPaywallTraits,
+    bool? dontShowIfAlreadyEntitled,
+  }) {
     return Future.value('Upsell presented!');
   }
 
@@ -92,6 +98,11 @@ class MockHeliumFlutterPlatform
   }
 
   @override
+  Future<bool?> hasEntitlementForPaywall(String trigger) {
+    return Future.value(false);
+  }
+
+  @override
   Future<ExperimentInfo?> getExperimentInfoForTrigger(String trigger) {
     return Future.value(null);
   }
@@ -108,6 +119,9 @@ class MockHeliumFlutterPlatform
 
   @override
   void resetHelium() {}
+
+  @override
+  void setLightDarkModeOverride(HeliumLightDarkMode mode) {}
 
 }
 
@@ -194,5 +208,14 @@ void main() {
   });
   test(hasAnyEntitlementMethodName, () async {
     expect(await heliumFlutterPlugin.hasAnyEntitlement(), true);
+  });
+  test(hasEntitlementForPaywallMethodName, () async {
+    expect(await heliumFlutterPlugin.hasEntitlementForPaywall('onboarding'), false);
+  });
+  test(setLightDarkModeOverrideMethodName, () {
+    // Test that it doesn't throw
+    heliumFlutterPlugin.setLightDarkModeOverride(HeliumLightDarkMode.light);
+    heliumFlutterPlugin.setLightDarkModeOverride(HeliumLightDarkMode.dark);
+    heliumFlutterPlugin.setLightDarkModeOverride(HeliumLightDarkMode.system);
   });
 }
