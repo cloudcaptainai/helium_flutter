@@ -13,6 +13,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlinx.coroutines.flow.StateFlow
 import kotlin.coroutines.resume
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
@@ -117,12 +118,13 @@ class HeliumFlutterPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
         }
       }
       "getDownloadStatus" -> {
-        val status = Helium.shared.downloadStatus.value
+        val status = (Helium.shared.downloadStatus as? StateFlow<HeliumConfigStatus>)?.value
         val statusString = when (status) {
           is HeliumConfigStatus.NotYetDownloaded -> "NotYetDownloaded"
           is HeliumConfigStatus.Downloading -> "Downloading"
           is HeliumConfigStatus.DownloadFailure -> "DownloadFailure"
           is HeliumConfigStatus.DownloadSuccess -> "DownloadSuccess"
+          else -> "NotYetDownloaded"
         }
         result.success(statusString)
       }
@@ -158,7 +160,8 @@ class HeliumFlutterPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
         result.success(userId)
       }
       "paywallsLoaded" -> {
-        val isLoaded = Helium.shared.downloadStatus.value is HeliumConfigStatus.DownloadSuccess
+        val status = (Helium.shared.downloadStatus as? StateFlow<HeliumConfigStatus>)?.value
+        val isLoaded = status is HeliumConfigStatus.DownloadSuccess
         result.success(isLoaded)
       }
       "overrideUserId" -> {
@@ -189,7 +192,7 @@ class HeliumFlutterPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
       }
       "getPaywallInfo" -> {
         val trigger = call.arguments as? String ?: ""
-        val paywallInfo = Helium.getPaywallInfo(trigger)
+        val paywallInfo = Helium.shared.getPaywallInfo(trigger)
 
         if (paywallInfo == null) {
           result.success(mapOf(
@@ -210,7 +213,7 @@ class HeliumFlutterPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
       }
       "handleDeepLink" -> {
         val urlString = call.arguments as? String
-        val handled = Helium.handleDeepLink(uri = urlString)
+        val handled = Helium.shared.handleDeepLink(uri = urlString)
         result.success(handled)
       }
       "hasAnyActiveSubscription" -> {
@@ -224,7 +227,7 @@ class HeliumFlutterPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
       }
       "getExperimentInfoForTrigger" -> {
         val trigger = call.arguments as? String ?: ""
-        val experimentInfo = Helium.getExperimentInfoForTrigger(trigger)
+        val experimentInfo = Helium.shared.getExperimentInfoForTrigger(trigger)
 
         if (experimentInfo == null) {
           result.success(null)
@@ -408,38 +411,52 @@ class CustomPaywallDelegate(
 
       methodChannel.invokeMethod(
         "makePurchase",
-        chainedProductId
-      ) { result ->
-        val status: HeliumPaywallTransactionStatus = when {
-          result is Map<*, *> -> {
-            val statusString = result["status"] as? String
-            val lowercasedStatus = statusString?.lowercase()
+        chainedProductId,
+        object : MethodChannel.Result {
+          override fun success(result: Any?) {
+            val status: HeliumPaywallTransactionStatus = when {
+              result is Map<*, *> -> {
+                val statusString = result["status"] as? String
+                val lowercasedStatus = statusString?.lowercase()
 
-            when (lowercasedStatus) {
-              "purchased" -> HeliumPaywallTransactionStatus.Purchased
-              "cancelled" -> HeliumPaywallTransactionStatus.Cancelled
-              "restored" -> HeliumPaywallTransactionStatus.Restored
-              "pending" -> HeliumPaywallTransactionStatus.Pending
-              "failed" -> {
-                val errorMsg = result["error"] as? String ?: "Unknown purchase error"
-                HeliumPaywallTransactionStatus.Failed(Exception(errorMsg))
+                when (lowercasedStatus) {
+                  "purchased" -> HeliumPaywallTransactionStatus.Purchased
+                  "cancelled" -> HeliumPaywallTransactionStatus.Cancelled
+                  "pending" -> HeliumPaywallTransactionStatus.Pending
+                  "failed" -> {
+                    val errorMsg = result["error"] as? String ?: "Unknown purchase error"
+                    HeliumPaywallTransactionStatus.Failed(Exception(errorMsg))
+                  }
+                  else -> {
+                    HeliumPaywallTransactionStatus.Failed(
+                      Exception("Unknown status: $lowercasedStatus")
+                    )
+                  }
+                }
               }
               else -> {
                 HeliumPaywallTransactionStatus.Failed(
-                  Exception("Unknown status: $lowercasedStatus")
+                  Exception("Invalid response format")
                 )
               }
             }
+
+            continuation.resume(status)
           }
-          else -> {
-            HeliumPaywallTransactionStatus.Failed(
-              Exception("Invalid response format")
+
+          override fun error(errorCode: String, errorMessage: String?, errorDetails: Any?) {
+            continuation.resume(
+              HeliumPaywallTransactionStatus.Failed(Exception(errorMessage ?: errorCode))
+            )
+          }
+
+          override fun notImplemented() {
+            continuation.resume(
+              HeliumPaywallTransactionStatus.Failed(Exception("Method not implemented"))
             )
           }
         }
-
-        continuation.resume(status)
-      }
+      )
     }
   }
 
@@ -447,11 +464,22 @@ class CustomPaywallDelegate(
     return suspendCancellableCoroutine { continuation ->
       methodChannel.invokeMethod(
         "restorePurchases",
-        null
-      ) { result ->
-        val success = (result as? Boolean) ?: false
-        continuation.resume(success)
-      }
+        null,
+        object : MethodChannel.Result {
+          override fun success(result: Any?) {
+            val success = (result as? Boolean) ?: false
+            continuation.resume(success)
+          }
+
+          override fun error(errorCode: String, errorMessage: String?, errorDetails: Any?) {
+            continuation.resume(false)
+          }
+
+          override fun notImplemented() {
+            continuation.resume(false)
+          }
+        }
+      )
     }
   }
 }
