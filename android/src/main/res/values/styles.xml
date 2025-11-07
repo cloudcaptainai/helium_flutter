@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Custom theme for Helium Paywall Activity with edge-to-edge display -->
+    <style name="HeliumPaywallTheme" parent="@android:style/Theme.Light.NoTitleBar">
+        <!-- Draw behind system bars (API 21+) -->
+        <item name="android:windowDrawsSystemBarBackgrounds">true</item>
+        <!-- Fully transparent status bar (API 21+) -->
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <!-- Keep navigation bar opaque -->
+        <item name="android:windowTranslucentNavigation">false</item>
+        <!-- Support display cutouts on devices with notches (API 28+) -->
+        <item name="android:windowLayoutInDisplayCutoutMode">shortEdges</item>
+    </style>
+</resources>

@@ -4,9 +4,10 @@
 
     <application>
         <!-- Ensure no title bar... maybe move this to Android sdk? -->
+        <!-- And use an edge-to-edge theme -->
         <activity
             android:name="com.tryhelium.paywall.ui.HeliumPaywallActivity"
-            android:theme="@android:style/Theme.Light.NoTitleBar"
+            android:theme="@style/HeliumPaywallTheme"
             tools:replace="android:theme" />
     </application>
 </manifest>
