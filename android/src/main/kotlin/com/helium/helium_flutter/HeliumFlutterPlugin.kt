@@ -1,20 +1,38 @@
 package com.helium.helium_flutter
 
+import android.app.Activity
+import android.content.Context
 import io.flutter.embedding.engine.plugins.FlutterPlugin
+import io.flutter.embedding.engine.plugins.activity.ActivityAware
+import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler
 import io.flutter.plugin.common.MethodChannel.Result
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import com.tryhelium.paywall.core.Helium
+import com.tryhelium.paywall.core.HeliumEnvironment
+import com.tryhelium.paywall.core.HeliumFallbackConfig
+import com.tryhelium.paywall.core.HeliumUserTraits
+import com.tryhelium.paywall.core.HeliumUserTraitsArgument
+import com.tryhelium.paywall.delegate.PlayStorePaywallDelegate
 
 /** HeliumFlutterPlugin */
-class HeliumFlutterPlugin: FlutterPlugin, MethodCallHandler {
+class HeliumFlutterPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
   /// The MethodChannel that will the communication between Flutter and native Android
   ///
   /// This local reference serves to register the plugin with the Flutter Engine and unregister it
   /// when the Flutter Engine is detached from the Activity
   private lateinit var channel : MethodChannel
+  private var activity: Activity? = null
+  private var context: Context? = null
+  private var flutterPluginBinding: FlutterPlugin.FlutterPluginBinding? = null
 
   override fun onAttachedToEngine(flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
+    this.flutterPluginBinding = flutterPluginBinding
+    this.context = flutterPluginBinding.applicationContext
     channel = MethodChannel(flutterPluginBinding.binaryMessenger, "helium_flutter")
     channel.setMethodCallHandler(this)
   }
@@ -25,7 +43,65 @@ class HeliumFlutterPlugin: FlutterPlugin, MethodCallHandler {
         result.success("Android ${android.os.Build.VERSION.RELEASE}")
       }
       "initialize" -> {
-        result.notImplemented()
+        val args = call.arguments as? Map<*, *>
+        if (args == null) {
+          result.error("BAD_ARGS", "Arguments not passed correctly", null)
+          return
+        }
+
+        val apiKey = args["apiKey"] as? String ?: ""
+        val customApiEndpoint = args["customAPIEndpoint"] as? String
+        val customUserId = args["customUserId"] as? String
+        val useDefaultDelegate = args["useDefaultDelegate"] as? Boolean ?: false
+
+        @Suppress("UNCHECKED_CAST")
+        val customUserTraitsMap = args["customUserTraits"] as? Map<String, Any?>
+        val customUserTraits = convertToHeliumUserTraits(customUserTraitsMap)
+
+        @Suppress("UNCHECKED_CAST")
+        val paywallLoadingConfigMap = args["paywallLoadingConfig"] as? Map<String, Any?>
+        val fallbackConfig = convertToHeliumFallbackConfig(paywallLoadingConfigMap)
+
+        // Use production environment by default
+        // TODO: Add environment parameter to Flutter API if needed
+        val environment = HeliumEnvironment.Sandbox
+
+        // Initialize on a coroutine scope
+        CoroutineScope(Dispatchers.Main).launch {
+          try {
+            val currentContext = context
+            val currentActivity = activity
+
+            if (currentContext == null) {
+              result.error("NO_CONTEXT", "Context not available", null)
+              return@launch
+            }
+
+            // Create delegate
+            val delegate = if (useDefaultDelegate && currentActivity != null) {
+              PlayStorePaywallDelegate(currentActivity)
+            } else {
+              // TODO: Implement custom delegate similar to DemoHeliumPaywallDelegate in iOS
+              result.error("DELEGATE_ERROR", "Activity not available for PlayStorePaywallDelegate. Custom delegate not yet implemented.", null)
+              return@launch
+            }
+
+            Helium.initialize(
+              context = currentContext,
+              apiKey = apiKey,
+              heliumPaywallDelegate = delegate,
+              customUserId = customUserId,
+              customApiEndpoint = customApiEndpoint,
+              customUserTraits = customUserTraits,
+              fallbackConfig = fallbackConfig,
+              environment = environment
+            )
+
+            result.success("Initialization started!")
+          } catch (e: Exception) {
+            result.error("INIT_ERROR", "Failed to initialize: ${e.message}", null)
+          }
+        }
       }
       "getDownloadStatus" -> {
         result.notImplemented()
@@ -92,5 +168,122 @@ class HeliumFlutterPlugin: FlutterPlugin, MethodCallHandler {
 
   override fun onDetachedFromEngine(binding: FlutterPlugin.FlutterPluginBinding) {
     channel.setMethodCallHandler(null)
+    this.flutterPluginBinding = null
+    this.context = null
+  }
+
+  // Helper functions for type conversion
+
+  /**
+   * Recursively converts special marker strings back to boolean values to restore
+   * type information that was preserved when passing through platform channels.
+   *
+   * Flutter's platform channels convert booleans to integers (0/1), so we use
+   * special marker strings to preserve the original intent. This helper converts:
+   * - "__helium_flutter_bool_true__" -> true
+   * - "__helium_flutter_bool_false__" -> false
+   * - All other values remain unchanged
+   */
+  private fun convertMarkersToBooleans(input: Map<String, Any?>?): Map<String, Any?>? {
+    if (input == null) return null
+    return input.mapValues { (_, value) ->
+      convertValueMarkersToBooleans(value)
+    }
+  }
+
+  private fun convertValueMarkersToBooleans(value: Any?): Any? {
+    return when (value) {
+      "__helium_flutter_bool_true__" -> true
+      "__helium_flutter_bool_false__" -> false
+      is String -> value
+      is Map<*, *> -> {
+        @Suppress("UNCHECKED_CAST")
+        convertMarkersToBooleans(value as? Map<String, Any?>)
+      }
+      is List<*> -> value.map { convertValueMarkersToBooleans(it) }
+      else -> value
+    }
+  }
+
+  private fun convertToHeliumUserTraits(input: Map<String, Any?>?): HeliumUserTraits? {
+    if (input == null) return null
+    val convertedInput = convertMarkersToBooleans(input) ?: return null
+    val traits = convertedInput.mapValues { (_, value) ->
+      convertToHeliumUserTraitsArgument(value)
+    }.filterValues { it != null }.mapValues { it.value!! }
+    return HeliumUserTraits(traits)
+  }
+
+  private fun convertToHeliumUserTraitsArgument(value: Any?): HeliumUserTraitsArgument? {
+    return when (value) {
+      is String -> HeliumUserTraitsArgument.StringParam(value)
+      is Int -> HeliumUserTraitsArgument.IntParam(value)
+      is Long -> HeliumUserTraitsArgument.LongParam(value)
+      is Double -> HeliumUserTraitsArgument.DoubleParam(value.toString())
+      is Boolean -> HeliumUserTraitsArgument.BooleanParam(value)
+      is List<*> -> {
+        val items = value.mapNotNull { convertToHeliumUserTraitsArgument(it) }
+        HeliumUserTraitsArgument.Array(items)
+      }
+      is Map<*, *> -> {
+        @Suppress("UNCHECKED_CAST")
+        val properties = (value as? Map<String, Any?>)?.mapValues { (_, v) ->
+          convertToHeliumUserTraitsArgument(v)
+        }?.filterValues { it != null }?.mapValues { it.value!! } ?: emptyMap()
+        HeliumUserTraitsArgument.Complex(properties)
+      }
+      else -> null
+    }
+  }
+
+  private fun convertToHeliumFallbackConfig(input: Map<String, Any?>?): HeliumFallbackConfig? {
+    if (input == null) return null
+
+    val useLoadingState = input["useLoadingState"] as? Boolean ?: true
+    val loadingBudget = (input["loadingBudget"] as? Number)?.toLong() ?: 2000L
+    val fallbackBundleName = input["fallbackBundleName"] as? String
+
+    // Parse perTriggerLoadingConfig if present
+    var perTriggerLoadingConfig: Map<String, HeliumFallbackConfig>? = null
+    val perTriggerDict = input["perTriggerLoadingConfig"] as? Map<*, *>
+    if (perTriggerDict != null) {
+      perTriggerLoadingConfig = perTriggerDict.mapNotNull { (key, value) ->
+        if (key is String && value is Map<*, *>) {
+          @Suppress("UNCHECKED_CAST")
+          val config = value as? Map<String, Any?>
+          val triggerUseLoadingState = config?.get("useLoadingState") as? Boolean
+          val triggerLoadingBudget = (config?.get("loadingBudget") as? Number)?.toLong()
+          key to HeliumFallbackConfig(
+            useLoadingState = triggerUseLoadingState ?: true,
+            loadingBudgetInMs = triggerLoadingBudget ?: 2000L
+          )
+        } else {
+          null
+        }
+      }.toMap()
+    }
+
+    return HeliumFallbackConfig(
+      useLoadingState = useLoadingState,
+      loadingBudgetInMs = loadingBudget,
+      perTriggerLoadingConfig = perTriggerLoadingConfig,
+      fallbackBundleName = fallbackBundleName
+    )
+  }
+
+  override fun onAttachedToActivity(binding: ActivityPluginBinding) {
+    activity = binding.activity
+  }
+
+  override fun onDetachedFromActivityForConfigChanges() {
+    activity = null
+  }
+
+  override fun onReattachedToActivityForConfigChanges(binding: ActivityPluginBinding) {
+    activity = binding.activity
+  }
+
+  override fun onDetachedFromActivity() {
+    activity = null
   }
 }
