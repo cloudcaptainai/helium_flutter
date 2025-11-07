@@ -20,10 +20,73 @@ class HeliumFlutterPlugin: FlutterPlugin, MethodCallHandler {
   }
 
   override fun onMethodCall(call: MethodCall, result: Result) {
-    if (call.method == "getPlatformVersion") {
-      result.success("Android ${android.os.Build.VERSION.RELEASE}")
-    } else {
-      result.notImplemented()
+    when (call.method) {
+      "getPlatformVersion" -> {
+        result.success("Android ${android.os.Build.VERSION.RELEASE}")
+      }
+      "initialize" -> {
+        result.notImplemented()
+      }
+      "getDownloadStatus" -> {
+        result.notImplemented()
+      }
+      "presentUpsell" -> {
+        result.notImplemented()
+      }
+      "hideUpsell" -> {
+        result.notImplemented()
+      }
+      "getHeliumUserId" -> {
+        result.notImplemented()
+      }
+      "paywallsLoaded" -> {
+        result.notImplemented()
+      }
+      "overrideUserId" -> {
+        result.notImplemented()
+      }
+      "fallbackOpenEvent" -> {
+        result.notImplemented()
+      }
+      "fallbackCloseEvent" -> {
+        result.notImplemented()
+      }
+      "getPaywallInfo" -> {
+        result.notImplemented()
+      }
+      "canPresentUpsell" -> {
+        result.notImplemented()
+      }
+      "handleDeepLink" -> {
+        result.notImplemented()
+      }
+      "hasAnyActiveSubscription" -> {
+        result.notImplemented()
+      }
+      "hasAnyEntitlement" -> {
+        result.notImplemented()
+      }
+      "hasEntitlementForPaywall" -> {
+        result.notImplemented()
+      }
+      "getExperimentInfoForTrigger" -> {
+        result.notImplemented()
+      }
+      "disableRestoreFailedDialog" -> {
+        result.notImplemented()
+      }
+      "setCustomRestoreFailedStrings" -> {
+        result.notImplemented()
+      }
+      "resetHelium" -> {
+        result.notImplemented()
+      }
+      "setLightDarkModeOverride" -> {
+        result.notImplemented()
+      }
+      else -> {
+        result.notImplemented()
+      }
     }
   }
 

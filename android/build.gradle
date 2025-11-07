@@ -48,6 +48,7 @@ android {
     }
 
     dependencies {
+        implementation("com.tryhelium.paywall:core:0.1.11")
         testImplementation("org.jetbrains.kotlin:kotlin-test")
         testImplementation("org.mockito:mockito-core:5.0.0")
     }
