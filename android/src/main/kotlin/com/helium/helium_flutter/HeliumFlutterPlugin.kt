@@ -12,12 +12,17 @@ import io.flutter.plugin.common.MethodChannel.Result
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlin.coroutines.resume
 import com.tryhelium.paywall.core.Helium
 import com.tryhelium.paywall.core.HeliumEnvironment
 import com.tryhelium.paywall.core.HeliumFallbackConfig
 import com.tryhelium.paywall.core.HeliumUserTraits
 import com.tryhelium.paywall.core.HeliumUserTraitsArgument
+import com.tryhelium.paywall.core.HeliumPaywallTransactionStatus
+import com.tryhelium.paywall.delegate.HeliumPaywallDelegate
 import com.tryhelium.paywall.delegate.PlayStorePaywallDelegate
+import com.android.billingclient.api.ProductDetails
 
 /** HeliumFlutterPlugin */
 class HeliumFlutterPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
@@ -78,12 +83,15 @@ class HeliumFlutterPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
             }
 
             // Create delegate
-            val delegate = if (useDefaultDelegate && currentActivity != null) {
-              PlayStorePaywallDelegate(currentActivity)
+            val delegate = if (useDefaultDelegate) {
+              if (currentActivity != null) {
+                PlayStorePaywallDelegate(currentActivity)
+              } else {
+                result.error("DELEGATE_ERROR", "Activity not available for PlayStorePaywallDelegate", null)
+                return@launch
+              }
             } else {
-              // TODO: Implement custom delegate similar to DemoHeliumPaywallDelegate in iOS
-              result.error("DELEGATE_ERROR", "Activity not available for PlayStorePaywallDelegate. Custom delegate not yet implemented.", null)
-              return@launch
+              CustomPaywallDelegate(channel)
             }
 
             Helium.initialize(
@@ -285,5 +293,80 @@ class HeliumFlutterPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
 
   override fun onDetachedFromActivity() {
     activity = null
+  }
+}
+
+/**
+ * Custom Helium Paywall Delegate that bridges purchase calls to Flutter.
+ * Similar to DemoHeliumPaywallDelegate in iOS.
+ */
+class CustomPaywallDelegate(
+  private val methodChannel: MethodChannel
+) : HeliumPaywallDelegate {
+
+  override suspend fun makePurchase(
+    productDetails: ProductDetails,
+    basePlanId: String?,
+    offerId: String?
+  ): HeliumPaywallTransactionStatus {
+    return suspendCancellableCoroutine { continuation ->
+      // Build chained product identifier: productId:basePlanId:offerId
+      val chainedProductId = buildString {
+        append(productDetails.productId)
+        if (basePlanId != null) {
+          append(":").append(basePlanId)
+        }
+        if (offerId != null) {
+          append(":").append(offerId)
+        }
+      }
+
+      methodChannel.invokeMethod(
+        "makePurchase",
+        chainedProductId
+      ) { result ->
+        val status: HeliumPaywallTransactionStatus = when {
+          result is Map<*, *> -> {
+            val statusString = result["status"] as? String
+            val lowercasedStatus = statusString?.lowercase()
+
+            when (lowercasedStatus) {
+              "purchased" -> HeliumPaywallTransactionStatus.Purchased
+              "cancelled" -> HeliumPaywallTransactionStatus.Cancelled
+              "restored" -> HeliumPaywallTransactionStatus.Restored
+              "pending" -> HeliumPaywallTransactionStatus.Pending
+              "failed" -> {
+                val errorMsg = result["error"] as? String ?: "Unknown purchase error"
+                HeliumPaywallTransactionStatus.Failed(Exception(errorMsg))
+              }
+              else -> {
+                HeliumPaywallTransactionStatus.Failed(
+                  Exception("Unknown status: $lowercasedStatus")
+                )
+              }
+            }
+          }
+          else -> {
+            HeliumPaywallTransactionStatus.Failed(
+              Exception("Invalid response format")
+            )
+          }
+        }
+
+        continuation.resume(status)
+      }
+    }
+  }
+
+  override suspend fun restorePurchases(): Boolean {
+    return suspendCancellableCoroutine { continuation ->
+      methodChannel.invokeMethod(
+        "restorePurchases",
+        null
+      ) { result ->
+        val success = (result as? Boolean) ?: false
+        continuation.resume(success)
+      }
+    }
   }
 }
