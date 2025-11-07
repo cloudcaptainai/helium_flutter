@@ -14,9 +14,13 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlin.coroutines.resume
+import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
 import com.tryhelium.paywall.core.Helium
+import com.tryhelium.paywall.core.HeliumConfigStatus
 import com.tryhelium.paywall.core.HeliumEnvironment
 import com.tryhelium.paywall.core.HeliumFallbackConfig
+import com.tryhelium.paywall.core.HeliumIdentityManager
 import com.tryhelium.paywall.core.HeliumUserTraits
 import com.tryhelium.paywall.core.HeliumUserTraitsArgument
 import com.tryhelium.paywall.core.HeliumPaywallTransactionStatus
@@ -34,6 +38,7 @@ class HeliumFlutterPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
   private var activity: Activity? = null
   private var context: Context? = null
   private var flutterPluginBinding: FlutterPlugin.FlutterPluginBinding? = null
+  private val gson = Gson()
 
   override fun onAttachedToEngine(flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
     this.flutterPluginBinding = flutterPluginBinding
@@ -69,7 +74,7 @@ class HeliumFlutterPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
 
         // Use production environment by default
         // TODO: Add environment parameter to Flutter API if needed
-        val environment = HeliumEnvironment.Sandbox
+        val environment = HeliumEnvironment.SANDBOX
 
         // Initialize on a coroutine scope
         CoroutineScope(Dispatchers.Main).launch {
@@ -112,22 +117,69 @@ class HeliumFlutterPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
         }
       }
       "getDownloadStatus" -> {
-        result.notImplemented()
+        val status = Helium.shared.downloadStatus.value
+        val statusString = when (status) {
+          is HeliumConfigStatus.NotYetDownloaded -> "NotYetDownloaded"
+          is HeliumConfigStatus.Downloading -> "Downloading"
+          is HeliumConfigStatus.DownloadFailure -> "DownloadFailure"
+          is HeliumConfigStatus.DownloadSuccess -> "DownloadSuccess"
+        }
+        result.success(statusString)
       }
       "presentUpsell" -> {
-        result.notImplemented()
+        val args = call.arguments as? Map<*, *>
+        if (args == null) {
+          result.error("BAD_ARGS", "Arguments not passed correctly", null)
+          return
+        }
+
+        val trigger = args["trigger"] as? String ?: ""
+
+        @Suppress("UNCHECKED_CAST")
+        val customPaywallTraitsMap = args["customPaywallTraits"] as? Map<String, Any?>
+        val customPaywallTraits = convertToHeliumUserTraits(customPaywallTraitsMap)
+
+        val dontShowIfAlreadyEntitled = args["dontShowIfAlreadyEntitled"] as? Boolean ?: false
+
+        Helium.presentUpsell(
+          trigger = trigger,
+          // TODO add support for these
+//          customPaywallTraits = customPaywallTraits,
+//          dontShowIfAlreadyEntitled = dontShowIfAlreadyEntitled
+        )
+
+        result.success("Upsell presented!")
       }
       "hideUpsell" -> {
         result.notImplemented()
       }
       "getHeliumUserId" -> {
-        result.notImplemented()
+        val userId = HeliumIdentityManager.shared.getUserId()
+        result.success(userId)
       }
       "paywallsLoaded" -> {
-        result.notImplemented()
+        val isLoaded = Helium.shared.downloadStatus.value is HeliumConfigStatus.DownloadSuccess
+        result.success(isLoaded)
       }
       "overrideUserId" -> {
-        result.notImplemented()
+        val args = call.arguments as? Map<*, *>
+        if (args == null) {
+          result.error("BAD_ARGS", "Arguments not passed correctly", null)
+          return
+        }
+
+        val newUserId = args["newUserId"] as? String ?: ""
+
+        @Suppress("UNCHECKED_CAST")
+        val traitsMap = args["traits"] as? Map<String, Any?>
+        val traits = convertToHeliumUserTraits(traitsMap)
+
+        HeliumIdentityManager.shared.setCustomUserId(newUserId)
+        traits?.let {
+          HeliumIdentityManager.shared.setCustomUserTraits(it)
+        }
+
+        result.success("User id is updated!")
       }
       "fallbackOpenEvent" -> {
         result.notImplemented()
@@ -136,13 +188,30 @@ class HeliumFlutterPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
         result.notImplemented()
       }
       "getPaywallInfo" -> {
-        result.notImplemented()
+        val trigger = call.arguments as? String ?: ""
+        val paywallInfo = Helium.getPaywallInfo(trigger)
+
+        if (paywallInfo == null) {
+          result.success(mapOf(
+            "errorMsg" to "Invalid trigger or paywalls not ready.",
+            "templateName" to null,
+            "shouldShow" to null
+          ))
+        } else {
+          result.success(mapOf(
+            "errorMsg" to null,
+            "templateName" to paywallInfo.paywallTemplateName,
+            "shouldShow" to paywallInfo.shouldShow
+          ))
+        }
       }
       "canPresentUpsell" -> {
         result.notImplemented()
       }
       "handleDeepLink" -> {
-        result.notImplemented()
+        val urlString = call.arguments as? String
+        val handled = Helium.handleDeepLink(uri = urlString)
+        result.success(handled)
       }
       "hasAnyActiveSubscription" -> {
         result.notImplemented()
@@ -154,7 +223,22 @@ class HeliumFlutterPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
         result.notImplemented()
       }
       "getExperimentInfoForTrigger" -> {
-        result.notImplemented()
+        val trigger = call.arguments as? String ?: ""
+        val experimentInfo = Helium.getExperimentInfoForTrigger(trigger)
+
+        if (experimentInfo == null) {
+          result.success(null)
+        } else {
+          // Convert ExperimentInfo to Map using Gson
+          try {
+            val json = gson.toJson(experimentInfo)
+            val type = object : TypeToken<Map<String, Any?>>() {}.type
+            val map: Map<String, Any?> = gson.fromJson(json, type)
+            result.success(map)
+          } catch (e: Exception) {
+            result.success(null)
+          }
+        }
       }
       "disableRestoreFailedDialog" -> {
         result.notImplemented()
@@ -163,7 +247,8 @@ class HeliumFlutterPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
         result.notImplemented()
       }
       "resetHelium" -> {
-        result.notImplemented()
+        Helium.resetHelium()
+        result.success("Helium reset!")
       }
       "setLightDarkModeOverride" -> {
         result.notImplemented()
