@@ -25,3 +25,5 @@ const String canPresentUpsellMethodName = 'canPresentUpsell';
 const String disableRestoreFailedDialogMethodName = 'disableRestoreFailedDialog';
 const String setCustomRestoreFailedStringsMethodName = 'setCustomRestoreFailedStrings';
 const String resetHeliumMethodName = 'resetHelium';
+const String hasEntitlementForPaywallMethodName = 'hasEntitlementForPaywall';
+const String setLightDarkModeOverrideMethodName = 'setLightDarkModeOverride';

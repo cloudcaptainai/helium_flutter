@@ -66,12 +66,14 @@ class HeliumFlutter {
     required String trigger,
     PaywallEventHandlers? eventHandlers,
     Map<String, dynamic>? customPaywallTraits,
+    bool? dontShowIfAlreadyEntitled,
   }) =>
       HeliumFlutterPlatform.instance.presentUpsell(
         context: context,
         trigger: trigger,
         eventHandlers: eventHandlers,
         customPaywallTraits: customPaywallTraits,
+        dontShowIfAlreadyEntitled: dontShowIfAlreadyEntitled,
       );
 
   Future<PaywallInfo?> getPaywallInfo(String trigger) =>
@@ -93,6 +95,12 @@ class HeliumFlutter {
   /// Checks if the user has any entitlement
   Future<bool> hasAnyEntitlement() =>
       HeliumFlutterPlatform.instance.hasAnyEntitlement();
+
+  /// Checks if the user has an active entitlement for any product attached to the paywall that will show for provided trigger.
+  /// - Parameter trigger: Trigger that would be used to show the paywall.
+  /// - Returns: `true` if the user has bought one of the products on the paywall. `false` if not. Returns `null` if not known (i.e. the paywall is not downloaded yet).
+  Future<bool?> hasEntitlementForPaywall(String trigger) =>
+      HeliumFlutterPlatform.instance.hasEntitlementForPaywall(trigger);
 
   /// Get experiment allocation info for a specific trigger
   ///
@@ -121,5 +129,11 @@ class HeliumFlutter {
 
   /// Reset Helium entirely so you can call initialize again. Only for advanced use cases.
   void resetHelium() => HeliumFlutterPlatform.instance.resetHelium();
+
+  /// Sets light/dark mode override for Helium paywalls.
+  /// - Parameter mode: The desired appearance mode (.light, .dark, or .system)
+  /// - Note: .system respects the device's current appearance setting (default)
+  void setLightDarkModeOverride(HeliumLightDarkMode mode) =>
+      HeliumFlutterPlatform.instance.setLightDarkModeOverride(mode);
 
 }

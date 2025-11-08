@@ -80,7 +80,8 @@ public class HeliumFlutterPlugin: NSObject, FlutterPlugin {
             if let args = call.arguments as? [String: Any] {
                 let trigger = args["trigger"] as? String ?? ""
                 let customPaywallTraits = args["customPaywallTraits"] as? [String: Any]
-                presentUpsell(trigger: trigger, customPaywallTraits: customPaywallTraits)
+                let dontShowIfAlreadyEntitled = args["dontShowIfAlreadyEntitled"] as? Bool
+                presentUpsell(trigger: trigger, customPaywallTraits: customPaywallTraits, dontShowIfAlreadyEntitled: dontShowIfAlreadyEntitled)
                 result("Upsell presented!")
             } else {
                 result("Upsell not presented - invalid arguments")
@@ -94,8 +95,8 @@ public class HeliumFlutterPlugin: NSObject, FlutterPlugin {
         case "overrideUserId":
             if let args = call.arguments as? [String: Any] {
                 let newUserId = args["newUserId"] as? String ?? ""
-                let userTraitsMap = args["traits"] as? [String: Any] ?? [:]
-                let traits = HeliumUserTraits(userTraitsMap)
+                let userTraitsMap = convertMarkersToBooleans(args["traits"] as? [String: Any])
+                let traits = userTraitsMap != nil ? HeliumUserTraits(userTraitsMap!) : nil
                 overrideUserId(newUserId: newUserId, traits: traits)
                 result("User id is updated!")
             } else {
@@ -141,6 +142,12 @@ public class HeliumFlutterPlugin: NSObject, FlutterPlugin {
                 let hasEntitlement = await hasAnyEntitlement()
                 result(hasEntitlement)
             }
+        case "hasEntitlementForPaywall":
+            let trigger = call.arguments as? String ?? ""
+            Task {
+                let hasEntitlement = await hasEntitlementForPaywall(trigger: trigger)
+                result(hasEntitlement)
+            }
         case "getExperimentInfoForTrigger":
             let trigger = call.arguments as? String ?? ""
             let experimentInfo = getExperimentInfoForTrigger(trigger: trigger)
@@ -165,6 +172,13 @@ public class HeliumFlutterPlugin: NSObject, FlutterPlugin {
         case "resetHelium":
             resetHelium()
             result("Helium reset!")
+        case "setLightDarkModeOverride":
+            if let modeString = call.arguments as? String {
+                setLightDarkModeOverride(mode: modeString)
+                result("Light/Dark mode override set!")
+            } else {
+                result(FlutterError(code: "BAD_ARGS", message: "Mode not provided", details: nil))
+            }
         default:
             result(FlutterMethodNotImplemented)
         }
@@ -230,7 +244,7 @@ public class HeliumFlutterPlugin: NSObject, FlutterPlugin {
         }
     }
 
-    public func presentUpsell(trigger: String, customPaywallTraits: [String: Any]? = nil) {
+    public func presentUpsell(trigger: String, customPaywallTraits: [String: Any]? = nil, dontShowIfAlreadyEntitled: Bool? = nil) {
         let convertedTraits = convertMarkersToBooleans(customPaywallTraits)
         Helium.shared.presentUpsell(
             trigger: trigger,
@@ -254,7 +268,8 @@ public class HeliumFlutterPlugin: NSObject, FlutterPlugin {
                     self?.channel.invokeMethod("onPaywallEventHandler", arguments: event.toDictionary())
                 }
             ),
-            customPaywallTraits: convertedTraits
+            customPaywallTraits: convertedTraits,
+            dontShowIfAlreadyEntitled: dontShowIfAlreadyEntitled ?? false
         )
     }
 
@@ -324,6 +339,10 @@ public class HeliumFlutterPlugin: NSObject, FlutterPlugin {
         return await Helium.shared.hasAnyEntitlement()
     }
 
+    private func hasEntitlementForPaywall(trigger: String) async -> Bool? {
+        return await Helium.shared.hasEntitlementForPaywall(trigger: trigger)
+    }
+
     private func getExperimentInfoForTrigger(trigger: String) -> [String: Any?]? {
         guard let experimentInfo = Helium.shared.getExperimentInfoForTrigger(trigger) else {
             return nil
@@ -357,6 +376,22 @@ public class HeliumFlutterPlugin: NSObject, FlutterPlugin {
 
     private func resetHelium() {
         Helium.resetHelium()
+    }
+
+    private func setLightDarkModeOverride(mode: String) {
+        let heliumMode: HeliumLightDarkMode
+        switch mode.lowercased() {
+        case "light":
+            heliumMode = .light
+        case "dark":
+            heliumMode = .dark
+        case "system":
+            heliumMode = .system
+        default:
+            print("[Helium] Unknown mode: \(mode), defaulting to system")
+            heliumMode = .system
+        }
+        Helium.shared.setLightDarkModeOverride(heliumMode)
     }
 
     /// Handler for paywall event notifications posted via NotificationCenter
