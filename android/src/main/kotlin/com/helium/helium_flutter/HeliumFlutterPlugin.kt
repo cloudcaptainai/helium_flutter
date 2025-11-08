@@ -421,6 +421,7 @@ class CustomPaywallDelegate(
 
                 when (lowercasedStatus) {
                   "purchased" -> HeliumPaywallTransactionStatus.Purchased
+                  "restored" -> HeliumPaywallTransactionStatus.Purchased
                   "cancelled" -> HeliumPaywallTransactionStatus.Cancelled
                   "pending" -> HeliumPaywallTransactionStatus.Pending
                   "failed" -> {
