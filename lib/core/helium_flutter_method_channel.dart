@@ -2,10 +2,8 @@ import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:helium_flutter/core/const/contants.dart';
-import 'package:helium_flutter/core/helium_callbacks.dart';
-import '../types/experiment_info.dart';
-import '../types/helium_transaction_status.dart';
-import '../types/helium_types.dart';
+import 'package:helium_flutter/helium_flutter.dart';
+import 'package:helium_flutter/types/helium_environment.dart';
 import 'helium_flutter_platform.dart';
 
 /// An implementation of [HeliumFlutterPlatform] that uses method channels.
@@ -32,6 +30,7 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
     Map<String, dynamic>? customUserTraits,
     String? revenueCatAppUserId,
     String? fallbackBundleAssetPath,
+    HeliumEnvironment? environment,
     HeliumPaywallLoadingConfig? paywallLoadingConfig,
   }) async {
     _setMethodCallHandlers(callbacks, purchaseDelegate);
@@ -42,15 +41,17 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
     }
     _isInitialized = true;
 
-    final result = await methodChannel
-        .invokeMethod<String?>(initializeMethodName, {
+    final result =
+        await methodChannel.invokeMethod<String?>(initializeMethodName, {
       'apiKey': apiKey,
       'customUserId': customUserId,
       'customAPIEndpoint': customAPIEndpoint,
       'customUserTraits': _convertBooleansToMarkers(customUserTraits),
       'revenueCatAppUserId': revenueCatAppUserId,
       'fallbackAssetPath': fallbackBundleAssetPath,
-      'paywallLoadingConfig': _convertBooleansToMarkers(paywallLoadingConfig?.toMap()),
+      'environment': environment?.name,
+      'paywallLoadingConfig':
+          _convertBooleansToMarkers(paywallLoadingConfig?.toMap()),
       'useDefaultDelegate': purchaseDelegate == null,
     });
     return result;
@@ -83,17 +84,15 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
         return success;
       } else if (handler.method == onPaywallEventMethodName) {
         final dynamic args = handler.arguments;
-        final Map<String, dynamic> eventMap = (args is Map)
-            ? Map<String, dynamic>.from(args)
-            : {};
+        final Map<String, dynamic> eventMap =
+            (args is Map) ? Map<String, dynamic>.from(args) : {};
         HeliumPaywallEvent event = HeliumPaywallEvent.fromMap(eventMap);
         _handlePaywallEvent(event);
         callbacks?.onPaywallEvent(event);
       } else if (handler.method == onPaywallEventHandlerMethodName) {
         final dynamic args = handler.arguments;
-        final Map<String, dynamic> eventDict = (args is Map)
-            ? Map<String, dynamic>.from(args)
-            : {};
+        final Map<String, dynamic> eventDict =
+            (args is Map) ? Map<String, dynamic>.from(args) : {};
         _handlePaywallEventHandlers(HeliumPaywallEvent.fromMap(eventDict));
       } else {
         log('[Helium] Unknown method from MethodChannel: ${handler.method}');
@@ -123,7 +122,9 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
       hideUpsellMethodName,
     );
     // Hide fallback sheet if it is displaying
-    if (_isFallbackSheetShowing && _fallbackContext != null && _fallbackContext!.mounted) {
+    if (_isFallbackSheetShowing &&
+        _fallbackContext != null &&
+        _fallbackContext!.mounted) {
       Navigator.of(_fallbackContext!).pop();
     }
     return result ?? false;
@@ -225,7 +226,8 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
 
   @override
   Future<PaywallInfo?> getPaywallInfo(String trigger) async {
-    final result = await methodChannel.invokeMethod<Map<dynamic, dynamic>>('getPaywallInfo', trigger);
+    final result = await methodChannel.invokeMethod<Map<dynamic, dynamic>>(
+        'getPaywallInfo', trigger);
 
     if (result == null) {
       log('[Helium] getPaywallInfo unexpected error.');
@@ -255,7 +257,8 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
 
   @override
   Future<bool> handleDeepLink(String uri) async {
-    final result = await methodChannel.invokeMethod<bool>('handleDeepLink', uri);
+    final result =
+        await methodChannel.invokeMethod<bool>('handleDeepLink', uri);
     log('[Helium] Handled deep link: $result');
     return result ?? false;
   }
@@ -385,7 +388,8 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
         ));
         break;
       case 'customPaywallAction':
-        _currentEventHandlers?.onCustomPaywallAction?.call(CustomPaywallActionEvent(
+        _currentEventHandlers?.onCustomPaywallAction
+            ?.call(CustomPaywallActionEvent(
           triggerName: triggerName,
           paywallName: paywallName,
           isSecondTry: isSecondTry,
@@ -412,10 +416,9 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
       case 'paywallOpenFailed':
         _currentEventHandlers = null;
         final unavailableReason = heliumPaywallEvent.paywallUnavailableReason;
-        if (trigger != null
-            && unavailableReason != "alreadyPresented"
-            && unavailableReason != "secondTryNoMatch"
-        ) {
+        if (trigger != null &&
+            unavailableReason != "alreadyPresented" &&
+            unavailableReason != "secondTryNoMatch") {
           // Dispatch on next frame to let event handling finish processing
           WidgetsBinding.instance.addPostFrameCallback((_) {
             _showFallbackSheet(trigger);
@@ -433,7 +436,8 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
     _currentEventHandlers = eventHandlers;
     return UpsellWrapperWidget(
       trigger: trigger,
-      fallbackPaywallWidget: _fallbackPaywallWidget ?? Text("No fallback view provided"),
+      fallbackPaywallWidget:
+          _fallbackPaywallWidget ?? Text("No fallback view provided"),
       availabilityChecker: () => canPresentUpsell(trigger),
       onFallbackOpened: (String? paywallUnavailableReason) async {
         await methodChannel.invokeMethod<String?>(
@@ -468,13 +472,16 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
   Map<String, dynamic>? _convertBooleansToMarkers(Map<String, dynamic>? input) {
     if (input == null) return null;
 
-    return input.map((key, value) => MapEntry(key, _convertValueBooleansToMarkers(value)));
+    return input.map(
+        (key, value) => MapEntry(key, _convertValueBooleansToMarkers(value)));
   }
 
   /// Helper to recursively convert booleans in any value type
   dynamic _convertValueBooleansToMarkers(dynamic value) {
     if (value is bool) {
-      return value ? "__helium_flutter_bool_true__" : "__helium_flutter_bool_false__";
+      return value
+          ? "__helium_flutter_bool_true__"
+          : "__helium_flutter_bool_false__";
     } else if (value is Map<String, dynamic>) {
       return _convertBooleansToMarkers(value);
     } else if (value is List) {
@@ -482,7 +489,6 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
     }
     return value;
   }
-
 }
 
 /// A wrapper widget that handles the asynchronous fetching of download status
@@ -507,6 +513,7 @@ class UpsellWrapperWidget extends StatefulWidget {
   @override
   State<UpsellWrapperWidget> createState() => _UpsellWrapperWidgetState();
 }
+
 class _UpsellWrapperWidgetState extends State<UpsellWrapperWidget> {
   late Future<CanPresentUpsellResult?> _availabilityFuture;
   bool _fallbackShown = false;

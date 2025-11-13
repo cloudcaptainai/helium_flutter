@@ -4,6 +4,7 @@ import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 
 import '../types/experiment_info.dart';
 import '../types/helium_types.dart';
+import '../types/helium_environment.dart';
 import 'helium_flutter_method_channel.dart';
 
 abstract class HeliumFlutterPlatform extends PlatformInterface {
@@ -38,6 +39,7 @@ abstract class HeliumFlutterPlatform extends PlatformInterface {
     Map<String, dynamic>? customUserTraits,
     String? revenueCatAppUserId,
     String? fallbackBundleAssetPath,
+    HeliumEnvironment? environment,
     HeliumPaywallLoadingConfig? paywallLoadingConfig,
   });
 

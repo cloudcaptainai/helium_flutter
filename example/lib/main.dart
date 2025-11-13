@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:helium_flutter/helium_flutter.dart';
+import 'package:helium_flutter/types/helium_environment.dart';
 import 'package:helium_flutter_example/core/payment_callbacks.dart';
 
 import 'package:helium_flutter_example/presentation/home_page.dart';
@@ -26,17 +27,17 @@ Future<void> initializeHeliumSwift() async {
   // We also handle the message potentially returning null.
   try {
     await heliumFlutterPlugin.initialize(
-      apiKey: apiKey,
-      fallbackPaywall: Text("fallback view here..."),
-      customUserId: customUserId,
-      callbacks: LogCallbacks(),
-      customUserTraits: {
-        'exampleUserTrait': 'test_value',
-        'somethingElse': 'somethingElse',
-        'somethingElse2': 'somethingElse2',
-        'vibes': 3.0,
-      },
-    );
+        apiKey: apiKey,
+        fallbackPaywall: Text("fallback view here..."),
+        customUserId: customUserId,
+        callbacks: LogCallbacks(),
+        customUserTraits: {
+          'exampleUserTrait': 'test_value',
+          'somethingElse': 'somethingElse',
+          'somethingElse2': 'somethingElse2',
+          'vibes': 3.0,
+        },
+        environment: HeliumEnvironment.production);
   } on PlatformException {
     rethrow;
   } catch (e) {

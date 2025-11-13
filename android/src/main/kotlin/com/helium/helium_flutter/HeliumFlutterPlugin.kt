@@ -17,6 +17,10 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlin.coroutines.resume
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
+import com.helium.helium_flutter.toEnvironment
+import com.helium.helium_flutter.convertToHeliumUserTraits
+import com.helium.helium_flutter.convertToHeliumUserTraitsArgument
+import com.helium.helium_flutter.CustomPaywallDelegate
 import com.tryhelium.paywall.core.Helium
 import com.tryhelium.paywall.core.HeliumConfigStatus
 import com.tryhelium.paywall.core.HeliumEnvironment
@@ -74,8 +78,7 @@ class HeliumFlutterPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
         val fallbackConfig = convertToHeliumFallbackConfig(paywallLoadingConfigMap)
 
         // Use production environment by default
-        // TODO: Add environment parameter to Flutter API if needed
-        val environment = HeliumEnvironment.SANDBOX
+        val environment = (args["environment"] as? String).toEnvironment()
 
         // Initialize on a coroutine scope
         CoroutineScope(Dispatchers.Main).launch {
@@ -268,105 +271,6 @@ class HeliumFlutterPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
     this.context = null
   }
 
-  // Helper functions for type conversion
-
-  /**
-   * Recursively converts special marker strings back to boolean values to restore
-   * type information that was preserved when passing through platform channels.
-   *
-   * Flutter's platform channels convert booleans to integers (0/1), so we use
-   * special marker strings to preserve the original intent. This helper converts:
-   * - "__helium_flutter_bool_true__" -> true
-   * - "__helium_flutter_bool_false__" -> false
-   * - All other values remain unchanged
-   */
-  private fun convertMarkersToBooleans(input: Map<String, Any?>?): Map<String, Any?>? {
-    if (input == null) return null
-    return input.mapValues { (_, value) ->
-      convertValueMarkersToBooleans(value)
-    }
-  }
-
-  private fun convertValueMarkersToBooleans(value: Any?): Any? {
-    return when (value) {
-      "__helium_flutter_bool_true__" -> true
-      "__helium_flutter_bool_false__" -> false
-      is String -> value
-      is Map<*, *> -> {
-        @Suppress("UNCHECKED_CAST")
-        convertMarkersToBooleans(value as? Map<String, Any?>)
-      }
-      is List<*> -> value.map { convertValueMarkersToBooleans(it) }
-      else -> value
-    }
-  }
-
-  private fun convertToHeliumUserTraits(input: Map<String, Any?>?): HeliumUserTraits? {
-    if (input == null) return null
-    val convertedInput = convertMarkersToBooleans(input) ?: return null
-    val traits = convertedInput.mapValues { (_, value) ->
-      convertToHeliumUserTraitsArgument(value)
-    }.filterValues { it != null }.mapValues { it.value!! }
-    return HeliumUserTraits(traits)
-  }
-
-  private fun convertToHeliumUserTraitsArgument(value: Any?): HeliumUserTraitsArgument? {
-    return when (value) {
-      is String -> HeliumUserTraitsArgument.StringParam(value)
-      is Int -> HeliumUserTraitsArgument.IntParam(value)
-      is Long -> HeliumUserTraitsArgument.LongParam(value)
-      is Double -> HeliumUserTraitsArgument.DoubleParam(value.toString())
-      is Boolean -> HeliumUserTraitsArgument.BooleanParam(value)
-      is List<*> -> {
-        val items = value.mapNotNull { convertToHeliumUserTraitsArgument(it) }
-        HeliumUserTraitsArgument.Array(items)
-      }
-      is Map<*, *> -> {
-        @Suppress("UNCHECKED_CAST")
-        val properties = (value as? Map<String, Any?>)?.mapValues { (_, v) ->
-          convertToHeliumUserTraitsArgument(v)
-        }?.filterValues { it != null }?.mapValues { it.value!! } ?: emptyMap()
-        HeliumUserTraitsArgument.Complex(properties)
-      }
-      else -> null
-    }
-  }
-
-  private fun convertToHeliumFallbackConfig(input: Map<String, Any?>?): HeliumFallbackConfig? {
-    if (input == null) return null
-
-    val useLoadingState = input["useLoadingState"] as? Boolean ?: true
-    val loadingBudget = (input["loadingBudget"] as? Number)?.toLong() ?: 2000L
-    val fallbackBundleName = input["fallbackBundleName"] as? String
-
-    // Parse perTriggerLoadingConfig if present
-    var perTriggerLoadingConfig: Map<String, HeliumFallbackConfig>? = null
-    val perTriggerDict = input["perTriggerLoadingConfig"] as? Map<*, *>
-    if (perTriggerDict != null) {
-      perTriggerLoadingConfig = perTriggerDict.mapNotNull { (key, value) ->
-        if (key is String && value is Map<*, *>) {
-          @Suppress("UNCHECKED_CAST")
-          val config = value as? Map<String, Any?>
-          val triggerUseLoadingState = config?.get("useLoadingState") as? Boolean
-          val triggerLoadingBudget = (config?.get("loadingBudget") as? Number)?.toLong()
-          key to HeliumFallbackConfig(
-            useLoadingState = triggerUseLoadingState ?: true,
-            loadingBudgetInMs = triggerLoadingBudget ?: 2000L
-          )
-        } else {
-          null
-        }
-      }.toMap()
-    }
-
-    return HeliumFallbackConfig(
-      useLoadingState = useLoadingState,
-      loadingBudgetInMs = loadingBudget,
-      perTriggerLoadingConfig = perTriggerLoadingConfig,
-      fallbackBundleName = fallbackBundleName
-    )
-  }
-
   override fun onAttachedToActivity(binding: ActivityPluginBinding) {
     activity = binding.activity
   }
@@ -381,106 +285,5 @@ class HeliumFlutterPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
 
   override fun onDetachedFromActivity() {
     activity = null
-  }
-}
-
-/**
- * Custom Helium Paywall Delegate that bridges purchase calls to Flutter.
- * Similar to DemoHeliumPaywallDelegate in iOS.
- */
-class CustomPaywallDelegate(
-  private val methodChannel: MethodChannel
-) : HeliumPaywallDelegate {
-
-  override suspend fun makePurchase(
-    productDetails: ProductDetails,
-    basePlanId: String?,
-    offerId: String?
-  ): HeliumPaywallTransactionStatus {
-    return suspendCancellableCoroutine { continuation ->
-      // Build chained product identifier: productId:basePlanId:offerId
-      val chainedProductId = buildString {
-        append(productDetails.productId)
-        if (basePlanId != null) {
-          append(":").append(basePlanId)
-        }
-        if (offerId != null) {
-          append(":").append(offerId)
-        }
-      }
-
-      methodChannel.invokeMethod(
-        "makePurchase",
-        chainedProductId,
-        object : MethodChannel.Result {
-          override fun success(result: Any?) {
-            val status: HeliumPaywallTransactionStatus = when {
-              result is Map<*, *> -> {
-                val statusString = result["status"] as? String
-                val lowercasedStatus = statusString?.lowercase()
-
-                when (lowercasedStatus) {
-                  "purchased" -> HeliumPaywallTransactionStatus.Purchased
-                  "restored" -> HeliumPaywallTransactionStatus.Purchased
-                  "cancelled" -> HeliumPaywallTransactionStatus.Cancelled
-                  "pending" -> HeliumPaywallTransactionStatus.Pending
-                  "failed" -> {
-                    val errorMsg = result["error"] as? String ?: "Unknown purchase error"
-                    HeliumPaywallTransactionStatus.Failed(Exception(errorMsg))
-                  }
-                  else -> {
-                    HeliumPaywallTransactionStatus.Failed(
-                      Exception("Unknown status: $lowercasedStatus")
-                    )
-                  }
-                }
-              }
-              else -> {
-                HeliumPaywallTransactionStatus.Failed(
-                  Exception("Invalid response format")
-                )
-              }
-            }
-
-            continuation.resume(status)
-          }
-
-          override fun error(errorCode: String, errorMessage: String?, errorDetails: Any?) {
-            continuation.resume(
-              HeliumPaywallTransactionStatus.Failed(Exception(errorMessage ?: errorCode))
-            )
-          }
-
-          override fun notImplemented() {
-            continuation.resume(
-              HeliumPaywallTransactionStatus.Failed(Exception("Method not implemented"))
-            )
-          }
-        }
-      )
-    }
-  }
-
-  override suspend fun restorePurchases(): Boolean {
-    return suspendCancellableCoroutine { continuation ->
-      methodChannel.invokeMethod(
-        "restorePurchases",
-        null,
-        object : MethodChannel.Result {
-          override fun success(result: Any?) {
-            val success = (result as? Boolean) ?: false
-            continuation.resume(success)
-          }
-
-          override fun error(errorCode: String, errorMessage: String?, errorDetails: Any?) {
-            continuation.resume(false)
-          }
-
-          override fun notImplemented() {
-            continuation.resume(false)
-          }
-        }
-      )
-    }
   }
 }
