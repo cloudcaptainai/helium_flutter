@@ -77,7 +77,6 @@ class HeliumFlutterPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
         val paywallLoadingConfigMap = args["paywallLoadingConfig"] as? Map<String, Any?>
         val fallbackConfig = convertToHeliumFallbackConfig(paywallLoadingConfigMap)
 
-        // Use production environment by default
         val environment = (args["environment"] as? String).toEnvironment()
 
         // Initialize on a coroutine scope

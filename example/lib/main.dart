@@ -27,17 +27,17 @@ Future<void> initializeHeliumSwift() async {
   // We also handle the message potentially returning null.
   try {
     await heliumFlutterPlugin.initialize(
-        apiKey: apiKey,
-        fallbackPaywall: Text("fallback view here..."),
-        customUserId: customUserId,
-        callbacks: LogCallbacks(),
-        customUserTraits: {
-          'exampleUserTrait': 'test_value',
-          'somethingElse': 'somethingElse',
-          'somethingElse2': 'somethingElse2',
-          'vibes': 3.0,
-        },
-        environment: HeliumEnvironment.production);
+      apiKey: apiKey,
+      fallbackPaywall: Text("fallback view here..."),
+      customUserId: customUserId,
+      callbacks: LogCallbacks(),
+      customUserTraits: {
+        'exampleUserTrait': 'test_value',
+        'somethingElse': 'somethingElse',
+        'somethingElse2': 'somethingElse2',
+        'vibes': 3.0,
+      },
+      environment: HeliumEnvironment.production);
   } on PlatformException {
     rethrow;
   } catch (e) {
