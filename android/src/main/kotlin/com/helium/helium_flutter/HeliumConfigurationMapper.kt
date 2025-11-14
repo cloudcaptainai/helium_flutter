@@ -84,14 +84,15 @@ internal fun convertToHeliumUserTraitsArgument(value: Any?): HeliumUserTraitsArg
 
 internal fun convertToHeliumFallbackConfig(input: Map<String, Any?>?): HeliumFallbackConfig? {
     if (input == null) return null
+    val convertedInput = convertMarkersToBooleans(input) ?: return null
 
-    val useLoadingState = input["useLoadingState"] as? Boolean ?: true
-    val loadingBudget = (input["loadingBudget"] as? Number)?.toLong() ?: 2000L
-    val fallbackBundleName = input["fallbackBundleName"] as? String
+    val useLoadingState = convertedInput["useLoadingState"] as? Boolean ?: true
+    val loadingBudget = (convertedInput["loadingBudget"] as? Number)?.toLong() ?: 2000L
+    val fallbackBundleName = convertedInput["fallbackBundleName"] as? String
 
     // Parse perTriggerLoadingConfig if present
     var perTriggerLoadingConfig: Map<String, HeliumFallbackConfig>? = null
-    val perTriggerDict = input["perTriggerLoadingConfig"] as? Map<*, *>
+    val perTriggerDict = convertedInput["perTriggerLoadingConfig"] as? Map<*, *>
     if (perTriggerDict != null) {
         perTriggerLoadingConfig = perTriggerDict.mapNotNull { (key, value) ->
             if (key is String && value is Map<*, *>) {
