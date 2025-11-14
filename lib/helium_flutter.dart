@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:helium_flutter/core/helium_callbacks.dart';
 import 'package:helium_flutter/core/helium_flutter_platform.dart';
 import 'package:helium_flutter/types/experiment_info.dart';
+import 'package:helium_flutter/types/helium_environment.dart';
 import 'package:helium_flutter/types/helium_types.dart';
 export './core/helium_callbacks.dart';
 export './types/experiment_info.dart';
@@ -20,6 +21,7 @@ class HeliumFlutter {
     Map<String, dynamic>? customUserTraits,
     String? revenueCatAppUserId,
     String? fallbackBundleAssetPath,
+    HeliumEnvironment? environment,
     HeliumPaywallLoadingConfig? paywallLoadingConfig,
   }) async {
     return await HeliumFlutterPlatform.instance.initialize(
@@ -32,6 +34,7 @@ class HeliumFlutter {
       customUserTraits: customUserTraits,
       revenueCatAppUserId: revenueCatAppUserId,
       fallbackBundleAssetPath: fallbackBundleAssetPath,
+      environment: environment,
       paywallLoadingConfig: paywallLoadingConfig,
     );
   }
@@ -51,10 +54,11 @@ class HeliumFlutter {
   Future<String?> overrideUserId({
     required String newUserId,
     required Map<String, dynamic> traits,
-  }) => HeliumFlutterPlatform.instance.overrideUserId(
-    newUserId: newUserId,
-    traits: traits,
-  );
+  }) =>
+      HeliumFlutterPlatform.instance.overrideUserId(
+        newUserId: newUserId,
+        traits: traits,
+      );
 
   ///Returns bool based on paywall loaded or not
   Future<bool> paywallsLoaded() =>
@@ -86,7 +90,8 @@ class HeliumFlutter {
     required String trigger,
     PaywallEventHandlers? eventHandlers,
   }) =>
-      HeliumFlutterPlatform.instance.getUpsellWidget(trigger: trigger, eventHandlers: eventHandlers);
+      HeliumFlutterPlatform.instance
+          .getUpsellWidget(trigger: trigger, eventHandlers: eventHandlers);
 
   /// Checks if the user has any active subscription (including non-renewable)
   Future<bool> hasAnyActiveSubscription() =>
@@ -135,5 +140,4 @@ class HeliumFlutter {
   /// - Note: .system respects the device's current appearance setting (default)
   void setLightDarkModeOverride(HeliumLightDarkMode mode) =>
       HeliumFlutterPlatform.instance.setLightDarkModeOverride(mode);
-
 }

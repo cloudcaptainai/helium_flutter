@@ -1,3 +1,13 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-  package="com.helium.helium_flutter">
+    xmlns:tools="http://schemas.android.com/tools"
+    package="com.helium.helium_flutter">
+
+    <application>
+        <!-- Ensure no title bar... maybe move this to Android sdk? -->
+        <!-- And use an edge-to-edge theme -->
+        <activity
+            android:name="com.tryhelium.paywall.ui.HeliumPaywallActivity"
+            android:theme="@style/HeliumPaywallTheme"
+            tools:replace="android:theme" />
+    </application>
 </manifest>

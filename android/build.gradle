@@ -2,7 +2,7 @@ group = "com.helium.helium_flutter"
 version = "1.0-SNAPSHOT"
 
 buildscript {
-    ext.kotlin_version = "1.8.22"
+    ext.kotlin_version = "2.1.0"
     repositories {
         google()
         mavenCentral()
@@ -48,6 +48,9 @@ android {
     }
 
     dependencies {
+        implementation("com.tryhelium.paywall:core:0.1.11")
+        implementation("com.google.code.gson:gson:2.10.1")
+        implementation("com.android.billingclient:billing:8.0.0")
         testImplementation("org.jetbrains.kotlin:kotlin-test")
         testImplementation("org.mockito:mockito-core:5.0.0")
     }

@@ -1,0 +1,1 @@
+enum HeliumEnvironment { sandbox, production }

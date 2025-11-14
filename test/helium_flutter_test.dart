@@ -4,6 +4,7 @@ import 'package:helium_flutter/core/const/contants.dart';
 import 'package:helium_flutter/core/helium_flutter_method_channel.dart';
 import 'package:helium_flutter/core/helium_flutter_platform.dart';
 import 'package:helium_flutter/helium_flutter.dart';
+import 'package:helium_flutter/types/helium_environment.dart';
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 
 import 'core/const.dart';
@@ -22,6 +23,7 @@ class MockHeliumFlutterPlatform
     Map<String, dynamic>? customUserTraits,
     String? revenueCatAppUserId,
     String? fallbackBundleAssetPath,
+    HeliumEnvironment? environment,
     HeliumPaywallLoadingConfig? paywallLoadingConfig,
   }) {
     return Future.value('Initialization started!');
@@ -122,7 +124,6 @@ class MockHeliumFlutterPlatform
 
   @override
   void setLightDarkModeOverride(HeliumLightDarkMode mode) {}
-
 }
 
 void main() {
@@ -199,7 +200,8 @@ void main() {
     );
 
     expect(
-      await heliumFlutterPlugin.presentUpsell(context: context, trigger: 'onboarding'),
+      await heliumFlutterPlugin.presentUpsell(
+          context: context, trigger: 'onboarding'),
       'Upsell presented!',
     );
   });
@@ -210,7 +212,8 @@ void main() {
     expect(await heliumFlutterPlugin.hasAnyEntitlement(), true);
   });
   test(hasEntitlementForPaywallMethodName, () async {
-    expect(await heliumFlutterPlugin.hasEntitlementForPaywall('onboarding'), false);
+    expect(await heliumFlutterPlugin.hasEntitlementForPaywall('onboarding'),
+        false);
   });
   test(setLightDarkModeOverrideMethodName, () {
     // Test that it doesn't throw

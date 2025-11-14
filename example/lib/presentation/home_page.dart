@@ -70,8 +70,7 @@ class _HomePageState extends State<HomePage> {
             ElevatedButton(
               key: ValueKey('is_paywall_loaded'),
               onPressed: () async {
-                bool result =
-                    await _heliumFlutterPlugin.paywallsLoaded();
+                bool result = await _heliumFlutterPlugin.paywallsLoaded();
                 setState(() {
                   _paywallsLoaded = result;
                 });
@@ -85,7 +84,7 @@ class _HomePageState extends State<HomePage> {
               key: ValueKey('present_upsell'),
               onPressed: () async {
                 await _heliumFlutterPlugin.presentUpsell(
-                  trigger: 'onboarding',
+                  trigger: 'sdk_test',
                   context: context,
                 );
               },

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:helium_flutter/helium_flutter.dart';
+import 'package:helium_flutter/types/helium_environment.dart';
 import 'package:helium_flutter_example/core/payment_callbacks.dart';
 
 import 'package:helium_flutter_example/presentation/home_page.dart';
@@ -36,7 +37,7 @@ Future<void> initializeHeliumSwift() async {
         'somethingElse2': 'somethingElse2',
         'vibes': 3.0,
       },
-    );
+      environment: HeliumEnvironment.production);
   } on PlatformException {
     rethrow;
   } catch (e) {
