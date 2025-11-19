@@ -7,6 +7,9 @@ import io.flutter.embedding.engine.plugins.activity.ActivityAware
 import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
+import io.flutter.plugin.common.EventChannel
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.collect
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler
 import io.flutter.plugin.common.MethodChannel.Result
 import kotlinx.coroutines.CoroutineScope
@@ -23,6 +26,7 @@ import com.helium.helium_flutter.convertToHeliumUserTraitsArgument
 import com.helium.helium_flutter.CustomPaywallDelegate
 import com.tryhelium.paywall.core.Helium
 import com.tryhelium.paywall.core.HeliumConfigStatus
+import com.tryhelium.paywall.core.HeliumConfigStatus.*
 import com.tryhelium.paywall.core.HeliumEnvironment
 import com.tryhelium.paywall.core.HeliumFallbackConfig
 import com.tryhelium.paywall.core.HeliumIdentityManager
@@ -45,11 +49,54 @@ class HeliumFlutterPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
   private var flutterPluginBinding: FlutterPlugin.FlutterPluginBinding? = null
   private val gson = Gson()
 
+  private lateinit var statusChannel: EventChannel
+  private val mainScope = CoroutineScope(Dispatchers.Main)
+  private var statusJob: Job? = null
+
   override fun onAttachedToEngine(flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
     this.flutterPluginBinding = flutterPluginBinding
     this.context = flutterPluginBinding.applicationContext
     channel = MethodChannel(flutterPluginBinding.binaryMessenger, "helium_flutter")
     channel.setMethodCallHandler(this)
+
+    statusChannel =
+      EventChannel(flutterPluginBinding.binaryMessenger, "com.tryhelium.paywall/download_status")
+    statusChannel.setStreamHandler(object : EventChannel.StreamHandler {
+      override fun onListen(arguments: Any?, events: EventChannel.EventSink?) {
+        if (!Helium.isInitialized) {
+          events?.error("NOT_INITIALIZED", "Helium not initialized", null)
+          return
+        }
+
+        // Launch a coroutine to collect the Kotlin Flow
+        statusJob = mainScope.launch {
+          try {
+            // Collect the flow and send enum names to Flutter
+            Helium.shared.downloadStatus.collect { status ->
+              events?.success(status.toStringValue()) // Sends "SUCCESS", "PENDING", etc.
+            }
+          } catch (e: Exception) {
+            // Handle flow errors or cancellation
+          }
+        }
+      }
+
+      override fun onCancel(arguments: Any?) {
+        // Stop collecting when Flutter listener cancels
+        statusJob?.cancel()
+        statusJob = null
+      }
+    })
+  }
+
+  fun HeliumConfigStatus.toStringValue(): String {
+    return when (this) {
+      DownloadFailure -> "downloadFailure"
+      DownloadSuccess -> "downloadSuccess"
+      Downloading -> "inProgress"
+      NotYetDownloaded -> "notDownloadedYet"
+      else -> ""
+    }
   }
 
   override fun onMethodCall(call: MethodCall, result: Result) {
@@ -118,17 +165,6 @@ class HeliumFlutterPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
             result.error("INIT_ERROR", "Failed to initialize: ${e.message}", null)
           }
         }
-      }
-      "getDownloadStatus" -> {
-        val status = (Helium.shared.downloadStatus as? StateFlow<HeliumConfigStatus>)?.value
-        val statusString = when (status) {
-          is HeliumConfigStatus.NotYetDownloaded -> "NotYetDownloaded"
-          is HeliumConfigStatus.Downloading -> "Downloading"
-          is HeliumConfigStatus.DownloadFailure -> "DownloadFailure"
-          is HeliumConfigStatus.DownloadSuccess -> "DownloadSuccess"
-          else -> "NotYetDownloaded"
-        }
-        result.success(statusString)
       }
       "presentUpsell" -> {
         val args = call.arguments as? Map<*, *>
@@ -268,6 +304,9 @@ class HeliumFlutterPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
     channel.setMethodCallHandler(null)
     this.flutterPluginBinding = null
     this.context = null
+    
+    statusChannel.setStreamHandler(null)
+    statusJob?.cancel()
   }
 
   override fun onAttachedToActivity(binding: ActivityPluginBinding) {

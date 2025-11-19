@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:helium_flutter/core/helium_callbacks.dart';
 import 'package:helium_flutter/core/helium_flutter_platform.dart';
 import 'package:helium_flutter/types/experiment_info.dart';
+import 'package:helium_flutter/types/helium_config_status.dart';
 import 'package:helium_flutter/types/helium_environment.dart';
 import 'package:helium_flutter/types/helium_types.dart';
 export './core/helium_callbacks.dart';
@@ -39,10 +41,6 @@ class HeliumFlutter {
     );
   }
 
-  ///Download status of paywall
-  Future<String?> getDownloadStatus() =>
-      HeliumFlutterPlatform.instance.getDownloadStatus();
-
   ///Gets helium user id
   Future<String?> getHeliumUserId() =>
       HeliumFlutterPlatform.instance.getHeliumUserId();
@@ -63,6 +61,17 @@ class HeliumFlutter {
   ///Returns bool based on paywall loaded or not
   Future<bool> paywallsLoaded() =>
       HeliumFlutterPlatform.instance.paywallsLoaded();
+
+  static const EventChannel _statusChannel =
+      EventChannel("com.tryhelium.paywall/download_status");
+
+  ///Download status of paywall
+  static Stream<HeliumConfigStatus?> get downloadStatus {
+    return _statusChannel.receiveBroadcastStream().map((event) {
+      final statusString = event as String;
+      return HeliumConfigStatus.create(statusString);
+    });
+  }
 
   ///Presents view based on [trigger]
   Future<String?> presentUpsell({
