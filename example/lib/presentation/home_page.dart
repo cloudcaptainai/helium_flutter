@@ -12,7 +12,7 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  String _downloadState = 'Neutral';
+  final String _downloadState = 'Neutral';
   String _userId = 'Initial';
   bool _upsellHidden = false;
   bool _paywallsLoaded = false;
