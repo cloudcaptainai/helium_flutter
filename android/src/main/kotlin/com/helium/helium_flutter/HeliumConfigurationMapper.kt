@@ -1,7 +1,6 @@
 package com.helium.helium_flutter
 
 import android.content.Context
-import android.util.Log
 import com.tryhelium.paywall.core.HeliumEnvironment
 import com.tryhelium.paywall.core.HeliumUserTraits
 import com.tryhelium.paywall.core.HeliumUserTraitsArgument
@@ -119,7 +118,6 @@ internal fun convertToHeliumFallbackConfig(
             // Return just the filename for SDK
             filename
         } catch (e: Exception) {
-            Log.e(TAG, "✗ Failed to pre-store asset: ${e.message}")
             null
         }
     } else {
