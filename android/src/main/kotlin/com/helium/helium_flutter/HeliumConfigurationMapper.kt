@@ -11,7 +11,6 @@ import java.io.FileOutputStream
 
 private const val DEFAULT_USE_LOADING_STATE = true
 private const val DEFAULT_LOADING_BUDGET_MS = 2000L // consider grabbing this from Android sdk as future enhancment
-private const val TAG = "HeliumConfigMapper"
 
 internal fun String?.toEnvironment(): HeliumEnvironment {
     if (this == null) return HeliumEnvironment.PRODUCTION
@@ -115,9 +114,6 @@ internal fun convertToHeliumFallbackConfig(
                         inputStream.copyTo(outputStream)
                     }
                 }
-                Log.d(TAG, "✓ Copied asset to: ${destinationFile.absolutePath}")
-            } else {
-                Log.d(TAG, "✓ Asset already exists at: ${destinationFile.absolutePath}")
             }
 
             // Return just the filename for SDK

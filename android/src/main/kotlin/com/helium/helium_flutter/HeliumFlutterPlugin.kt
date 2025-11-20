@@ -2,10 +2,7 @@ package com.helium.helium_flutter
 
 import android.app.Activity
 import android.content.Context
-import android.util.Log
 import io.flutter.embedding.engine.plugins.FlutterPlugin
-import java.io.File
-import java.io.FileOutputStream
 import io.flutter.embedding.engine.plugins.activity.ActivityAware
 import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding
 import io.flutter.plugin.common.MethodCall
@@ -47,10 +44,6 @@ class HeliumFlutterPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
   private var context: Context? = null
   private var flutterPluginBinding: FlutterPlugin.FlutterPluginBinding? = null
   private val gson = Gson()
-
-  companion object {
-    private const val TAG = "HeliumFlutterPlugin"
-  }
 
   override fun onAttachedToEngine(flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
     this.flutterPluginBinding = flutterPluginBinding
