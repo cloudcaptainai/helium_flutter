@@ -250,22 +250,7 @@ public class HeliumFlutterPlugin: NSObject, FlutterPlugin {
         Helium.shared.presentUpsell(
             trigger: trigger,
             eventHandlers: PaywallEventHandlers.withHandlers(
-                onOpen: { [weak self] event in
-                    self?.channel.invokeMethod("onPaywallEventHandler", arguments: event.toDictionary())
-                },
-                onClose: { [weak self] event in
-                    self?.channel.invokeMethod("onPaywallEventHandler", arguments: event.toDictionary())
-                },
-                onDismissed: { [weak self] event in
-                    self?.channel.invokeMethod("onPaywallEventHandler", arguments: event.toDictionary())
-                },
-                onPurchaseSucceeded: { [weak self] event in
-                    self?.channel.invokeMethod("onPaywallEventHandler", arguments: event.toDictionary())
-                },
-                onOpenFailed: { [weak self] event in
-                    self?.channel.invokeMethod("onPaywallEventHandler", arguments: event.toDictionary())
-                },
-                onCustomPaywallAction: { [weak self] event in
+                onAnyEvent: { [weak self] event in
                     self?.channel.invokeMethod("onPaywallEventHandler", arguments: event.toDictionary())
                 }
             ),

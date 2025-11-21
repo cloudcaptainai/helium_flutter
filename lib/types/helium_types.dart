@@ -96,6 +96,7 @@ class PaywallEventHandlers {
   final void Function(PurchaseSucceededEvent event)? onPurchaseSucceeded;
   final void Function(PaywallOpenFailedEvent event)? onOpenFailed;
   final void Function(CustomPaywallActionEvent event)? onCustomPaywallAction;
+  final void Function(HeliumPaywallEvent event)? onAnyEvent;
 
   PaywallEventHandlers({
     this.onOpen,
@@ -104,6 +105,7 @@ class PaywallEventHandlers {
     this.onPurchaseSucceeded,
     this.onOpenFailed,
     this.onCustomPaywallAction,
+    this.onAnyEvent,
   });
 }
 
