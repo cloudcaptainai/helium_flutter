@@ -68,6 +68,9 @@ class HeliumFlutterPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
           return
         }
 
+        // Cancel the currentJob if one exist
+        statusJob?.cancel()
+
         // Launch a coroutine to collect the Kotlin Flow
         statusJob = mainScope.launch {
           try {
