@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:helium_flutter/helium_flutter.dart';
+import 'package:helium_flutter/types/helium_config_status.dart';
 import 'package:helium_flutter_example/presentation/revenue_cat_page.dart';
 import 'package:helium_flutter_example/presentation/view_for_trigger_page.dart';
 
@@ -11,12 +12,23 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  String _downloadState = 'Neutral';
+  final String _downloadState = 'Neutral';
   String _userId = 'Initial';
   bool _upsellHidden = false;
   bool _paywallsLoaded = false;
 
   final _heliumFlutterPlugin = HeliumFlutter();
+
+
+  Widget getDownloadStatusText(BuildContext context) {
+    return StreamBuilder<HeliumConfigStatus?>(
+      stream: HeliumFlutter.downloadStatus,
+      builder: (context, snapshot) {
+        final status = snapshot.data;
+          return Text("Helium Status ${status?.name}");
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -26,14 +38,10 @@ class _HomePageState extends State<HomePage> {
         child: Column(
           children: [
             SizedBox(height: 8),
+            getDownloadStatusText(context),
             ElevatedButton(
               key: ValueKey('download_status'),
               onPressed: () async {
-                String status =
-                    await _heliumFlutterPlugin.getDownloadStatus() ?? '';
-                setState(() {
-                  _downloadState = status;
-                });
               },
               child: Text('Download status'),
             ),

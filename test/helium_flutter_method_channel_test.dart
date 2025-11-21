@@ -35,8 +35,6 @@ void main() {
             case initializeMethodName:
               log(methodCall.arguments.toString());
               return 'Initialization started!';
-            case getDownloadStatusMethodName:
-              return 'Completed';
             case getHeliumUserIdMethodName:
               return 'Test';
             case hideUpsellMethodName:
@@ -69,9 +67,6 @@ void main() {
       ),
       'Initialization started!',
     );
-  });
-  test(getDownloadStatusMethodName, () async {
-    expect(await platform.getDownloadStatus(), 'Completed');
   });
   test(getHeliumUserIdMethodName, () async {
     expect(await platform.getHeliumUserId(), 'Test');

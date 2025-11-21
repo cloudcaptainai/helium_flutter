@@ -30,11 +30,6 @@ class MockHeliumFlutterPlatform
   }
 
   @override
-  Future<String?> getDownloadStatus() {
-    return Future.value('Completed');
-  }
-
-  @override
   Future<String?> getHeliumUserId() {
     return Future.value('user_id');
   }
@@ -163,9 +158,6 @@ void main() {
       ),
       'Initialization started!',
     );
-  });
-  test(getDownloadStatusMethodName, () async {
-    expect(await heliumFlutterPlugin.getDownloadStatus(), 'Completed');
   });
   test(getHeliumUserIdMethodName, () async {
     expect(await heliumFlutterPlugin.getHeliumUserId(), 'user_id');

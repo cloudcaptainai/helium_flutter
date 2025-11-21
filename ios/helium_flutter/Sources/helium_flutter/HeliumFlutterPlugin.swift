@@ -43,6 +43,9 @@ public class HeliumFlutterPlugin: NSObject, FlutterPlugin {
 
         let factory = FLNativeViewFactory()
         registrar.register(factory, withId: "upsellViewForTrigger")
+
+        let statusChannel = FlutterEventChannel(name: "com.tryhelium.paywall/download_status", binaryMessenger: registrar.messenger())
+        statusChannel.setStreamHandler(HeliumStatusStreamHandler())
     }
 
     public func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
@@ -74,8 +77,6 @@ public class HeliumFlutterPlugin: NSObject, FlutterPlugin {
             } else {
                 result(FlutterError(code: "BAD_ARGS", message: "Arguments not passed correctly", details: nil))
             }
-        case "getDownloadStatus":
-            result(getDownloadStatus())
         case "presentUpsell":
             if let args = call.arguments as? [String: Any] {
                 let trigger = args["trigger"] as? String ?? ""
@@ -275,10 +276,6 @@ public class HeliumFlutterPlugin: NSObject, FlutterPlugin {
 
     public func hideUpsell() -> Bool {
         Helium.shared.hideUpsell()
-    }
-
-    public func getDownloadStatus() -> String {
-        return Helium.shared.getDownloadStatus().rawValue
     }
 
     public func getHeliumUserId() -> String? {

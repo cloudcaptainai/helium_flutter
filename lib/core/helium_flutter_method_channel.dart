@@ -101,14 +101,6 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
   }
 
   @override
-  Future<String?> getDownloadStatus() async {
-    final result = await methodChannel.invokeMethod<String?>(
-      getDownloadStatusMethodName,
-    );
-    return result;
-  }
-
-  @override
   Future<String?> getHeliumUserId() async {
     final result = await methodChannel.invokeMethod<String?>(
       getHeliumUserIdMethodName,
