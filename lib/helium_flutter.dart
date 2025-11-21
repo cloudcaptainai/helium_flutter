@@ -66,10 +66,9 @@ class HeliumFlutter {
       EventChannel("com.tryhelium.paywall/download_status");
 
   ///Download status of paywall
-  static Stream<HeliumConfigStatus?> get downloadStatus {
+  static Stream<HeliumConfigStatus> get downloadStatus {
     return _statusChannel.receiveBroadcastStream().map((event) {
-      final statusString = event as String;
-      return HeliumConfigStatus.create(statusString);
+      return HeliumConfigStatus.create(event as String?);
     });
   }
 

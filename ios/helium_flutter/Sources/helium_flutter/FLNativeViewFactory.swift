@@ -54,12 +54,7 @@ class FLNativeView: NSObject, FlutterPlatformView {
         let swiftUIView = Helium.shared.upsellViewForTrigger(
             trigger: trigger,
             eventHandlers: PaywallEventHandlers.withHandlers(
-                onOpen: postPaywallEvent,
-                onClose: postPaywallEvent,
-                onDismissed: postPaywallEvent,
-                onPurchaseSucceeded: postPaywallEvent,
-                onOpenFailed: postPaywallEvent,
-                onCustomPaywallAction: postPaywallEvent
+                onAnyEvent: postPaywallEvent
             )
         )
         guard let swiftUIView else {

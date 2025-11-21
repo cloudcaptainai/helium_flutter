@@ -4,9 +4,11 @@ import Helium
 import SwiftUI
 import Foundation
 
-// Notification name for paywall events
+// Notification names for events
 extension NSNotification.Name {
     static let paywallEventHandlerDispatch = NSNotification.Name("paywallEventHandlerDispatch")
+    static let heliumInitializing = NSNotification.Name("heliumInitializing")
+    static let heliumReset = NSNotification.Name("heliumReset")
 }
 
 enum PurchaseError: LocalizedError {
@@ -192,7 +194,9 @@ public class HeliumFlutterPlugin: NSObject, FlutterPlugin {
         paywallLoadingConfig: [String: Any]?,
         useDefaultDelegate: Bool
     ) {
-        Task {
+        Task { // task probably not needed here...
+            NotificationCenter.default.post(name: .heliumInitializing, object: nil)
+
             let delegate: HeliumPaywallDelegate
             if useDefaultDelegate {
                 delegate = DefaultPurchaseDelegate(methodChannel: channel)
@@ -225,7 +229,7 @@ public class HeliumFlutterPlugin: NSObject, FlutterPlugin {
                 perTriggerLoadingConfig = triggerConfigs
             }
 
-            await Helium.shared.initialize(
+            Helium.shared.initialize(
                 apiKey: apiKey,
                 heliumPaywallDelegate: delegate,
                 fallbackConfig: HeliumFallbackConfig.withMultipleFallbacks(
@@ -250,22 +254,7 @@ public class HeliumFlutterPlugin: NSObject, FlutterPlugin {
         Helium.shared.presentUpsell(
             trigger: trigger,
             eventHandlers: PaywallEventHandlers.withHandlers(
-                onOpen: { [weak self] event in
-                    self?.channel.invokeMethod("onPaywallEventHandler", arguments: event.toDictionary())
-                },
-                onClose: { [weak self] event in
-                    self?.channel.invokeMethod("onPaywallEventHandler", arguments: event.toDictionary())
-                },
-                onDismissed: { [weak self] event in
-                    self?.channel.invokeMethod("onPaywallEventHandler", arguments: event.toDictionary())
-                },
-                onPurchaseSucceeded: { [weak self] event in
-                    self?.channel.invokeMethod("onPaywallEventHandler", arguments: event.toDictionary())
-                },
-                onOpenFailed: { [weak self] event in
-                    self?.channel.invokeMethod("onPaywallEventHandler", arguments: event.toDictionary())
-                },
-                onCustomPaywallAction: { [weak self] event in
+                onAnyEvent: { [weak self] event in
                     self?.channel.invokeMethod("onPaywallEventHandler", arguments: event.toDictionary())
                 }
             ),
@@ -372,6 +361,7 @@ public class HeliumFlutterPlugin: NSObject, FlutterPlugin {
     }
 
     private func resetHelium() {
+        NotificationCenter.default.post(name: .heliumReset, object: nil)
         Helium.resetHelium()
     }
 

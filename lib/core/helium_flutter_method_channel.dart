@@ -390,6 +390,7 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
         ));
         break;
     }
+    _currentEventHandlers?.onAnyEvent?.call(event);
   }
 
   void _handlePaywallEvent(HeliumPaywallEvent heliumPaywallEvent) {
