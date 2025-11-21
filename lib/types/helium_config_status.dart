@@ -4,7 +4,7 @@ enum HeliumConfigStatus {
   downloadFailure,
   downloadSuccess;
 
-  static HeliumConfigStatus? create(String statusString) {
+  static HeliumConfigStatus create(String? statusString) {
     switch (statusString) {
       case "downloadFailure":
         return downloadFailure;
@@ -14,7 +14,8 @@ enum HeliumConfigStatus {
         return downloading;
       case "notDownloadedYet":
         return notYetDownloaded;
+      default:
+        return notYetDownloaded;
     }
-    return null;
   }
 }
