@@ -12,7 +12,6 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  final String _downloadState = 'Neutral';
   String _userId = 'Initial';
   bool _upsellHidden = false;
   bool _paywallsLoaded = false;
@@ -39,14 +38,6 @@ class _HomePageState extends State<HomePage> {
           children: [
             SizedBox(height: 8),
             getDownloadStatusText(context),
-            ElevatedButton(
-              key: ValueKey('download_status'),
-              onPressed: () async {
-              },
-              child: Text('Download status'),
-            ),
-            SizedBox(height: 8),
-            Text(_downloadState),
             SizedBox(height: 8),
             ElevatedButton(
               key: ValueKey('user_id'),
