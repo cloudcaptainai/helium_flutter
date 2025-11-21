@@ -43,9 +43,6 @@ abstract class HeliumFlutterPlatform extends PlatformInterface {
     HeliumPaywallLoadingConfig? paywallLoadingConfig,
   });
 
-  ///Download status of paywall
-  Future<String?> getDownloadStatus();
-
   ///Presents view based on [trigger]
   Future<String?> presentUpsell({
     required BuildContext context,
