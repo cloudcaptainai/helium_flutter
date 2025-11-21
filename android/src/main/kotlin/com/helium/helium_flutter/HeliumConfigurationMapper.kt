@@ -1,9 +1,15 @@
 package com.helium.helium_flutter
 
+import android.content.Context
 import com.tryhelium.paywall.core.HeliumEnvironment
 import com.tryhelium.paywall.core.HeliumUserTraits
 import com.tryhelium.paywall.core.HeliumUserTraitsArgument
 import com.tryhelium.paywall.core.HeliumFallbackConfig
+import java.io.File
+import java.io.FileOutputStream
+
+private const val DEFAULT_USE_LOADING_STATE = true
+private const val DEFAULT_LOADING_BUDGET_MS = 2000L // consider grabbing this from Android sdk as future enhancment
 
 internal fun String?.toEnvironment(): HeliumEnvironment {
     if (this == null) return HeliumEnvironment.PRODUCTION
@@ -82,17 +88,56 @@ internal fun convertToHeliumUserTraitsArgument(value: Any?): HeliumUserTraitsArg
     }
 }
 
-internal fun convertToHeliumFallbackConfig(input: Map<String, Any?>?): HeliumFallbackConfig? {
-    if (input == null) return null
-    val convertedInput = convertMarkersToBooleans(input) ?: return null
+internal fun convertToHeliumFallbackConfig(
+    paywallLoadingConfig: Map<String, Any?>?,
+    fallbackAssetPath: String?,
+    flutterAssetPath: String?,
+    context: Context?
+): HeliumFallbackConfig? {
+    if (paywallLoadingConfig == null && fallbackAssetPath == null) return null
 
-    val useLoadingState = convertedInput["useLoadingState"] as? Boolean ?: true
-    val loadingBudget = (convertedInput["loadingBudget"] as? Number)?.toLong() ?: 2000L
-    val fallbackBundleName = convertedInput["fallbackBundleName"] as? String
+    // Pre-emptively store the fallback bundle to avoid path traversal issues
+    val finalFallbackBundleName = if (flutterAssetPath != null && context != null) {
+        try {
+            // Extract just the filename (remove flutter_assets/ prefix)
+            val filename = fallbackAssetPath.substringAfterLast('/') ?: flutterAssetPath.substringAfterLast('/')
 
-    // Parse perTriggerLoadingConfig if present
+            // Get SDK's local directory
+            val heliumLocalDir = context.getDir("helium_local", Context.MODE_PRIVATE)
+            val destinationFile = File(heliumLocalDir, filename)
+
+            // Copy asset to local storage if not already there
+            if (!destinationFile.exists()) {
+                context.assets.open(flutterAssetPath).use { inputStream ->
+                    FileOutputStream(destinationFile).use { outputStream ->
+                        inputStream.copyTo(outputStream)
+                    }
+                }
+            }
+
+            // Return just the filename for SDK
+            filename
+        } catch (e: Exception) {
+            null
+        }
+    } else {
+        null
+    }
+
+    if (paywallLoadingConfig == null) {
+        return HeliumFallbackConfig(
+            useLoadingState = DEFAULT_USE_LOADING_STATE,
+            fallbackBundleName = finalFallbackBundleName
+        )
+    }
+
+    val convertedConfig = convertMarkersToBooleans(paywallLoadingConfig) ?: return null
+
+    val useLoadingState = convertedConfig["useLoadingState"] as? Boolean ?: DEFAULT_USE_LOADING_STATE
+    val loadingBudget = (convertedConfig["loadingBudget"] as? Number)?.toLong() ?: DEFAULT_LOADING_BUDGET_MS
+
     var perTriggerLoadingConfig: Map<String, HeliumFallbackConfig>? = null
-    val perTriggerDict = convertedInput["perTriggerLoadingConfig"] as? Map<*, *>
+    val perTriggerDict = convertedConfig["perTriggerLoadingConfig"] as? Map<*, *>
     if (perTriggerDict != null) {
         perTriggerLoadingConfig = perTriggerDict.mapNotNull { (key, value) ->
             if (key is String && value is Map<*, *>) {
@@ -101,8 +146,8 @@ internal fun convertToHeliumFallbackConfig(input: Map<String, Any?>?): HeliumFal
                 val triggerUseLoadingState = config?.get("useLoadingState") as? Boolean
                 val triggerLoadingBudget = (config?.get("loadingBudget") as? Number)?.toLong()
                 key to HeliumFallbackConfig(
-                    useLoadingState = triggerUseLoadingState ?: true,
-                    loadingBudgetInMs = triggerLoadingBudget ?: 2000L
+                    useLoadingState = triggerUseLoadingState ?: DEFAULT_USE_LOADING_STATE,
+                    loadingBudgetInMs = triggerLoadingBudget ?: DEFAULT_LOADING_BUDGET_MS
                 )
             } else {
                 null
@@ -114,6 +159,6 @@ internal fun convertToHeliumFallbackConfig(input: Map<String, Any?>?): HeliumFal
         useLoadingState = useLoadingState,
         loadingBudgetInMs = loadingBudget,
         perTriggerLoadingConfig = perTriggerLoadingConfig,
-        fallbackBundleName = fallbackBundleName
+        fallbackBundleName = finalFallbackBundleName
     )
 }
