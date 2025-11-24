@@ -323,15 +323,19 @@ class HeliumFlutterPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
       }
       "disableRestoreFailedDialog" -> {
         Helium.shared.disableRestoreFailedDialog()
-        result.success(null)
+        result.success("Restore failed dialog disabled!")
       }
       "setCustomRestoreFailedStrings" -> {
-        val args = call.arguments as? Map<*, *> ?: return
+        val args = call.arguments as? Map<*, *>
+        if (args == null) {
+          result.error("BAD_ARGS", "Arguments not passed correctly", null)
+          return
+        }
         val customTitle = args["customTitle"] as? String
         val customMessage = args["customMessage"] as? String
         val customCloseButtonText = args["customCloseButtonText"] as? String
         Helium.shared.setCustomRestoreFailedStrings(customTitle = customTitle, customMessage = customMessage, customCloseButtonText = customCloseButtonText)
-        result.success(null)
+        result.success("Custom restore failed strings set!")
       }
       "resetHelium" -> {
         Helium.resetHelium()
