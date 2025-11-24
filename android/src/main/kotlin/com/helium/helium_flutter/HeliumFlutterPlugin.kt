@@ -2,6 +2,8 @@ package com.helium.helium_flutter
 
 import android.app.Activity
 import android.content.Context
+import android.os.Handler
+import android.os.Looper
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.embedding.engine.plugins.activity.ActivityAware
 import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding
@@ -25,6 +27,9 @@ import com.helium.helium_flutter.convertToHeliumUserTraits
 import com.helium.helium_flutter.convertToHeliumUserTraitsArgument
 import com.helium.helium_flutter.CustomPaywallDelegate
 import com.tryhelium.paywall.core.Helium
+import com.tryhelium.paywall.core.event.HeliumEvent
+import com.tryhelium.paywall.core.event.HeliumEventListener
+import com.tryhelium.paywall.core.event.HeliumEventDictionaryMapper
 import com.tryhelium.paywall.core.HeliumConfigStatus
 import com.tryhelium.paywall.core.HeliumConfigStatus.*
 import com.tryhelium.paywall.core.HeliumEnvironment
@@ -184,8 +189,18 @@ class HeliumFlutterPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
 
         val dontShowIfAlreadyEntitled = args["dontShowIfAlreadyEntitled"] as? Boolean ?: false
 
+        val eventListener = HeliumEventListener { event ->
+            // Convert the sealed class object to a Map
+            val eventData = HeliumEventDictionaryMapper.toDictionary(event)
+            // Send to Flutter on the Main Thread
+            Handler(Looper.getMainLooper()).post {
+                channel.invokeMethod("onPaywallEventHandler", eventData)
+            }
+        }
+
         Helium.presentUpsell(
           trigger = trigger,
+          eventListener = eventListener,
           // TODO add support for these
 //          customPaywallTraits = customPaywallTraits,
 //          dontShowIfAlreadyEntitled = dontShowIfAlreadyEntitled
@@ -258,13 +273,35 @@ class HeliumFlutterPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
         result.success(handled)
       }
       "hasAnyActiveSubscription" -> {
-        result.notImplemented()
+        CoroutineScope(Dispatchers.Main).launch {
+          try {
+            val hasSubscription: Boolean = Helium.shared.hasAnyActiveSubscription()
+            result.success(hasSubscription)
+          } catch (e: Exception) {
+            result.success(null)
+          }
+        }
       }
       "hasAnyEntitlement" -> {
-        result.notImplemented()
+        CoroutineScope(Dispatchers.Main).launch {
+          try {
+            val hasEntitlement: Boolean = Helium.shared.hasAnyEntitlement()
+            result.success(hasEntitlement)
+          } catch (e: Exception) {
+            result.success(null)
+          }
+        }
       }
       "hasEntitlementForPaywall" -> {
-        result.notImplemented()
+        val trigger = call.arguments as? String
+        CoroutineScope(Dispatchers.Main).launch {
+          try {
+            val hasEntitlement: Boolean? = Helium.shared.hasEntitlementForPaywall(trigger ?: "")
+            result.success(hasEntitlement)
+          } catch (e: Exception) {
+            result.success(null)
+          }
+        }
       }
       "getExperimentInfoForTrigger" -> {
         val trigger = call.arguments as? String ?: ""
@@ -285,10 +322,16 @@ class HeliumFlutterPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
         }
       }
       "disableRestoreFailedDialog" -> {
-        result.notImplemented()
+        Helium.shared.disableRestoreFailedDialog()
+        result.success(null)
       }
       "setCustomRestoreFailedStrings" -> {
-        result.notImplemented()
+        val args = call.arguments as? Map<*, *> ?: return
+        val customTitle = args["customTitle"] as? String
+        val customMessage = args["customMessage"] as? String
+        val customCloseButtonText = args["customCloseButtonText"] as? String
+        Helium.shared.setCustomRestoreFailedStrings(customTitle = customTitle, customMessage = customMessage, customCloseButtonText = customCloseButtonText)
+        result.success(null)
       }
       "resetHelium" -> {
         Helium.resetHelium()
