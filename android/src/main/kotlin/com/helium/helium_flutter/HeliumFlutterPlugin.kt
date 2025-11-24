@@ -294,9 +294,13 @@ class HeliumFlutterPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
       }
       "hasEntitlementForPaywall" -> {
         val trigger = call.arguments as? String
+        if (trigger == null) {
+          result.error("BAD_ARGS", "Arguments not passed correctly", null)
+          return
+        }
         CoroutineScope(Dispatchers.Main).launch {
           try {
-            val hasEntitlement: Boolean? = Helium.shared.hasEntitlementForPaywall(trigger ?: "")
+            val hasEntitlement: Boolean? = Helium.shared.hasEntitlementForPaywall(trigger)
             result.success(hasEntitlement)
           } catch (e: Exception) {
             result.success(null)
