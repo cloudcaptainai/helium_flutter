@@ -130,7 +130,19 @@ class HeliumFlutterPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
 
         @Suppress("UNCHECKED_CAST")
         val paywallLoadingConfigMap = args["paywallLoadingConfig"] as? Map<String, Any?>
-        val fallbackConfig = convertToHeliumFallbackConfig(paywallLoadingConfigMap)
+
+        // Extract fallbackAssetPath from args and resolve Flutter asset path
+        val fallbackAssetPath = args["fallbackAssetPath"] as? String
+        val flutterAssetPath = fallbackAssetPath?.let {
+          flutterPluginBinding?.flutterAssets?.getAssetFilePathByName(it)
+        }
+
+        val fallbackConfig = convertToHeliumFallbackConfig(
+          paywallLoadingConfigMap,
+          fallbackAssetPath,
+          flutterAssetPath,
+          context
+        )
 
         val environment = (args["environment"] as? String).toEnvironment()
 
