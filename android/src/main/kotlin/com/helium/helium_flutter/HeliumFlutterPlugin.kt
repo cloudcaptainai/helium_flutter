@@ -213,9 +213,8 @@ class HeliumFlutterPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
         Helium.presentUpsell(
           trigger = trigger,
           eventListener = eventListener,
-          // TODO add support for these
-//          customPaywallTraits = customPaywallTraits,
-//          dontShowIfAlreadyEntitled = dontShowIfAlreadyEntitled
+          customPaywallTraits = customPaywallTraits,
+          dontShowIfAlreadyEntitled = dontShowIfAlreadyEntitled
         )
 
         result.success("Upsell presented!")
