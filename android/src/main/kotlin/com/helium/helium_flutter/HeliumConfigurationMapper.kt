@@ -100,7 +100,7 @@ internal fun convertToHeliumFallbackConfig(
     val finalFallbackBundleName = if (flutterAssetPath != null && context != null) {
         try {
             // Extract just the filename (remove flutter_assets/ prefix)
-            val filename = fallbackAssetPath.substringAfterLast('/') ?: flutterAssetPath.substringAfterLast('/')
+            val filename = fallbackAssetPath?.substringAfterLast('/') ?: flutterAssetPath.substringAfterLast('/')
 
             // Get SDK's local directory
             val heliumLocalDir = context.getDir("helium_local", Context.MODE_PRIVATE)
