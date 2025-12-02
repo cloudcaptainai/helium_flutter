@@ -22,8 +22,8 @@ jobs:
 
       - name: Update Package.swift
         run: |
-          # Update just the version part on the from: line
-          sed -i 's/from: "[^"]*"/from: "${{ github.event.client_payload.version || github.event.inputs.version }}"/g' ios/helium_flutter/Package.swift
+          # Update just the version part on the exact: line
+          sed -i 's/exact: "[^"]*"/exact: "${{ github.event.client_payload.version || github.event.inputs.version }}"/g' ios/helium_flutter/Package.swift
 
       - name: Update podspec
         run: |
