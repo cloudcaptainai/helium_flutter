@@ -42,8 +42,20 @@ class ExperimentInfo {
 
   ExperimentInfo.fromMap(Map<String, dynamic> map) : _data = map;
 
-  /// Trigger name at which user was enrolled
+  /// @deprecated Use `enrolledTrigger` instead.
   String get trigger => _data['trigger'] ?? '';
+
+  /// Trigger where this user was enrolled
+  String? get enrolledTrigger => _data['enrolledTrigger'];
+
+  /// All triggers where this experiment is configured
+  List<String>? get triggers {
+    final triggers = _data['triggers'];
+    if (triggers is List) {
+      return triggers.whereType<String>().toList();
+    }
+    return null;
+  }
 
   /// Experiment name
   String? get experimentName => _data['experimentName'];
