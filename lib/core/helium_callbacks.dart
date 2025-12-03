@@ -2,7 +2,6 @@ import 'package:helium_flutter/types/helium_transaction_status.dart';
 import 'package:helium_flutter/types/helium_types.dart';
 
 abstract class HeliumPurchaseDelegate {
-  @Deprecated('Use makePurchaseIOS / makePurchaseAndroid instead for platform-specific handling.')
   Future<HeliumPurchaseResult> makePurchase(String productId);
 
   Future<HeliumPurchaseResult> makePurchaseAndroid(String productId,
