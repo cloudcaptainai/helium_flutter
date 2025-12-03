@@ -23,20 +23,15 @@ class CustomPaywallDelegate(
     offerId: String?
   ): HeliumPaywallTransactionStatus {
     return suspendCancellableCoroutine { continuation ->
-      // Build chained product identifier: productId:basePlanId:offerId
-      val chainedProductId = buildString {
-        append(productDetails.productId)
-        if (basePlanId != null) {
-          append(":").append(basePlanId)
-        }
-        if (offerId != null) {
-          append(":").append(offerId)
-        }
-      }
+      val arguments = mapOf(
+        "productId" to productDetails.productId,
+        "basePlanId" to basePlanId,
+        "offerId" to offerId
+      )
 
       methodChannel.invokeMethod(
         "makePurchase",
-        chainedProductId,
+        arguments,
         object : MethodChannel.Result {
           override fun success(result: Any?) {
             val status: HeliumPaywallTransactionStatus = when {

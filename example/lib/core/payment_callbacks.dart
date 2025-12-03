@@ -11,7 +11,7 @@ class LogCallbacks implements HeliumCallbacks {
   }
 }
 
-class PaymentCallbacks implements HeliumPurchaseDelegate {
+class PaymentCallbacks extends HeliumPurchaseDelegate {
   @override
   Future<HeliumPurchaseResult> makePurchase(String productId) async {
     log('makePurchase: $productId');
@@ -24,7 +24,7 @@ class PaymentCallbacks implements HeliumPurchaseDelegate {
   }
 }
 
-class RevenueCatCallbacks implements HeliumPurchaseDelegate {
+class RevenueCatCallbacks extends HeliumPurchaseDelegate {
   @override
   Future<HeliumPurchaseResult> makePurchase(String productId) async {
     try {
