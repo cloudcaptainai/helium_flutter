@@ -26,11 +26,6 @@ class HeliumStatusStreamHandler: NSObject, FlutterStreamHandler, HeliumEventList
         )
     }
 
-    deinit {
-        // Clean up event listener and observers
-        Helium.shared.removeHeliumEventListener(self)
-    }
-
     func onListen(withArguments arguments: Any?, eventSink events: @escaping FlutterEventSink) -> FlutterError? {
         self.eventSink = events
 
@@ -49,8 +44,6 @@ class HeliumStatusStreamHandler: NSObject, FlutterStreamHandler, HeliumEventList
     }
 
     @objc private func handleHeliumInitializing() {
-        // Remove listener first for safety, then add it
-        Helium.shared.removeHeliumEventListener(self)
         Helium.shared.addHeliumEventListener(self)
 
         // Update status to inProgress

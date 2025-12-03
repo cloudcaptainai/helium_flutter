@@ -28,6 +28,7 @@ enum PurchaseError: LocalizedError {
 public class HeliumFlutterPlugin: NSObject, FlutterPlugin {
     var channel: FlutterMethodChannel!
     var registrar: FlutterPluginRegistrar?
+    private var statusStreamHandler: HeliumStatusStreamHandler?
 
     public static func register(with registrar: FlutterPluginRegistrar) {
         let instance = HeliumFlutterPlugin()
@@ -47,7 +48,9 @@ public class HeliumFlutterPlugin: NSObject, FlutterPlugin {
         registrar.register(factory, withId: "upsellViewForTrigger")
 
         let statusChannel = FlutterEventChannel(name: "com.tryhelium.paywall/download_status", binaryMessenger: registrar.messenger())
-        statusChannel.setStreamHandler(HeliumStatusStreamHandler())
+        let streamHandler = HeliumStatusStreamHandler()
+        instance.statusStreamHandler = streamHandler
+        statusChannel.setStreamHandler(streamHandler)
     }
 
     public func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
