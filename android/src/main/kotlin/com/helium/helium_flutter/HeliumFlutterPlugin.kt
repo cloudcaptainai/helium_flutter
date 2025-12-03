@@ -95,6 +95,11 @@ class HeliumFlutterPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
         statusJob = null
       }
     })
+
+    flutterPluginBinding.platformViewRegistry.registerViewFactory(
+        "upsellViewForTrigger",
+        HeliumNativeViewFactory(channel)
+    )
   }
 
   fun HeliumConfigStatus.toStringValue(): String {
