@@ -1,4 +1,5 @@
 import 'dart:developer';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:helium_flutter/core/const/contants.dart';
@@ -69,8 +70,28 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
             'error': 'No purchase delegate found.',
           };
         }
-        String id = handler.arguments as String? ?? '';
-        final result = await purchaseDelegate.makePurchase(id);
+        String productId = '';
+        String? basePlanId;
+        String? offerId;
+
+        if (handler.arguments is String) {
+          productId = handler.arguments as String;
+        } else if (handler.arguments is Map) {
+          final args = handler.arguments as Map;
+          productId = args['productId'] as String? ?? '';
+          basePlanId = args['basePlanId'] as String?;
+          offerId = args['offerId'] as String?;
+        }
+
+        HeliumPurchaseResult result;
+        if (Platform.isAndroid) {
+          result = await purchaseDelegate.makePurchaseAndroid(productId,
+              basePlanId: basePlanId, offerId: offerId);
+        } else if (Platform.isIOS) {
+          result = await purchaseDelegate.makePurchaseIOS(productId);
+        } else {
+          result = await purchaseDelegate.makePurchase(productId);
+        }
 
         return {
           'status': result.status.name,
