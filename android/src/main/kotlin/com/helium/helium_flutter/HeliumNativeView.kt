@@ -42,7 +42,7 @@ class HeliumNativeView(
         return try {
             val paywallView = HeliumPaywallView(context = context)
             paywallView.loadPaywall(trigger = trigger, navigationDispatcher = { command ->
-                // TODO -> Not sure what to do with this navigation command.
+                // Do nothing. Called need to listen to the paywall events
             })
             paywallView.setPaywallEventHandlers(eventListener)
 

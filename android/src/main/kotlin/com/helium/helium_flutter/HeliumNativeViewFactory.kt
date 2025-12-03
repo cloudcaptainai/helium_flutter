@@ -8,7 +8,7 @@ import io.flutter.plugin.platform.PlatformViewFactory
 
 class HeliumNativeViewFactory(private val channel: MethodChannel) : PlatformViewFactory(StandardMessageCodec.INSTANCE) {
     override fun create(context: Context, viewId: Int, args: Any?): PlatformView {
-        val creationParams = args as Map<String?, Any?>?
+        val creationParams = args as? Map<String?, Any?>?
         return HeliumNativeView(context, viewId, creationParams, channel)
     }
 }
