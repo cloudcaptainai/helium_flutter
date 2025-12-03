@@ -1,3 +1,6 @@
+## 3.0.18
+- Avoid sporadic crash from new downloadStatus logic
+
 ## 3.0.17
 - Updated helium-swift dependency to 3.1.2
 
