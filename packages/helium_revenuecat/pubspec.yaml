@@ -10,9 +10,12 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  helium_flutter: ^3.0.18
+  purchases_flutter: ^8.7.3
+
+dependency_overrides:
   helium_flutter:
     path: ../../
-  purchases_flutter: ^8.7.3
 
 dev_dependencies:
   flutter_test:
