@@ -1,0 +1,26 @@
+name: helium_revenuecat
+description: "Helium RevenueCat SDK. Remotely build and auto-optimize paywalls (tryhelium.com)"
+version: 3.0.18
+homepage: https://tryhelium.com
+
+environment:
+  sdk: ^3.5.0
+  flutter: ">=3.24.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  helium_flutter:
+    path: ../../
+  purchases_flutter: ^8.7.3
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+
+# For information on the generic Dart part of this file, see the
+# following page: https://dart.dev/tools/pub/pubspec
+
+# The following section is specific to Flutter packages.
+

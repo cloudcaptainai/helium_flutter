@@ -8,9 +8,17 @@ on:
 
 # Publish using the reusable workflow from dart-lang.
 jobs:
-  publish:
+  publish_helium_flutter:
     permissions:
       id-token: write # Required for authentication using OIDC
     uses: dart-lang/setup-dart/.github/workflows/publish.yml@v1
-    # with:
-    #   working-directory: path/to/package/within/repository
+    with:
+      working-directory: .
+
+  publish_helium_revenuecat:
+    needs: publish_helium_flutter
+    permissions:
+      id-token: write # Required for authentication using OIDC
+    uses: dart-lang/setup-dart/.github/workflows/publish.yml@v1
+    with:
+      working-directory: packages/helium_revenuecat
