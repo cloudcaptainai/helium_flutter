@@ -19,6 +19,24 @@ jobs:
     needs: publish_helium_flutter
     permissions:
       id-token: write # Required for authentication using OIDC
-    uses: dart-lang/setup-dart/.github/workflows/publish.yml@v1
-    with:
-      working-directory: packages/helium_revenuecat
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+      
+      - name: Remove dependency_overrides
+        working-directory: packages/helium_revenuecat
+        run: |
+          # Remove dependency_overrides section to allow publishing
+          # This removes the line containing 'dependency_overrides:' and the next 2 lines
+          sed -i '/dependency_overrides:/,+2d' pubspec.yaml
+          
+          # Verify the file content
+          cat pubspec.yaml
+
+      - name: Publish
+        uses: dart-lang/setup-dart/actions/publish@v1
+        with:
+          working-directory: packages/helium_revenuecat
