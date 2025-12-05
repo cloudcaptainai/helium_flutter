@@ -37,6 +37,10 @@ dependencies:
   path_provider: ^2.1.5
   path: ^1.9.0
 
+dependency_overrides:
+  helium_flutter:
+    path: ../
+
 dev_dependencies:
   integration_test:
     sdk: flutter
