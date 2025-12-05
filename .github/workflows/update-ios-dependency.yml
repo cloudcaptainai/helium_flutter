@@ -23,17 +23,17 @@ jobs:
       - name: Update Package.swift
         run: |
           # Update just the version part on the exact: line
-          sed -i 's/exact: "[^"]*"/exact: "${{ github.event.client_payload.version || github.event.inputs.version }}"/g' ios/helium_flutter/Package.swift
+          sed -i 's/exact: "[^"]*"/exact: "${{ github.event.client_payload.version || github.event.inputs.version }}"/g' packages/helium_flutter/ios/helium_flutter/Package.swift
 
       - name: Update podspec
         run: |
           # Update the iOS SDK dependency version in the podspec
-          sed -i "s/s\.dependency 'Helium', '[^']*'/s.dependency 'Helium', '${{ github.event.client_payload.version || github.event.inputs.version }}'/g" ios/helium_flutter.podspec
+          sed -i "s/s\.dependency 'Helium', '[^']*'/s.dependency 'Helium', '${{ github.event.client_payload.version || github.event.inputs.version }}'/g" packages/helium_flutter/ios/helium_flutter.podspec
 
       - name: Bump pubspec.yaml version
         run: |
           # Get current version and increment patch version
-          CURRENT_VERSION=$(grep '^version:' pubspec.yaml | sed 's/version: //')
+          CURRENT_VERSION=$(grep '^version:' packages/helium_flutter/pubspec.yaml | sed 's/version: //')
           NEW_VERSION=$(node -e "
             const current = '$CURRENT_VERSION'.split('+')[0]; // Remove build number if present
             const parts = current.split('.');
@@ -44,7 +44,7 @@ jobs:
           ")
           
           # Update pubspec.yaml with new version
-          sed -i "s/^version: .*/version: $NEW_VERSION/g" pubspec.yaml
+          sed -i "s/^version: .*/version: $NEW_VERSION/g" packages/helium_flutter/pubspec.yaml
           
           echo "Bumped version from $CURRENT_VERSION to $NEW_VERSION"
           echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_ENV
@@ -56,8 +56,8 @@ jobs:
           echo "## $NEW_VERSION" > $TEMP_FILE
           echo "- Updated helium-swift dependency to ${{ github.event.client_payload.version || github.event.inputs.version }}" >> $TEMP_FILE
           echo "" >> $TEMP_FILE
-          cat CHANGELOG.md >> $TEMP_FILE
-          mv $TEMP_FILE CHANGELOG.md
+          cat packages/helium_flutter/CHANGELOG.md >> $TEMP_FILE
+          mv $TEMP_FILE packages/helium_flutter/CHANGELOG.md
 
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v7
