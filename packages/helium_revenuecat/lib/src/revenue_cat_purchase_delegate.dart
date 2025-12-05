@@ -44,18 +44,21 @@ class RevenueCatPurchaseDelegate implements HeliumPurchaseDelegate {
       } else {
         return HeliumPurchaseResult(status: HeliumTransactionStatus.failed);
       }
-    } catch (e) {
-      log('RevenueCat purchase error: $e');
-      if (e is PurchasesErrorCode) {
-        if (e == PurchasesErrorCode.purchaseCancelledError) {
-          return HeliumPurchaseResult(status: HeliumTransactionStatus.cancelled);
-        } else if (e == PurchasesErrorCode.paymentPendingError) {
-          return HeliumPurchaseResult(status: HeliumTransactionStatus.pending);
-        }
+    } on PlatformException catch (e) {
+      var errorCode = PurchasesErrorHelper.getErrorCode(e);
+      if (errorCode == PurchasesErrorCode.purchaseCancelledError) {
+        return HeliumPurchaseResult(status: HeliumTransactionStatus.cancelled);
+      } else if (errorCode == PurchasesErrorCode.paymentPendingError) {
+        return HeliumPurchaseResult(status: HeliumTransactionStatus.pending);
       }
       return HeliumPurchaseResult(
-          status: HeliumTransactionStatus.failed,
-          error: 'RevenueCat purchase error: ${(e as PlatformException?)?.message ?? "Unknown error"}'
+        status: HeliumTransactionStatus.failed,
+        error: 'RevenueCat purchase error: ${e.message ?? "Unknown error"}',
+      );
+    } catch(e) {
+      return HeliumPurchaseResult(
+        status: HeliumTransactionStatus.failed,
+        error: 'RevenueCat purchase error: ${e.toString()}',
       );
     }
   }
