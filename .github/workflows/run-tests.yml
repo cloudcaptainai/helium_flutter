@@ -21,7 +21,7 @@ jobs:
 
       - name: Create .env file
         run: |
-          cat > example/.env << EOF
+          cat > example/.env <<EOF
           API_KEY=''
           CUSTOM_API_END_POINT=''
           CUSTOM_USER_ID=''
@@ -29,14 +29,18 @@ jobs:
 
       - name: Get dependencies
         run: flutter pub get
+        working-directory: packages/helium_flutter
 
       - name: Analyze code
         run: flutter analyze
+        working-directory: packages/helium_flutter
 
       - name: Run tests
         run: flutter test
+        working-directory: packages/helium_flutter
 
 #        todo consider running flutter test integration_test from example/ directory
 
       - name: Check pub publish dry run
         run: flutter pub publish --dry-run
+        working-directory: packages/helium_flutter
