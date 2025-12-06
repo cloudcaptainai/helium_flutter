@@ -65,12 +65,14 @@ class HeliumStatusStreamHandler: NSObject, FlutterStreamHandler, HeliumEventList
     }
 
     private func emitStatus(_ status: HeliumFetchedConfigStatus) {
-        guard let sink = self.eventSink else { return }
+        DispatchQueue.main.async { [weak self] in
+            guard let self, let sink = eventSink else { return }
 
-        // Only emit if the status has changed
-        if status != lastKnownStatus {
-            lastKnownStatus = status
-            sink(mapStatusToString(status))
+            // Only emit if the status has changed
+            if status != lastKnownStatus {
+                lastKnownStatus = status
+                sink(mapStatusToString(status))
+            }
         }
     }
 
