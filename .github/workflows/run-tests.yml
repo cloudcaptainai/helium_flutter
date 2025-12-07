@@ -9,6 +9,9 @@ on:
 jobs:
   validate-and-test:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        package: ['packages/helium_flutter', 'packages/helium_revenuecat']
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -20,6 +23,7 @@ jobs:
       - run: flutter --version
 
       - name: Create .env file
+        if: matrix.package == 'packages/helium_flutter'
         run: |
           cat > example/.env <<EOF
           API_KEY=''
@@ -29,18 +33,18 @@ jobs:
 
       - name: Get dependencies
         run: flutter pub get
-        working-directory: packages/helium_flutter
+        working-directory: ${{ matrix.package }}
 
       - name: Analyze code
         run: flutter analyze
-        working-directory: packages/helium_flutter
+        working-directory: ${{ matrix.package }}
 
       - name: Run tests
         run: flutter test
-        working-directory: packages/helium_flutter
+        working-directory: ${{ matrix.package }}
 
 #        todo consider running flutter test integration_test from example/ directory
 
       - name: Check pub publish dry run
         run: flutter pub publish --dry-run
-        working-directory: packages/helium_flutter
+        working-directory: ${{ matrix.package }}
