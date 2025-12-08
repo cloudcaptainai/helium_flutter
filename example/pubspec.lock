@@ -124,6 +124,13 @@ packages:
       relative: true
     source: path
     version: "3.0.18"
+  helium_revenuecat:
+    dependency: "direct main"
+    description:
+      path: "../packages/helium_revenuecat"
+      relative: true
+    source: path
+    version: "3.0.18"
   integration_test:
     dependency: "direct dev"
     description: flutter
