@@ -31,9 +31,8 @@ jobs:
           CUSTOM_USER_ID=''
           EOF
 
-      - name: Get dependencies
+      - name: Get dependencies (workspace)
         run: flutter pub get
-        working-directory: ${{ matrix.package }}
 
       - name: Analyze code
         run: flutter analyze
