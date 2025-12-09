@@ -8,6 +8,8 @@ version: 0.0.1+1
 environment:
   sdk: ^3.5.0
 
+resolution: workspace
+
 # Dependencies specify other packages that your package needs in order to work.
 # To automatically upgrade your package dependencies to the latest versions
 # consider running `flutter pub upgrade --major-versions`. Alternatively,
@@ -36,10 +38,6 @@ dependencies:
   flutter_dotenv: ^5.2.1
   path_provider: ^2.1.5
   path: ^1.9.0
-
-dependency_overrides:
-  helium_flutter:
-    path: ../packages/helium_flutter
 
 dev_dependencies:
   integration_test:

@@ -1,6 +1,7 @@
 # helium_flutter
 
-Helium is an upsell experimentation and optimization platform for mobile apps of all sizes.
+Helium is an upsell experimentation and optimization platform for mobile apps of all sizes. This is
+the core Flutter package.
 
 ## How to Integrate
 
