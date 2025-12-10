@@ -364,6 +364,15 @@ class HeliumFlutterPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
       "setLightDarkModeOverride" -> {
         result.notImplemented()
       }
+      "setRevenueCatAppUserId" -> {
+        val rcAppUserId = call.arguments as? String
+        if (rcAppUserId == null) {
+          result.error("BAD_ARGS", "rcAppUserId not provided", null)
+          return
+        }
+        HeliumIdentityManager.shared.setRevenueCatAppUserId(rcAppUserId)
+        result.success("RevenueCat App User ID set!")
+      }
       else -> {
         result.notImplemented()
       }

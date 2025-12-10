@@ -27,3 +27,4 @@ const String setCustomRestoreFailedStringsMethodName = 'setCustomRestoreFailedSt
 const String resetHeliumMethodName = 'resetHelium';
 const String hasEntitlementForPaywallMethodName = 'hasEntitlementForPaywall';
 const String setLightDarkModeOverrideMethodName = 'setLightDarkModeOverride';
+const String setRevenueCatAppUserIdMethodName = 'setRevenueCatAppUserId';

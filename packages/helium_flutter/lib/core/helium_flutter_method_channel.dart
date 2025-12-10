@@ -351,6 +351,14 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
     );
   }
 
+  @override
+  void setRevenueCatAppUserId(String rcAppUserId) {
+    methodChannel.invokeMethod<void>(
+      setRevenueCatAppUserIdMethodName,
+      rcAppUserId,
+    );
+  }
+
   void _handlePaywallEventHandlers(HeliumPaywallEvent event) {
     if (_currentEventHandlers == null) return;
 
