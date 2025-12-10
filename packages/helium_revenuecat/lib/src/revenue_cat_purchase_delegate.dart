@@ -12,7 +12,13 @@ class RevenueCatPurchaseDelegate extends HeliumPurchaseDelegate {
   Future<HeliumPurchaseResult> purchaseProduct(String productId) async {
     try {
       log('[Helium] Making purchase with RevenueCat for: $productId');
-      return await _purchaseProduct(productId);
+      final products = await Purchases.getProducts([productId]);
+      if (products.isEmpty) {
+        return _createFailedResult('Product not found: $productId');
+      }
+
+      final customerInfo = await Purchases.purchaseStoreProduct(products.first);
+      return _evaluatePurchaseResult(customerInfo, productId);
     } on PlatformException catch (e) {
       return _handlePlatformException(e);
     } catch (e) {
@@ -46,17 +52,27 @@ class RevenueCatPurchaseDelegate extends HeliumPurchaseDelegate {
               await Purchases.purchaseSubscriptionOption(subscriptionOption);
           return _evaluatePurchaseResult(customerInfo, productId);
         }
-        log('[Helium] No matching subscription option found, falling back to default');
+        log('[Helium] No matching subscription option found');
       }
 
-      // Handle one-time purchase or subscription that didn't have matching base plan / offer
-      final products = await Purchases.getProducts([productId]);
-      if (products.isEmpty) {
-        return _createFailedResult('Android product not found: $productId');
+      // Try non-subscription (INAPP) product; most likely not a sub at this point
+      var products = await Purchases.getProducts(
+        [productId],
+        productCategory: ProductCategory.nonSubscription,
+      );
+      if (products.isNotEmpty) {
+        final customerInfo = await Purchases.purchaseStoreProduct(products.first);
+        return _evaluatePurchaseResult(customerInfo, productId);
       }
 
-      final customerInfo = await Purchases.purchaseStoreProduct(products.first);
-      return _evaluatePurchaseResult(customerInfo, productId);
+      // Then try subscription product (let RC pick option since we couldn't find a match)
+      products = await Purchases.getProducts([productId]);
+      if (products.isNotEmpty) {
+        final customerInfo = await Purchases.purchaseStoreProduct(products.first);
+        return _evaluatePurchaseResult(customerInfo, productId);
+      }
+
+      return _createFailedResult('Android product not found: $productId');
     } on PlatformException catch (e) {
       return _handlePlatformException(e);
     } catch (e) {
@@ -86,18 +102,6 @@ class RevenueCatPurchaseDelegate extends HeliumPurchaseDelegate {
   // ---------------------------------------------------------------------------
   // Private Helper Methods
   // ---------------------------------------------------------------------------
-
-  /// Standard purchase flow - fetches product directly and purchases it.
-  Future<HeliumPurchaseResult> _purchaseProduct(String productId) async {
-    final products = await Purchases.getProducts([productId]);
-    if (products.isEmpty) {
-      return _createFailedResult('Product not found: $productId');
-    }
-
-    final customerInfo = await Purchases.purchaseStoreProduct(products.first);
-    return _evaluatePurchaseResult(customerInfo, productId);
-  }
-
 
   /// Finds a matching Android subscription option.
   ///
