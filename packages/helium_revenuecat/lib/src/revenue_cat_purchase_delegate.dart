@@ -50,7 +50,7 @@ class RevenueCatPurchaseDelegate extends HeliumPurchaseDelegate {
         if (subscriptionOption != null) {
           final customerInfo =
               await Purchases.purchaseSubscriptionOption(subscriptionOption);
-          return _evaluatePurchaseResult(customerInfo, productId);
+          return _evaluatePurchaseResult(customerInfo, productId, basePlanId);
         }
         log('[Helium] No matching subscription option found');
       }
@@ -65,11 +65,26 @@ class RevenueCatPurchaseDelegate extends HeliumPurchaseDelegate {
         return _evaluatePurchaseResult(customerInfo, productId);
       }
 
-      // Then try subscription product (let RC pick option since we couldn't find a match)
+      // Then try subscription product
       products = await Purchases.getProducts([productId]);
       if (products.isNotEmpty) {
-        final customerInfo = await Purchases.purchaseStoreProduct(products.first);
-        return _evaluatePurchaseResult(customerInfo, productId);
+        final product = products.first;
+        CustomerInfo customerInfo;
+        String? purchasedBasePlanId;
+
+        final defaultOption = product.defaultOption;
+        if (defaultOption != null) {
+          // Subscription: explicitly purchase the default option if available
+          // for safer _isProductActive logic
+          purchasedBasePlanId = defaultOption.id.split(':').first;
+          customerInfo =
+              await Purchases.purchaseSubscriptionOption(defaultOption);
+        } else {
+          // Just go with whatever RC plan/offer picks
+          customerInfo = await Purchases.purchaseStoreProduct(product);
+        }
+
+        return _evaluatePurchaseResult(customerInfo, productId, purchasedBasePlanId);
       }
 
       return _createFailedResult('Android product not found: $productId');
@@ -152,31 +167,30 @@ class RevenueCatPurchaseDelegate extends HeliumPurchaseDelegate {
   }
 
   /// Checks if a specific product is active in the customer info.
-  ///
-  /// Matching React Native's thorough approach - checks:
-  /// 1. Entitlements for this specific product
-  /// 2. Active subscriptions
-  /// 3. All purchased product identifiers
-  bool _isProductActive(CustomerInfo customerInfo, String productId) {
-    // Check entitlements for this specific product
-    final hasActiveEntitlement = customerInfo.entitlements.active.values
-        .any((entitlement) => entitlement.productIdentifier == productId);
+  bool _isProductActive(CustomerInfo customerInfo, String productId,
+      [String? basePlanId]) {
+    if (basePlanId != null) {
+      // Android subscription: check with basePlanId format
+      final androidSubId = '$productId:$basePlanId';
+      return customerInfo.entitlements.active.values.any((e) =>
+              e.productIdentifier == productId &&
+              e.productPlanIdentifier == basePlanId) ||
+          customerInfo.activeSubscriptions.contains(androidSubId) ||
+          customerInfo.allPurchasedProductIdentifiers.contains(androidSubId);
+    }
 
-    // Check active subscriptions
-    final hasActiveSubscription =
-        customerInfo.activeSubscriptions.contains(productId);
-
-    // Check all purchased products
-    final wasPurchased =
+    // iOS or non-subscription:
+    return customerInfo.entitlements.active.values
+            .any((e) => e.productIdentifier == productId) ||
+        customerInfo.activeSubscriptions.contains(productId) ||
         customerInfo.allPurchasedProductIdentifiers.contains(productId);
-
-    return hasActiveEntitlement || hasActiveSubscription || wasPurchased;
   }
 
   /// Evaluates customer info to determine purchase result.
   HeliumPurchaseResult _evaluatePurchaseResult(
-      CustomerInfo customerInfo, String productId) {
-    if (_isProductActive(customerInfo, productId)) {
+      CustomerInfo customerInfo, String productId,
+      [String? basePlanId]) {
+    if (_isProductActive(customerInfo, productId, basePlanId)) {
       return HeliumPurchaseResult(status: HeliumTransactionStatus.purchased);
     }
     return HeliumPurchaseResult(
