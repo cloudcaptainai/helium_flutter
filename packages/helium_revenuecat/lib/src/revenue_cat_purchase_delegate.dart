@@ -8,11 +8,10 @@ import 'dart:developer';
 /// Handles purchases through RevenueCat's SDK, supporting both iOS and Android
 /// platforms with proper handling of Android subscription options (base plans
 /// and offers).
-class RevenueCatPurchaseDelegate implements HeliumPurchaseDelegate {
-  @override
-  Future<HeliumPurchaseResult> makePurchase(String productId) async {
+class RevenueCatPurchaseDelegate extends HeliumPurchaseDelegate {
+  Future<HeliumPurchaseResult> purchaseProduct(String productId) async {
     try {
-      log('[RevenueCat] Making purchase: $productId');
+      log('[Helium] Making purchase with RevenueCat for: $productId');
       return await _purchaseProduct(productId);
     } on PlatformException catch (e) {
       return _handlePlatformException(e);
@@ -27,21 +26,37 @@ class RevenueCatPurchaseDelegate implements HeliumPurchaseDelegate {
     String? basePlanId,
     String? offerId,
   }) async {
+    // Keep this value as up-to-date as possible
+    HeliumFlutter().setRevenueCatAppUserId(await Purchases.appUserID);
+
+    log('[Helium] RevenueCat Android purchase: productId=$productId, '
+        'basePlanId=$basePlanId, offerId=$offerId');
+
     try {
-      // RevenueCat uses format: <product_id>:<base_plan_id>
-      final revenueCatProductId = _buildAndroidProductId(productId, basePlanId);
+      // If basePlanId or offerId provided, try to find matching subscription option
+      if (basePlanId != null || offerId != null) {
+        final subscriptionOption = await _findAndroidSubscriptionOption(
+          productId,
+          basePlanId,
+          offerId,
+        );
 
-      log('[RevenueCat] Android purchase: productId=$productId, '
-          'basePlanId=$basePlanId, offerId=$offerId, '
-          'revenueCatProductId=$revenueCatProductId');
-
-      // If no offer specified, use standard purchase flow
-      if (offerId == null || offerId.isEmpty) {
-        return await _purchaseProduct(revenueCatProductId);
+        if (subscriptionOption != null) {
+          final customerInfo =
+              await Purchases.purchaseSubscriptionOption(subscriptionOption);
+          return _evaluatePurchaseResult(customerInfo, productId);
+        }
+        log('[Helium] No matching subscription option found, falling back to default');
       }
 
-      // With offer specified, use subscription options flow
-      return await _purchaseWithOffer(revenueCatProductId, offerId);
+      // Handle one-time purchase or subscription that didn't have matching base plan / offer
+      final products = await Purchases.getProducts([productId]);
+      if (products.isEmpty) {
+        return _createFailedResult('Android product not found: $productId');
+      }
+
+      final customerInfo = await Purchases.purchaseStoreProduct(products.first);
+      return _evaluatePurchaseResult(customerInfo, productId);
     } on PlatformException catch (e) {
       return _handlePlatformException(e);
     } catch (e) {
@@ -51,7 +66,9 @@ class RevenueCatPurchaseDelegate implements HeliumPurchaseDelegate {
 
   @override
   Future<HeliumPurchaseResult> makePurchaseIOS(String productId) async {
-    return makePurchase(productId);
+    // Keep this value as up-to-date as possible
+    HeliumFlutter().setRevenueCatAppUserId(await Purchases.appUserID);
+    return purchaseProduct(productId);
   }
 
   @override
@@ -70,111 +87,99 @@ class RevenueCatPurchaseDelegate implements HeliumPurchaseDelegate {
   // Private Helper Methods
   // ---------------------------------------------------------------------------
 
-  /// Builds the RevenueCat product identifier for Android subscriptions.
-  /// Format: `product_id:base_plan_id` or just `product_id` if no base plan.
-  ///
-  /// Guards against double-concatenation if productId already contains the basePlanId.
-  String _buildAndroidProductId(String productId, String? basePlanId) {
-    if (basePlanId == null || basePlanId.isEmpty) {
-      return productId;
-    }
-
-    // Guard: avoid double-concatenation if productId already ends with :basePlanId
-    final expectedSuffix = ':$basePlanId';
-    if (productId.endsWith(expectedSuffix)) {
-      log('[RevenueCat] Warning: productId already contains basePlanId suffix');
-      return productId;
-    }
-
-    return '$productId:$basePlanId';
-  }
-
   /// Standard purchase flow - fetches product directly and purchases it.
   Future<HeliumPurchaseResult> _purchaseProduct(String productId) async {
-    final product = await _fetchProduct(productId);
-    if (product == null) {
-      return _createFailedResult('Product not found: $productId');
-    }
-
-    final customerInfo = await Purchases.purchaseStoreProduct(product);
-    return _evaluatePurchaseResult(customerInfo);
-  }
-
-  /// Purchase with a specific subscription offer.
-  ///
-  /// IMPORTANT: If the requested offer is not found, this method fails explicitly
-  /// to prevent accidentally charging full price when user expects a discount.
-  Future<HeliumPurchaseResult> _purchaseWithOffer(
-    String productId,
-    String offerId,
-  ) async {
-    final product = await _fetchProduct(productId);
-    if (product == null) {
-      return _createFailedResult('Product not found: $productId');
-    }
-
-    final subscriptionOption = _findSubscriptionOption(product, offerId);
-    if (subscriptionOption == null) {
-      // SAFETY: Fail explicitly - do NOT fall back to full price purchase.
-      // This prevents accidentally overcharging users who expect a discount.
-      return _createFailedResult(
-        'Offer "$offerId" not found for product "$productId". Purchase aborted.',
-      );
-    }
-
-    log('[RevenueCat] Purchasing with offer: ${subscriptionOption.id}');
-    final customerInfo =
-        await Purchases.purchaseSubscriptionOption(subscriptionOption);
-
-    return _evaluatePurchaseResult(customerInfo);
-  }
-
-
-
-  /// Fetches a product directly by ID.
-  Future<StoreProduct?> _fetchProduct(String productId) async {
     final products = await Purchases.getProducts([productId]);
-    return products.isNotEmpty ? products.first : null;
+    if (products.isEmpty) {
+      return _createFailedResult('Product not found: $productId');
+    }
+
+    final customerInfo = await Purchases.purchaseStoreProduct(products.first);
+    return _evaluatePurchaseResult(customerInfo, productId);
   }
 
-  /// Finds a subscription option matching the offer ID.
+
+  /// Finds a matching Android subscription option.
   ///
-  /// Matching strategy (in order of precedence):
-  /// 1. Exact match on option.id
-  /// 2. EndsWith match (RevenueCat may prefix IDs as `productId:basePlan:offerId`)
-  SubscriptionOption? _findSubscriptionOption(
-    StoreProduct product,
-    String offerId,
-  ) {
-    final options = product.subscriptionOptions;
-    if (options == null || options.isEmpty) {
+  /// RevenueCat subscription option IDs follow the format:
+  /// - `basePlanId` for base plans without offers
+  /// - `basePlanId:offerId` for offers
+  ///
+  /// RC may return multiple products if multiple base plans exist.
+  Future<SubscriptionOption?> _findAndroidSubscriptionOption(
+    String productId,
+    String? basePlanId,
+    String? offerId,
+  ) async {
+    try {
+      final products = await Purchases.getProducts([productId]);
+      if (products.isEmpty) return null;
+
+      // RC may return multiple products for multiple base plans
+      final allSubscriptionOptions = products
+          .expand(
+              (product) => product.subscriptionOptions ?? <SubscriptionOption>[])
+          .toList();
+
+      if (allSubscriptionOptions.isEmpty) return null;
+
+      SubscriptionOption? subscriptionOption;
+
+      // Priority 1: Look for "basePlanId:offerId" if both provided
+      if (offerId != null && basePlanId != null) {
+        final targetId = '$basePlanId:$offerId';
+        subscriptionOption = allSubscriptionOptions
+            .cast<SubscriptionOption?>()
+            .firstWhere((opt) => opt?.id == targetId, orElse: () => null);
+      }
+
+      // Priority 2: Look for just basePlanId
+      if (subscriptionOption == null && basePlanId != null) {
+        subscriptionOption = allSubscriptionOptions
+            .cast<SubscriptionOption?>()
+            .firstWhere((opt) => opt?.id == basePlanId, orElse: () => null);
+      }
+
+      return subscriptionOption;
+    } catch (e) {
+      log('[Helium] Error finding RevenueCat subscription option: $e');
       return null;
     }
+  }
 
-    // Priority 1: Exact match
-    for (final option in options) {
-      if (option.id == offerId) {
-        return option;
-      }
-    }
+  /// Checks if a specific product is active in the customer info.
+  ///
+  /// Matching React Native's thorough approach - checks:
+  /// 1. Entitlements for this specific product
+  /// 2. Active subscriptions
+  /// 3. All purchased product identifiers
+  bool _isProductActive(CustomerInfo customerInfo, String productId) {
+    // Check entitlements for this specific product
+    final hasActiveEntitlement = customerInfo.entitlements.active.values
+        .any((entitlement) => entitlement.productIdentifier == productId);
 
-    // Priority 2: EndsWith match (safer than contains)
-    // This handles RevenueCat's prefixed format: productId:basePlan:offerId
-    for (final option in options) {
-      if (option.id.endsWith(':$offerId')) {
-        return option;
-      }
-    }
+    // Check active subscriptions
+    final hasActiveSubscription =
+        customerInfo.activeSubscriptions.contains(productId);
 
-    return null;
+    // Check all purchased products
+    final wasPurchased =
+        customerInfo.allPurchasedProductIdentifiers.contains(productId);
+
+    return hasActiveEntitlement || hasActiveSubscription || wasPurchased;
   }
 
   /// Evaluates customer info to determine purchase result.
-  HeliumPurchaseResult _evaluatePurchaseResult(CustomerInfo customerInfo) {
-    if (customerInfo.entitlements.active.isNotEmpty) {
+  HeliumPurchaseResult _evaluatePurchaseResult(
+      CustomerInfo customerInfo, String productId) {
+    if (_isProductActive(customerInfo, productId)) {
       return HeliumPurchaseResult(status: HeliumTransactionStatus.purchased);
     }
-    return HeliumPurchaseResult(status: HeliumTransactionStatus.failed);
+    return HeliumPurchaseResult(
+      status: HeliumTransactionStatus.failed,
+      error:
+          '[RevenueCat] Purchase possibly complete but entitlement/subscription not active for this product.',
+    );
   }
 
   /// Handles RevenueCat platform exceptions.

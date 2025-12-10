@@ -2,15 +2,27 @@ import 'package:helium_flutter/types/helium_transaction_status.dart';
 import 'package:helium_flutter/types/helium_types.dart';
 
 abstract class HeliumPurchaseDelegate {
-  Future<HeliumPurchaseResult> makePurchase(String productId);
+  @Deprecated('Use makePurchaseIOS / makePurchaseAndroid instead for platform-specific handling.')
+  Future<HeliumPurchaseResult> makePurchase(String productId) async {
+    return HeliumPurchaseResult(
+      status: HeliumTransactionStatus.failed,
+      error: 'makePurchase not implemented',
+    );
+  }
 
   Future<HeliumPurchaseResult> makePurchaseAndroid(String productId,
       {String? basePlanId, String? offerId}) async {
-    return makePurchase(productId);
+    return HeliumPurchaseResult(
+      status: HeliumTransactionStatus.failed,
+      error: 'makePurchaseAndroid not implemented',
+    );
   }
 
   Future<HeliumPurchaseResult> makePurchaseIOS(String productId) async {
-    return makePurchase(productId);
+    return HeliumPurchaseResult(
+      status: HeliumTransactionStatus.failed,
+      error: 'makePurchaseIOS not implemented',
+    );
   }
 
   Future<bool> restorePurchases();
