@@ -8,17 +8,18 @@ import 'package:helium_flutter/types/helium_environment.dart';
 import 'package:helium_flutter_example/core/payment_callbacks.dart';
 
 import 'package:helium_flutter_example/presentation/home_page.dart';
+import 'package:helium_revenuecat/helium_revenuecat.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
 
 void main() {
-  WidgetsFlutterBinding.ensureInitialized();
-  initializeHeliumSwift();
+  WidgetsFlutterBinding.ensureInitialized(); // need this since initializing Helium before runApp call
   initializeRevenueCat();
+  initializeHelium();
   runApp(const MyApp());
 }
 
 // Platform messages are asynchronous, so we initialize in an async method.
-Future<void> initializeHeliumSwift() async {
+Future<void> initializeHelium() async {
   final heliumFlutterPlugin = HeliumFlutter();
   await dotenv.load(fileName: ".env");
   final apiKey = dotenv.env['API_KEY'] ?? '';

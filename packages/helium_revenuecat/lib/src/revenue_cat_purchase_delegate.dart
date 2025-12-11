@@ -16,6 +16,10 @@ class RevenueCatPurchaseDelegate extends HeliumPurchaseDelegate {
 
   /// Syncs the RevenueCat app user ID with Helium.
   Future<void> _syncAppUserId() async {
+    final rcSetUp = await Purchases.isConfigured;
+    if (!rcSetUp) {
+      return;
+    }
     HeliumFlutter().setRevenueCatAppUserId(await Purchases.appUserID);
   }
 
