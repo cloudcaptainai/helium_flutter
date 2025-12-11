@@ -179,14 +179,10 @@ class RevenueCatPurchaseDelegate extends HeliumPurchaseDelegate {
   /// Evaluates customer info to determine purchase result.
   HeliumPurchaseResult _evaluatePurchaseResult(
       CustomerInfo customerInfo, String productId) {
-    if (_isProductActive(customerInfo, productId)) {
-      return HeliumPurchaseResult(status: HeliumTransactionStatus.purchased);
+    if (!_isProductActive(customerInfo, productId)) {
+      log('[Helium] Purchase succeeded but product not immediately active in customerInfo: $productId');
     }
-    return HeliumPurchaseResult(
-      status: HeliumTransactionStatus.failed,
-      error:
-          '[RevenueCat] Purchase possibly complete but entitlement/subscription not active for this product.',
-    );
+    return HeliumPurchaseResult(status: HeliumTransactionStatus.purchased);
   }
 
   /// Handles RevenueCat platform exceptions.
