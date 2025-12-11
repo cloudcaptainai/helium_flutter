@@ -12,10 +12,12 @@ abstract class HeliumPurchaseDelegate {
 
   Future<HeliumPurchaseResult> makePurchaseAndroid(String productId,
       {String? basePlanId, String? offerId}) async {
+    // ignore: deprecated_member_use_from_same_package
     return makePurchase(productId);
   }
 
   Future<HeliumPurchaseResult> makePurchaseIOS(String productId) async {
+    // ignore: deprecated_member_use_from_same_package
     return makePurchase(productId);
   }
 

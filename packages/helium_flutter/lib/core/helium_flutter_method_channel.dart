@@ -90,6 +90,7 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
         } else if (Platform.isIOS) {
           result = await purchaseDelegate.makePurchaseIOS(productId);
         } else {
+          // ignore: deprecated_member_use_from_same_package
           result = await purchaseDelegate.makePurchase(productId);
         }
 
