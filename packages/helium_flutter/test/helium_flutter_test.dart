@@ -119,6 +119,9 @@ class MockHeliumFlutterPlatform
 
   @override
   void setLightDarkModeOverride(HeliumLightDarkMode mode) {}
+
+  @override
+  void setRevenueCatAppUserId(String rcAppUserId) {}
 }
 
 void main() {
@@ -212,5 +215,9 @@ void main() {
     heliumFlutterPlugin.setLightDarkModeOverride(HeliumLightDarkMode.light);
     heliumFlutterPlugin.setLightDarkModeOverride(HeliumLightDarkMode.dark);
     heliumFlutterPlugin.setLightDarkModeOverride(HeliumLightDarkMode.system);
+  });
+  test(setRevenueCatAppUserIdMethodName, () {
+    // Test that it doesn't throw
+    heliumFlutterPlugin.setRevenueCatAppUserId('rc_app_user_id_123');
   });
 }

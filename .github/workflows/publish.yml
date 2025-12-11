@@ -25,13 +25,6 @@ jobs:
       - uses: subosito/flutter-action@v2
         with:
           channel: stable
-      
-      - name: Remove dependency_overrides
-        working-directory: packages/helium_revenuecat
-        run: |
-          # Remove dependency_overrides section (3 lines)
-          sed -i '/^dependency_overrides:/,/^[^ ]/{ /^dependency_overrides:/d; /^  /d; }' pubspec.yaml
-          cat pubspec.yaml
 
       - name: Publish
         uses: dart-lang/setup-dart/actions/publish@v1

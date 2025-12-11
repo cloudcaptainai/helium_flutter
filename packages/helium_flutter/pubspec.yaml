@@ -11,6 +11,8 @@ environment:
   sdk: ^3.5.0
   flutter: ">=3.24.0"
 
+resolution: workspace
+
 dependencies:
   flutter:
     sdk: flutter

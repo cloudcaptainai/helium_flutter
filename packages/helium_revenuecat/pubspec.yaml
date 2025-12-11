@@ -7,15 +7,13 @@ environment:
   sdk: ^3.5.0
   flutter: ">=3.24.0"
 
+resolution: workspace
+
 dependencies:
   flutter:
     sdk: flutter
   helium_flutter: ^3.0.18
   purchases_flutter: ^8.7.3
-
-dependency_overrides:
-  helium_flutter:
-    path: ../helium_flutter
 
 dev_dependencies:
   flutter_test:

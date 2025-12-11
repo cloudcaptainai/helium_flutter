@@ -95,4 +95,6 @@ abstract class HeliumFlutterPlatform extends PlatformInterface {
   void resetHelium();
 
   void setLightDarkModeOverride(HeliumLightDarkMode mode);
+
+  void setRevenueCatAppUserId(String rcAppUserId);
 }

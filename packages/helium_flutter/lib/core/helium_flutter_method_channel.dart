@@ -90,6 +90,7 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
         } else if (Platform.isIOS) {
           result = await purchaseDelegate.makePurchaseIOS(productId);
         } else {
+          // ignore: deprecated_member_use_from_same_package
           result = await purchaseDelegate.makePurchase(productId);
         }
 
@@ -348,6 +349,14 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
     methodChannel.invokeMethod<void>(
       setLightDarkModeOverrideMethodName,
       mode.name,
+    );
+  }
+
+  @override
+  void setRevenueCatAppUserId(String rcAppUserId) {
+    methodChannel.invokeMethod<void>(
+      setRevenueCatAppUserIdMethodName,
+      rcAppUserId,
     );
   }
 

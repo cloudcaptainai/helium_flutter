@@ -148,4 +148,9 @@ class HeliumFlutter {
   /// - Note: .system respects the device's current appearance setting (default)
   void setLightDarkModeOverride(HeliumLightDarkMode mode) =>
       HeliumFlutterPlatform.instance.setLightDarkModeOverride(mode);
+
+  /// Set RevenueCat App User ID to improve Helium revenue attribution.
+  /// - Parameter rcAppUserId: RevenueCat App User ID (e.g. await Purchases.appUserID)
+  void setRevenueCatAppUserId(String rcAppUserId) =>
+      HeliumFlutterPlatform.instance.setRevenueCatAppUserId(rcAppUserId);
 }

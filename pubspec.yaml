@@ -1,0 +1,10 @@
+name: helium_workspace
+publish_to: "none"
+
+environment:
+  sdk: ^3.5.0
+
+workspace:
+  - packages/helium_flutter
+  - packages/helium_revenuecat
+  - example

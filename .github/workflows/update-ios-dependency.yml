@@ -30,7 +30,7 @@ jobs:
           # Update the iOS SDK dependency version in the podspec
           sed -i "s/s\.dependency 'Helium', '[^']*'/s.dependency 'Helium', '${{ github.event.client_payload.version || github.event.inputs.version }}'/g" packages/helium_flutter/ios/helium_flutter.podspec
 
-      - name: Bump pubspec.yaml version
+      - name: Bump pubspec.yaml versions
         run: |
           # Get current version and increment patch version
           CURRENT_VERSION=$(grep '^version:' packages/helium_flutter/pubspec.yaml | sed 's/version: //')
@@ -42,22 +42,32 @@ jobs:
             const patch = parseInt(parts[2]) + 1;
             console.log(\`\${major}.\${minor}.\${patch}\`);
           ")
-          
-          # Update pubspec.yaml with new version
+
+          # Update both pubspec.yaml files with new version
           sed -i "s/^version: .*/version: $NEW_VERSION/g" packages/helium_flutter/pubspec.yaml
-          
-          echo "Bumped version from $CURRENT_VERSION to $NEW_VERSION"
+          sed -i "s/^version: .*/version: $NEW_VERSION/g" packages/helium_revenuecat/pubspec.yaml
+
+          echo "Bumped helium_flutter from $CURRENT_VERSION to $NEW_VERSION"
+          echo "Bumped helium_revenuecat to $NEW_VERSION"
           echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_ENV
 
-      - name: Update CHANGELOG.md
+      - name: Update CHANGELOGs
         run: |
-          # Add new entry to top of CHANGELOG.md
+          # Update helium_flutter CHANGELOG.md
           TEMP_FILE=$(mktemp)
           echo "## $NEW_VERSION" > $TEMP_FILE
           echo "- Updated helium-swift dependency to ${{ github.event.client_payload.version || github.event.inputs.version }}" >> $TEMP_FILE
           echo "" >> $TEMP_FILE
           cat packages/helium_flutter/CHANGELOG.md >> $TEMP_FILE
           mv $TEMP_FILE packages/helium_flutter/CHANGELOG.md
+
+          # Update helium_revenuecat CHANGELOG.md
+          TEMP_FILE=$(mktemp)
+          echo "## $NEW_VERSION" > $TEMP_FILE
+          echo "- Updated helium-swift dependency to ${{ github.event.client_payload.version || github.event.inputs.version }}" >> $TEMP_FILE
+          echo "" >> $TEMP_FILE
+          cat packages/helium_revenuecat/CHANGELOG.md >> $TEMP_FILE
+          mv $TEMP_FILE packages/helium_revenuecat/CHANGELOG.md
 
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v7
@@ -67,11 +77,12 @@ jobs:
           title: "Update helium-swift SDK to ${{ github.event.client_payload.version || github.event.inputs.version }}"
           body: |
             Automated update of helium-swift SDK dependency to version ${{ github.event.client_payload.version || github.event.inputs.version }}.
-            
+
             Changes:
             - Updated Package.swift dependency version
             - Updated podspec dependency version
-            - Bumped pubspec.yaml version (patch increment)
-            - Added changelog entry
-            
+            - Bumped helium_flutter pubspec.yaml version (patch increment)
+            - Bumped helium_revenuecat pubspec.yaml version (patch increment)
+            - Added changelog entries to both packages
+
             This PR was automatically created by the iOS SDK release workflow.

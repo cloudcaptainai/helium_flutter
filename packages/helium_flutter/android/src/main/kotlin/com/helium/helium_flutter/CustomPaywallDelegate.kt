@@ -1,5 +1,7 @@
 package com.helium.helium_flutter
 
+import android.os.Handler
+import android.os.Looper
 import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler
 import io.flutter.plugin.common.MethodChannel.Result
@@ -17,6 +19,8 @@ class CustomPaywallDelegate(
   private val methodChannel: MethodChannel
 ) : HeliumPaywallDelegate {
 
+  private val mainHandler = Handler(Looper.getMainLooper())
+
   override suspend fun makePurchase(
     productDetails: ProductDetails,
     basePlanId: String?,
@@ -29,78 +33,84 @@ class CustomPaywallDelegate(
         "offerId" to offerId
       )
 
-      methodChannel.invokeMethod(
-        "makePurchase",
-        arguments,
-        object : MethodChannel.Result {
-          override fun success(result: Any?) {
-            val status: HeliumPaywallTransactionStatus = when {
-              result is Map<*, *> -> {
-                val statusString = result["status"] as? String
-                val lowercasedStatus = statusString?.lowercase()
+      // Must invoke on main thread - Flutter's MethodChannel requires it
+      mainHandler.post {
+        methodChannel.invokeMethod(
+          "makePurchase",
+          arguments,
+          object : MethodChannel.Result {
+            override fun success(result: Any?) {
+              val status: HeliumPaywallTransactionStatus = when {
+                result is Map<*, *> -> {
+                  val statusString = result["status"] as? String
+                  val lowercasedStatus = statusString?.lowercase()
 
-                when (lowercasedStatus) {
-                  "purchased" -> HeliumPaywallTransactionStatus.Purchased
-                  "restored" -> HeliumPaywallTransactionStatus.Purchased
-                  "cancelled" -> HeliumPaywallTransactionStatus.Cancelled
-                  "pending" -> HeliumPaywallTransactionStatus.Pending
-                  "failed" -> {
-                    val errorMsg = result["error"] as? String ?: "Unknown purchase error"
-                    HeliumPaywallTransactionStatus.Failed(Exception(errorMsg))
-                  }
-                  else -> {
-                    HeliumPaywallTransactionStatus.Failed(
-                      Exception("Unknown status: $lowercasedStatus")
-                    )
+                  when (lowercasedStatus) {
+                    "purchased" -> HeliumPaywallTransactionStatus.Purchased
+                    "restored" -> HeliumPaywallTransactionStatus.Purchased
+                    "cancelled" -> HeliumPaywallTransactionStatus.Cancelled
+                    "pending" -> HeliumPaywallTransactionStatus.Pending
+                    "failed" -> {
+                      val errorMsg = result["error"] as? String ?: "Unknown purchase error"
+                      HeliumPaywallTransactionStatus.Failed(Exception(errorMsg))
+                    }
+                    else -> {
+                      HeliumPaywallTransactionStatus.Failed(
+                        Exception("Unknown status: $lowercasedStatus")
+                      )
+                    }
                   }
                 }
+                else -> {
+                  HeliumPaywallTransactionStatus.Failed(
+                    Exception("Invalid response format")
+                  )
+                }
               }
-              else -> {
-                HeliumPaywallTransactionStatus.Failed(
-                  Exception("Invalid response format")
-                )
-              }
+
+              continuation.resume(status)
             }
 
-            continuation.resume(status)
-          }
+            override fun error(errorCode: String, errorMessage: String?, errorDetails: Any?) {
+              continuation.resume(
+                HeliumPaywallTransactionStatus.Failed(Exception(errorMessage ?: errorCode))
+              )
+            }
 
-          override fun error(errorCode: String, errorMessage: String?, errorDetails: Any?) {
-            continuation.resume(
-              HeliumPaywallTransactionStatus.Failed(Exception(errorMessage ?: errorCode))
-            )
+            override fun notImplemented() {
+              continuation.resume(
+                HeliumPaywallTransactionStatus.Failed(Exception("Method not implemented"))
+              )
+            }
           }
-
-          override fun notImplemented() {
-            continuation.resume(
-              HeliumPaywallTransactionStatus.Failed(Exception("Method not implemented"))
-            )
-          }
-        }
-      )
+        )
+      }
     }
   }
 
   override suspend fun restorePurchases(): Boolean {
     return suspendCancellableCoroutine { continuation ->
-      methodChannel.invokeMethod(
-        "restorePurchases",
-        null,
-        object : MethodChannel.Result {
-          override fun success(result: Any?) {
-            val success = (result as? Boolean) ?: false
-            continuation.resume(success)
-          }
+      // Must invoke on main thread - Flutter's MethodChannel requires it
+      mainHandler.post {
+        methodChannel.invokeMethod(
+          "restorePurchases",
+          null,
+          object : MethodChannel.Result {
+            override fun success(result: Any?) {
+              val success = (result as? Boolean) ?: false
+              continuation.resume(success)
+            }
 
-          override fun error(errorCode: String, errorMessage: String?, errorDetails: Any?) {
-            continuation.resume(false)
-          }
+            override fun error(errorCode: String, errorMessage: String?, errorDetails: Any?) {
+              continuation.resume(false)
+            }
 
-          override fun notImplemented() {
-            continuation.resume(false)
+            override fun notImplemented() {
+              continuation.resume(false)
+            }
           }
-        }
-      )
+        )
+      }
     }
   }
 }

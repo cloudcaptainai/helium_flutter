@@ -185,6 +185,13 @@ public class HeliumFlutterPlugin: NSObject, FlutterPlugin {
             } else {
                 result(FlutterError(code: "BAD_ARGS", message: "Mode not provided", details: nil))
             }
+        case "setRevenueCatAppUserId":
+            if let rcAppUserId = call.arguments as? String {
+                Helium.shared.setRevenueCatAppUserId(rcAppUserId)
+                result("RevenueCat App User ID set!")
+            } else {
+                result(FlutterError(code: "BAD_ARGS", message: "rcAppUserId not provided", details: nil))
+            }
         default:
             result(FlutterMethodNotImplemented)
         }
