@@ -12,17 +12,11 @@ abstract class HeliumPurchaseDelegate {
 
   Future<HeliumPurchaseResult> makePurchaseAndroid(String productId,
       {String? basePlanId, String? offerId}) async {
-    return HeliumPurchaseResult(
-      status: HeliumTransactionStatus.failed,
-      error: 'makePurchaseAndroid not implemented',
-    );
+    return makePurchase(productId);
   }
 
   Future<HeliumPurchaseResult> makePurchaseIOS(String productId) async {
-    return HeliumPurchaseResult(
-      status: HeliumTransactionStatus.failed,
-      error: 'makePurchaseIOS not implemented',
-    );
+    return makePurchase(productId);
   }
 
   Future<bool> restorePurchases();
