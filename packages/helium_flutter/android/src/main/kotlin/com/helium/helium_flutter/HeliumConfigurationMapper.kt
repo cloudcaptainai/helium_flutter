@@ -69,7 +69,7 @@ internal fun convertToHeliumUserTraitsArgument(value: Any?): HeliumUserTraitsArg
         is String -> HeliumUserTraitsArgument.StringParam(value)
         is Int -> HeliumUserTraitsArgument.IntParam(value)
         is Long -> HeliumUserTraitsArgument.LongParam(value)
-        is Double -> HeliumUserTraitsArgument.DoubleParam(value.toString())
+        is Double -> HeliumUserTraitsArgument.DoubleParam(value)
         is Boolean -> HeliumUserTraitsArgument.BooleanParam(value)
         is List<*> -> {
             val items = value.mapNotNull { convertToHeliumUserTraitsArgument(it) }

@@ -31,8 +31,8 @@ class RevenueCatPurchaseDelegate extends HeliumPurchaseDelegate {
         return _createFailedResult('Product not found: $productId');
       }
 
-      final customerInfo = await Purchases.purchaseStoreProduct(products.first);
-      return _evaluatePurchaseResult(customerInfo, productId);
+      final purchaseResult = await Purchases.purchase(PurchaseParams.storeProduct(products.first));
+      return _evaluatePurchaseResult(purchaseResult.customerInfo, productId);
     } on PlatformException catch (e) {
       return _handlePlatformException(e);
     } catch (e) {
@@ -61,9 +61,9 @@ class RevenueCatPurchaseDelegate extends HeliumPurchaseDelegate {
         );
 
         if (subscriptionOption != null) {
-          final customerInfo =
-              await Purchases.purchaseSubscriptionOption(subscriptionOption);
-          return _evaluatePurchaseResult(customerInfo, productId);
+          final purchaseResult =
+              await Purchases.purchase(PurchaseParams.subscriptionOption(subscriptionOption));
+          return _evaluatePurchaseResult(purchaseResult.customerInfo, productId);
         }
         log('[Helium] No matching subscription option found');
       }
@@ -74,15 +74,15 @@ class RevenueCatPurchaseDelegate extends HeliumPurchaseDelegate {
         productCategory: ProductCategory.nonSubscription,
       );
       if (products.isNotEmpty) {
-        final customerInfo = await Purchases.purchaseStoreProduct(products.first);
-        return _evaluatePurchaseResult(customerInfo, productId);
+        final purchaseResult = await Purchases.purchase(PurchaseParams.storeProduct(products.first));
+        return _evaluatePurchaseResult(purchaseResult.customerInfo, productId);
       }
 
       // Then try subscription product (let RC pick option since we couldn't find a match)
       products = await Purchases.getProducts([productId]);
       if (products.isNotEmpty) {
-        final customerInfo = await Purchases.purchaseStoreProduct(products.first);
-        return _evaluatePurchaseResult(customerInfo, productId);
+        final purchaseResult = await Purchases.purchase(PurchaseParams.storeProduct(products.first));
+        return _evaluatePurchaseResult(purchaseResult.customerInfo, productId);
       }
 
       return _createFailedResult('Android product not found: $productId');

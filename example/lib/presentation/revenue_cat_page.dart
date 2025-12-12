@@ -19,7 +19,7 @@ class _RevenueCatPageState extends State<RevenueCatPage> {
 
   Future<void> getCustomerInfo() async {
     final offerings = await Purchases.getOfferings();
-    log(offerings.toJson().toString());
+    log(offerings.toString());
   }
 
   @override

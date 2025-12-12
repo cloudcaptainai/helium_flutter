@@ -13,7 +13,7 @@ dependencies:
   flutter:
     sdk: flutter
   helium_flutter: ^3.0.18
-  purchases_flutter: ^8.7.3
+  purchases_flutter: ^9.4.0
 
 dev_dependencies:
   flutter_test:

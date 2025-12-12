@@ -127,6 +127,7 @@ class HeliumFlutterPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
         val apiKey = args["apiKey"] as? String ?: ""
         val customApiEndpoint = args["customAPIEndpoint"] as? String
         val customUserId = args["customUserId"] as? String
+        val revenueCatAppUserId = args["revenueCatAppUserId"] as? String
         val useDefaultDelegate = args["useDefaultDelegate"] as? Boolean ?: false
 
         @Suppress("UNCHECKED_CAST")
@@ -181,6 +182,7 @@ class HeliumFlutterPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
               customUserId = customUserId,
               customApiEndpoint = customApiEndpoint,
               customUserTraits = customUserTraits,
+              revenueCatAppUserId = revenueCatAppUserId,
               fallbackConfig = fallbackConfig,
               environment = environment
             )
