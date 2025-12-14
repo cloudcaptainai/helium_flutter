@@ -19,14 +19,6 @@ jobs:
     needs: publish_helium_flutter
     permissions:
       id-token: write # Required for authentication using OIDC
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: subosito/flutter-action@v2
-        with:
-          channel: stable
-
-      - name: Publish
-        uses: dart-lang/setup-dart/actions/publish@v1
-        with:
-          working-directory: packages/helium_revenuecat
+    uses: dart-lang/setup-dart/.github/workflows/publish.yml@v1
+    with:
+      working-directory: packages/helium_revenuecat
