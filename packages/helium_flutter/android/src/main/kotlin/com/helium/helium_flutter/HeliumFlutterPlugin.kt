@@ -38,6 +38,7 @@ import com.tryhelium.paywall.core.HeliumIdentityManager
 import com.tryhelium.paywall.core.HeliumUserTraits
 import com.tryhelium.paywall.core.HeliumUserTraitsArgument
 import com.tryhelium.paywall.core.HeliumPaywallTransactionStatus
+import com.tryhelium.paywall.core.HeliumLightDarkMode
 import com.tryhelium.paywall.delegate.HeliumPaywallDelegate
 import com.tryhelium.paywall.delegate.PlayStorePaywallDelegate
 import com.android.billingclient.api.ProductDetails
@@ -127,6 +128,7 @@ class HeliumFlutterPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
         val apiKey = args["apiKey"] as? String ?: ""
         val customApiEndpoint = args["customAPIEndpoint"] as? String
         val customUserId = args["customUserId"] as? String
+        val revenueCatAppUserId = args["revenueCatAppUserId"] as? String
         val useDefaultDelegate = args["useDefaultDelegate"] as? Boolean ?: false
 
         @Suppress("UNCHECKED_CAST")
@@ -181,6 +183,7 @@ class HeliumFlutterPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
               customUserId = customUserId,
               customApiEndpoint = customApiEndpoint,
               customUserTraits = customUserTraits,
+              revenueCatAppUserId = revenueCatAppUserId,
               fallbackConfig = fallbackConfig,
               environment = environment
             )
@@ -217,6 +220,7 @@ class HeliumFlutterPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
 
         Helium.presentUpsell(
           trigger = trigger,
+          activityContext = activity,
           eventListener = eventListener,
           customPaywallTraits = customPaywallTraits,
           dontShowIfAlreadyEntitled = dontShowIfAlreadyEntitled
@@ -225,7 +229,8 @@ class HeliumFlutterPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
         result.success("Upsell presented!")
       }
       "hideUpsell" -> {
-        result.notImplemented()
+        Helium.hideUpsell()
+        result.success(true)
       }
       "getHeliumUserId" -> {
         val userId = HeliumIdentityManager.shared.getUserId()
@@ -281,7 +286,14 @@ class HeliumFlutterPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
         }
       }
       "canPresentUpsell" -> {
-        result.notImplemented()
+        val trigger = call.arguments as? String ?: ""
+        val paywallInfo = Helium.shared.getPaywallInfo(trigger)
+        val canPresent = paywallInfo?.shouldShow == true
+        result.success(mapOf(
+          "canShow" to canPresent,
+          "isFallback" to false,
+//          "paywallUnavailableReason" to paywallInfo.shouldShow //todo improve this
+        ))
       }
       "handleDeepLink" -> {
         val urlString = call.arguments as? String
@@ -362,7 +374,18 @@ class HeliumFlutterPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
         result.success("Helium reset!")
       }
       "setLightDarkModeOverride" -> {
-        result.notImplemented()
+        val mode = call.arguments as? String ?: ""
+        val heliumMode: HeliumLightDarkMode = when (mode.lowercase()) {
+          "light" -> HeliumLightDarkMode.LIGHT
+          "dark" -> HeliumLightDarkMode.DARK
+          "system" -> HeliumLightDarkMode.SYSTEM
+          else -> {
+            android.util.Log.w("HeliumPaywallSdk", "Invalid light/dark mode: $mode, defaulting to system")
+            HeliumLightDarkMode.SYSTEM
+          }
+        }
+        Helium.shared.setLightDarkModeOverride(heliumMode)
+        result.success("Light/Dark mode override set!")
       }
       "setRevenueCatAppUserId" -> {
         val rcAppUserId = call.arguments as? String

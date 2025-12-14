@@ -1,3 +1,6 @@
+## 3.1.0
+- Android beta support
+
 ## 3.0.18
 - Avoid sporadic crash from new downloadStatus logic
 
