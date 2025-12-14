@@ -230,6 +230,7 @@ class HeliumFlutterPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
       }
       "hideUpsell" -> {
         Helium.hideUpsell()
+        result.success("hideUpsell() called")
       }
       "getHeliumUserId" -> {
         val userId = HeliumIdentityManager.shared.getUserId()
@@ -384,6 +385,7 @@ class HeliumFlutterPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
           }
         }
         Helium.shared.setLightDarkModeOverride(heliumMode)
+        result.success("setLightDarkModeOverride() called")
       }
       "setRevenueCatAppUserId" -> {
         val rcAppUserId = call.arguments as? String
