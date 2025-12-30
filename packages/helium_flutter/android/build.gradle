@@ -48,7 +48,7 @@ android {
     }
 
     dependencies {
-        implementation("com.tryhelium.paywall:core:0.1.17")
+        implementation("com.tryhelium.paywall:core:0.1.21")
         implementation("com.google.code.gson:gson:2.10.1")
         implementation("com.android.billingclient:billing:8.0.0")
         testImplementation("org.jetbrains.kotlin:kotlin-test")

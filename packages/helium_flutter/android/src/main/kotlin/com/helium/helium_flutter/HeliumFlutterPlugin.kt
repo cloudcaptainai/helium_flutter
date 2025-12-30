@@ -254,10 +254,7 @@ class HeliumFlutterPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
         val traitsMap = args["traits"] as? Map<String, Any?>
         val traits = convertToHeliumUserTraits(traitsMap)
 
-        HeliumIdentityManager.shared.setCustomUserId(newUserId)
-        traits?.let {
-          HeliumIdentityManager.shared.setCustomUserTraits(it)
-        }
+        Helium.shared.overrideUserId(customUserId = newUserId, customUserTraits = traits)
 
         result.success("User id is updated!")
       }
