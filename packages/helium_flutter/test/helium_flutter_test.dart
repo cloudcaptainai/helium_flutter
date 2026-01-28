@@ -42,7 +42,7 @@ class MockHeliumFlutterPlatform
   @override
   Future<String?> overrideUserId({
     required String newUserId,
-    required Map<String, dynamic> traits,
+    Map<String, dynamic>? traits,
   }) {
     return Future.value(newUserId);
   }
@@ -115,7 +115,7 @@ class MockHeliumFlutterPlatform
   }) {}
 
   @override
-  void resetHelium() {}
+  Future<void> resetHelium() async {}
 
   @override
   void setLightDarkModeOverride(HeliumLightDarkMode mode) {}
@@ -219,5 +219,9 @@ void main() {
   test(setRevenueCatAppUserIdMethodName, () {
     // Test that it doesn't throw
     heliumFlutterPlugin.setRevenueCatAppUserId('rc_app_user_id_123');
+  });
+  test(resetHeliumMethodName, () async {
+    // Test that resetHelium completes without throwing
+    await heliumFlutterPlugin.resetHelium();
   });
 }

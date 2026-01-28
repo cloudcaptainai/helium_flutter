@@ -19,6 +19,17 @@ jobs:
         with:
           fetch-depth: 2
 
+      - name: Verify SDK version constant matches pubspec
+        run: |
+          PUBSPEC_VERSION=$(grep "^version:" packages/helium_flutter/pubspec.yaml | sed 's/version: //')
+          CONST_VERSION=$(grep "heliumFlutterSdkVersion" packages/helium_flutter/lib/core/const/contants.dart | sed "s/.*'\(.*\)'.*/\1/")
+          if [ "$PUBSPEC_VERSION" != "$CONST_VERSION" ]; then
+            echo "❌ Version mismatch! pubspec.yaml: $PUBSPEC_VERSION, contants.dart: $CONST_VERSION"
+            echo "Please update heliumFlutterSdkVersion in contants.dart to match pubspec.yaml"
+            exit 1
+          fi
+          echo "✅ SDK version constant matches pubspec: $PUBSPEC_VERSION"
+
       - name: Check version change
         id: check
         run: |
@@ -53,6 +64,17 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: Verify SDK version constant matches pubspec
+        run: |
+          PUBSPEC_VERSION=$(grep "^version:" packages/helium_flutter/pubspec.yaml | sed 's/version: //')
+          CONST_VERSION=$(grep "heliumFlutterSdkVersion" packages/helium_flutter/lib/core/const/contants.dart | sed "s/.*'\(.*\)'.*/\1/")
+          if [ "$PUBSPEC_VERSION" != "$CONST_VERSION" ]; then
+            echo "❌ Version mismatch! pubspec.yaml: $PUBSPEC_VERSION, contants.dart: $CONST_VERSION"
+            echo "Please update heliumFlutterSdkVersion in contants.dart to match pubspec.yaml"
+            exit 1
+          fi
+          echo "✅ SDK version constant matches pubspec: $PUBSPEC_VERSION"
 
       - name: Extract current version
         id: extract

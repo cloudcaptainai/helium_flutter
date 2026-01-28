@@ -54,6 +54,8 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
       'paywallLoadingConfig':
           _convertBooleansToMarkers(paywallLoadingConfig?.toMap()),
       'useDefaultDelegate': purchaseDelegate == null,
+      'wrapperSdkVersion': heliumFlutterSdkVersion,
+      'delegateType': purchaseDelegate?.delegateType,
     });
     return result;
   }
@@ -147,7 +149,7 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
   @override
   Future<String?> overrideUserId({
     required String newUserId,
-    required Map<String, dynamic> traits,
+    Map<String, dynamic>? traits,
   }) async {
     final result = await methodChannel.invokeMethod<String?>(
       overrideUserIdMethodName,
@@ -338,10 +340,23 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
   }
 
   @override
-  void resetHelium() {
-    methodChannel.invokeMethod<void>(
+  Future<void> resetHelium() async {
+    // Dismiss fallback sheet if it is displaying
+    if (_isFallbackSheetShowing &&
+        _fallbackContext != null &&
+        _fallbackContext!.mounted) {
+      Navigator.of(_fallbackContext!).pop();
+    }
+
+    _fallbackPaywallWidget = null;
+    _isFallbackSheetShowing = false;
+    _fallbackContext = null;
+    _currentEventHandlers = null;
+    // Reset native SDK state
+    await methodChannel.invokeMethod<void>(
       resetHeliumMethodName,
     );
+    _isInitialized = false;
   }
 
   @override

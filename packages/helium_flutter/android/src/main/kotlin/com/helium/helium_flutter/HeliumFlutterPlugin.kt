@@ -39,6 +39,7 @@ import com.tryhelium.paywall.core.HeliumUserTraits
 import com.tryhelium.paywall.core.HeliumUserTraitsArgument
 import com.tryhelium.paywall.core.HeliumPaywallTransactionStatus
 import com.tryhelium.paywall.core.HeliumLightDarkMode
+import com.tryhelium.paywall.core.HeliumSdkConfig
 import com.tryhelium.paywall.delegate.HeliumPaywallDelegate
 import com.tryhelium.paywall.delegate.PlayStorePaywallDelegate
 import com.android.billingclient.api.ProductDetails
@@ -153,6 +154,9 @@ class HeliumFlutterPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
 
         val environment = (args["environment"] as? String).toEnvironment()
 
+        val wrapperSdkVersion = args["wrapperSdkVersion"] as? String ?: "unknown"
+        val delegateType = args["delegateType"] as? String ?: "custom"
+
         // Initialize on a coroutine scope
         CoroutineScope(Dispatchers.Main).launch {
           try {
@@ -164,6 +168,9 @@ class HeliumFlutterPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
               return@launch
             }
 
+            // Set wrapper SDK info for analytics
+            HeliumSdkConfig.setWrapperSdkInfo(sdk = "flutter", version = wrapperSdkVersion)
+
             // Create delegate
             val delegate = if (useDefaultDelegate) {
               if (currentActivity != null) {
@@ -173,7 +180,7 @@ class HeliumFlutterPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
                 return@launch
               }
             } else {
-              CustomPaywallDelegate(channel)
+              CustomPaywallDelegate(delegateType, channel)
             }
 
             Helium.initialize(

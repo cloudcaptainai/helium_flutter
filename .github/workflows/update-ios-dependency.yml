@@ -51,6 +51,12 @@ jobs:
           echo "Bumped helium_revenuecat to $NEW_VERSION"
           echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_ENV
 
+      - name: Update SDK version constant
+        run: |
+          # Update heliumFlutterSdkVersion constant to match pubspec.yaml
+          sed -i "s/const String heliumFlutterSdkVersion = '[^']*'/const String heliumFlutterSdkVersion = '$NEW_VERSION'/g" packages/helium_flutter/lib/core/const/contants.dart
+          echo "Updated heliumFlutterSdkVersion to $NEW_VERSION"
+
       - name: Update CHANGELOGs
         run: |
           # Update helium_flutter CHANGELOG.md
@@ -83,6 +89,7 @@ jobs:
             - Updated podspec dependency version
             - Bumped helium_flutter pubspec.yaml version (patch increment)
             - Bumped helium_revenuecat pubspec.yaml version (patch increment)
+            - Updated heliumFlutterSdkVersion constant
             - Added changelog entries to both packages
 
             This PR was automatically created by the iOS SDK release workflow.

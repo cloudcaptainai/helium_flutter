@@ -63,6 +63,9 @@ class ExperimentInfo {
   /// Experiment ID
   String? get experimentId => _data['experimentId'];
 
+  /// Experiment version ID - identifies a specific version/iteration of the experiment
+  String? get experimentVersionId => _data['experimentVersionId'];
+
   /// Experiment type (e.g., "A/B/n test")
   String? get experimentType => _data['experimentType'];
 

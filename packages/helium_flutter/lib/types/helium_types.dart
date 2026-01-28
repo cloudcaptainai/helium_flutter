@@ -55,7 +55,7 @@ class HeliumPaywallLoadingConfig {
 
   /// Maximum time (in seconds) to show the loading state before displaying fallback.
   /// After this timeout, the fallback view will be shown even if the paywall is still downloading.
-  /// Default: 2.0 seconds
+  /// Default: 7.0 seconds
   final double loadingBudget;
 
   /// Optional per-trigger loading configuration overrides.
@@ -66,7 +66,7 @@ class HeliumPaywallLoadingConfig {
 
   HeliumPaywallLoadingConfig({
     this.useLoadingState = true,
-    this.loadingBudget = 2.0,
+    this.loadingBudget = 7.0,
     this.perTriggerLoadingConfig,
   });
 

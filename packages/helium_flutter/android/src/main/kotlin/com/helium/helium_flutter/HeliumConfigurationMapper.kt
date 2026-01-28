@@ -134,7 +134,9 @@ internal fun convertToHeliumFallbackConfig(
     val convertedConfig = convertMarkersToBooleans(paywallLoadingConfig) ?: return null
 
     val useLoadingState = convertedConfig["useLoadingState"] as? Boolean ?: DEFAULT_USE_LOADING_STATE
-    val loadingBudget = (convertedConfig["loadingBudget"] as? Number)?.toLong() ?: DEFAULT_LOADING_BUDGET_MS
+    // Convert seconds to milliseconds (Flutter passes seconds, Android expects ms)
+    val loadingBudgetSeconds = (convertedConfig["loadingBudget"] as? Number)?.toDouble()
+    val loadingBudget = loadingBudgetSeconds?.let { (it * 1000).toLong() } ?: DEFAULT_LOADING_BUDGET_MS
 
     var perTriggerLoadingConfig: Map<String, HeliumFallbackConfig>? = null
     val perTriggerDict = convertedConfig["perTriggerLoadingConfig"] as? Map<*, *>
@@ -144,7 +146,9 @@ internal fun convertToHeliumFallbackConfig(
                 @Suppress("UNCHECKED_CAST")
                 val config = value as? Map<String, Any?>
                 val triggerUseLoadingState = config?.get("useLoadingState") as? Boolean
-                val triggerLoadingBudget = (config?.get("loadingBudget") as? Number)?.toLong()
+                // Convert seconds to milliseconds
+                val triggerLoadingBudgetSeconds = (config?.get("loadingBudget") as? Number)?.toDouble()
+                val triggerLoadingBudget = triggerLoadingBudgetSeconds?.let { (it * 1000).toLong() }
                 key to HeliumFallbackConfig(
                     useLoadingState = triggerUseLoadingState ?: DEFAULT_USE_LOADING_STATE,
                     loadingBudgetInMs = triggerLoadingBudget ?: DEFAULT_LOADING_BUDGET_MS
