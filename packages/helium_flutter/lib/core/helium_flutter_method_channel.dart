@@ -338,10 +338,16 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
   }
 
   @override
-  void resetHelium() {
-    methodChannel.invokeMethod<void>(
+  Future<void> resetHelium() async {
+    _fallbackPaywallWidget = null;
+    _isFallbackSheetShowing = false;
+    _fallbackContext = null;
+    _currentEventHandlers = null;
+    // Reset native SDK state
+    await methodChannel.invokeMethod<void>(
       resetHeliumMethodName,
     );
+    _isInitialized = false;
   }
 
   @override

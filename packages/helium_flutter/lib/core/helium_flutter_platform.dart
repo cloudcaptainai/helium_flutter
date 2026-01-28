@@ -92,7 +92,7 @@ abstract class HeliumFlutterPlatform extends PlatformInterface {
     String? customCloseButtonText,
   });
 
-  void resetHelium();
+  Future<void> resetHelium();
 
   void setLightDarkModeOverride(HeliumLightDarkMode mode);
 
