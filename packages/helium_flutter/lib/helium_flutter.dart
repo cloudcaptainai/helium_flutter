@@ -51,7 +51,7 @@ class HeliumFlutter {
   ///Overrides user id to given [newUserId]
   Future<String?> overrideUserId({
     required String newUserId,
-    required Map<String, dynamic> traits,
+    Map<String, dynamic>? traits,
   }) =>
       HeliumFlutterPlatform.instance.overrideUserId(
         newUserId: newUserId,
@@ -141,7 +141,7 @@ class HeliumFlutter {
       );
 
   /// Reset Helium entirely so you can call initialize again. Only for advanced use cases.
-  void resetHelium() => HeliumFlutterPlatform.instance.resetHelium();
+  Future<void> resetHelium() => HeliumFlutterPlatform.instance.resetHelium();
 
   /// Sets light/dark mode override for Helium paywalls.
   /// - Parameter mode: The desired appearance mode (.light, .dark, or .system)
