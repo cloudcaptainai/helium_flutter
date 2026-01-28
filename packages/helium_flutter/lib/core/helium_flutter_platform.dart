@@ -64,7 +64,7 @@ abstract class HeliumFlutterPlatform extends PlatformInterface {
   ///Overrides user id to given [newUserId]
   Future<String?> overrideUserId({
     required String newUserId,
-    required Map<String, dynamic> traits,
+    Map<String, dynamic>? traits,
   });
 
   Future<PaywallInfo?> getPaywallInfo(String trigger);

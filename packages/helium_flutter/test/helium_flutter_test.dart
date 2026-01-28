@@ -42,7 +42,7 @@ class MockHeliumFlutterPlatform
   @override
   Future<String?> overrideUserId({
     required String newUserId,
-    required Map<String, dynamic> traits,
+    Map<String, dynamic>? traits,
   }) {
     return Future.value(newUserId);
   }

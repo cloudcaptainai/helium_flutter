@@ -147,7 +147,7 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
   @override
   Future<String?> overrideUserId({
     required String newUserId,
-    required Map<String, dynamic> traits,
+    Map<String, dynamic>? traits,
   }) async {
     final result = await methodChannel.invokeMethod<String?>(
       overrideUserIdMethodName,
