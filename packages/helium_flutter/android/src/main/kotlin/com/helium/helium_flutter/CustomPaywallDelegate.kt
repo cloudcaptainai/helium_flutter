@@ -16,6 +16,7 @@ import kotlin.coroutines.resume
  * Similar to DemoHeliumPaywallDelegate in iOS.
  */
 class CustomPaywallDelegate(
+  override val delegateType: String,
   private val methodChannel: MethodChannel
 ) : HeliumPaywallDelegate {
 

@@ -67,6 +67,8 @@ public class HeliumFlutterPlugin: NSObject, FlutterPlugin {
                 let paywallLoadingConfig = convertMarkersToBooleans(args["paywallLoadingConfig"] as? [String: Any])
 
                 let useDefaultDelegate = args["useDefaultDelegate"] as? Bool ?? false
+                let wrapperSdkVersion = args["wrapperSdkVersion"] as? String ?? "unknown"
+                let delegateType = args["delegateType"] as? String
 
                 initializeHelium(
                     apiKey: apiKey,
@@ -76,7 +78,9 @@ public class HeliumFlutterPlugin: NSObject, FlutterPlugin {
                     revenueCatAppUserId: revenueCatAppUserId,
                     fallbackAssetPath: fallbackAssetPath,
                     paywallLoadingConfig: paywallLoadingConfig,
-                    useDefaultDelegate: useDefaultDelegate
+                    useDefaultDelegate: useDefaultDelegate,
+                    wrapperSdkVersion: wrapperSdkVersion,
+                    delegateType: delegateType
                 )
                 result("Initialization started!")
             } else {
@@ -202,16 +206,21 @@ public class HeliumFlutterPlugin: NSObject, FlutterPlugin {
         customUserId: String?, customUserTraits: HeliumUserTraits?,
         revenueCatAppUserId: String?, fallbackAssetPath: String?,
         paywallLoadingConfig: [String: Any]?,
-        useDefaultDelegate: Bool
+        useDefaultDelegate: Bool,
+        wrapperSdkVersion: String,
+        delegateType: String?
     ) {
         Task { // task probably not needed here...
             NotificationCenter.default.post(name: .heliumInitializing, object: nil)
+
+            // Set wrapper SDK info for analytics
+            HeliumSdkConfig.shared.setWrapperSdkInfo(sdk: "flutter", version: wrapperSdkVersion)
 
             let delegate: HeliumPaywallDelegate
             if useDefaultDelegate {
                 delegate = DefaultPurchaseDelegate(methodChannel: channel)
             } else {
-                delegate = DemoHeliumPaywallDelegate(methodChannel: channel)
+                delegate = DemoHeliumPaywallDelegate(delegateType: delegateType, methodChannel: channel)
             }
 
             var fallbackBundleURL: URL? = nil
@@ -290,8 +299,10 @@ public class HeliumFlutterPlugin: NSObject, FlutterPlugin {
     }
 
     private func fallbackOpenOrCloseEvent(trigger: String?, isOpen: Bool, viewType: String?, paywallUnavailableReason: String?) {
-        let fallbackReason = paywallUnavailableReason != nil ? PaywallUnavailableReason(rawValue: paywallUnavailableReason!) : nil
-        HeliumPaywallDelegateWrapper.shared.onFallbackOpenCloseEvent(trigger: trigger, isOpen: isOpen, viewType: viewType, fallbackReason: fallbackReason)
+        // Taking this out for now, this method is no longer exposed
+        // by native SDK and paywall open fail event will fire anyways so we can use that.
+        // let fallbackReason = paywallUnavailableReason != nil ? PaywallUnavailableReason(rawValue: paywallUnavailableReason!) : nil
+        // HeliumPaywallDelegateWrapper.shared.onFallbackOpenCloseEvent(trigger: trigger, isOpen: isOpen, viewType: viewType, fallbackReason: fallbackReason)
     }
 
     private func getPaywallInfo(trigger: String) -> [String: Any?] {
@@ -438,9 +449,12 @@ public class HeliumFlutterPlugin: NSObject, FlutterPlugin {
 }
 
 class DemoHeliumPaywallDelegate: HeliumPaywallDelegate {
+    private let _delegateType: String?
+    public var delegateType: String { _delegateType ?? "custom" }
     let _methodChannel: FlutterMethodChannel
 
-    init(methodChannel: FlutterMethodChannel) {
+    init(delegateType: String?, methodChannel: FlutterMethodChannel) {
+        _delegateType = delegateType
         _methodChannel = methodChannel
     }
 

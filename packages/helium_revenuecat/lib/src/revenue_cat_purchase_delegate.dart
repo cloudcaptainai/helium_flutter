@@ -9,6 +9,9 @@ import 'dart:developer';
 /// platforms with proper handling of Android subscription options (base plans
 /// and offers).
 class RevenueCatPurchaseDelegate extends HeliumPurchaseDelegate {
+  @override
+  String get delegateType => 'h_revenuecat';
+
   /// Creates a new [RevenueCatPurchaseDelegate].
   RevenueCatPurchaseDelegate() {
     _syncAppUserId();

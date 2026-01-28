@@ -54,6 +54,8 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
       'paywallLoadingConfig':
           _convertBooleansToMarkers(paywallLoadingConfig?.toMap()),
       'useDefaultDelegate': purchaseDelegate == null,
+      'wrapperSdkVersion': heliumFlutterSdkVersion,
+      'delegateType': purchaseDelegate?.delegateType,
     });
     return result;
   }

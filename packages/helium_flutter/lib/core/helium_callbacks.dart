@@ -2,6 +2,9 @@ import 'package:helium_flutter/types/helium_transaction_status.dart';
 import 'package:helium_flutter/types/helium_types.dart';
 
 abstract class HeliumPurchaseDelegate {
+  /// Used to identify the purchase delegate type for analytics.
+  String get delegateType => 'custom';
+
   @Deprecated('Use makePurchaseIOS / makePurchaseAndroid instead for platform-specific handling.')
   Future<HeliumPurchaseResult> makePurchase(String productId) async {
     return HeliumPurchaseResult(
