@@ -341,6 +341,13 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
 
   @override
   Future<void> resetHelium() async {
+    // Dismiss fallback sheet if it is displaying
+    if (_isFallbackSheetShowing &&
+        _fallbackContext != null &&
+        _fallbackContext!.mounted) {
+      Navigator.of(_fallbackContext!).pop();
+    }
+
     _fallbackPaywallWidget = null;
     _isFallbackSheetShowing = false;
     _fallbackContext = null;
