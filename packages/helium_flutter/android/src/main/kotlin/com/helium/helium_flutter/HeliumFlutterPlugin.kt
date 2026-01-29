@@ -157,48 +157,45 @@ class HeliumFlutterPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
         val wrapperSdkVersion = args["wrapperSdkVersion"] as? String ?: "unknown"
         val delegateType = args["delegateType"] as? String ?: "custom"
 
-        // Initialize on a coroutine scope
-        CoroutineScope(Dispatchers.Main).launch {
-          try {
-            val currentContext = context
-            val currentActivity = activity
+        try {
+          val currentContext = context
+          val currentActivity = activity
 
-            if (currentContext == null) {
-              result.error("NO_CONTEXT", "Context not available", null)
-              return@launch
-            }
-
-            // Set wrapper SDK info for analytics
-            HeliumSdkConfig.setWrapperSdkInfo(sdk = "flutter", version = wrapperSdkVersion)
-
-            // Create delegate
-            val delegate = if (useDefaultDelegate) {
-              if (currentActivity != null) {
-                PlayStorePaywallDelegate(currentActivity)
-              } else {
-                result.error("DELEGATE_ERROR", "Activity not available for PlayStorePaywallDelegate", null)
-                return@launch
-              }
-            } else {
-              CustomPaywallDelegate(delegateType, channel)
-            }
-
-            Helium.initialize(
-              context = currentContext,
-              apiKey = apiKey,
-              heliumPaywallDelegate = delegate,
-              customUserId = customUserId,
-              customApiEndpoint = customApiEndpoint,
-              customUserTraits = customUserTraits,
-              revenueCatAppUserId = revenueCatAppUserId,
-              fallbackConfig = fallbackConfig,
-              environment = environment
-            )
-
-            result.success("Initialization started!")
-          } catch (e: Exception) {
-            result.error("INIT_ERROR", "Failed to initialize: ${e.message}", null)
+          if (currentContext == null) {
+            result.error("NO_CONTEXT", "Context not available", null)
+            return
           }
+
+          // Set wrapper SDK info for analytics
+          HeliumSdkConfig.setWrapperSdkInfo(sdk = "flutter", version = wrapperSdkVersion)
+
+          // Create delegate
+          val delegate = if (useDefaultDelegate) {
+            if (currentActivity != null) {
+              PlayStorePaywallDelegate(currentActivity)
+            } else {
+              result.error("DELEGATE_ERROR", "Activity not available for PlayStorePaywallDelegate", null)
+              return
+            }
+          } else {
+            CustomPaywallDelegate(delegateType, channel)
+          }
+
+          Helium.initialize(
+            context = currentContext,
+            apiKey = apiKey,
+            heliumPaywallDelegate = delegate,
+            customUserId = customUserId,
+            customApiEndpoint = customApiEndpoint,
+            customUserTraits = customUserTraits,
+            revenueCatAppUserId = revenueCatAppUserId,
+            fallbackConfig = fallbackConfig,
+            environment = environment
+          )
+
+          result.success("Initialization started!")
+        } catch (e: Exception) {
+          result.error("INIT_ERROR", "Failed to initialize: ${e.message}", null)
         }
       }
       "presentUpsell" -> {

@@ -210,62 +210,60 @@ public class HeliumFlutterPlugin: NSObject, FlutterPlugin {
         wrapperSdkVersion: String,
         delegateType: String?
     ) {
-        Task { // task probably not needed here...
-            NotificationCenter.default.post(name: .heliumInitializing, object: nil)
+        NotificationCenter.default.post(name: .heliumInitializing, object: nil)
 
-            // Set wrapper SDK info for analytics
-            HeliumSdkConfig.shared.setWrapperSdkInfo(sdk: "flutter", version: wrapperSdkVersion)
+        // Set wrapper SDK info for analytics
+        HeliumSdkConfig.shared.setWrapperSdkInfo(sdk: "flutter", version: wrapperSdkVersion)
 
-            let delegate: HeliumPaywallDelegate
-            if useDefaultDelegate {
-                delegate = DefaultPurchaseDelegate(methodChannel: channel)
-            } else {
-                delegate = DemoHeliumPaywallDelegate(delegateType: delegateType, methodChannel: channel)
-            }
-
-            var fallbackBundleURL: URL? = nil
-
-            // Get file from Flutter assets
-            if let assetPath = fallbackAssetPath,
-               let key = registrar?.lookupKey(forAsset: assetPath),
-               let path = Bundle.main.path(forResource: key, ofType: nil) {
-                fallbackBundleURL = URL(fileURLWithPath: path)
-            }
-
-            // Parse loading configuration
-            let useLoadingState = paywallLoadingConfig?["useLoadingState"] as? Bool ?? true
-            let loadingBudget = paywallLoadingConfig?["loadingBudget"] as? TimeInterval ?? HeliumFallbackConfig.defaultLoadingBudget
-
-            var perTriggerLoadingConfig: [String: TriggerLoadingConfig]? = nil
-            if let perTriggerDict = paywallLoadingConfig?["perTriggerLoadingConfig"] as? [String: [String: Any]] {
-                var triggerConfigs: [String: TriggerLoadingConfig] = [:]
-                for (trigger, config) in perTriggerDict {
-                    triggerConfigs[trigger] = TriggerLoadingConfig(
-                        useLoadingState: config["useLoadingState"] as? Bool,
-                        loadingBudget: config["loadingBudget"] as? TimeInterval
-                    )
-                }
-                perTriggerLoadingConfig = triggerConfigs
-            }
-
-            Helium.shared.initialize(
-                apiKey: apiKey,
-                heliumPaywallDelegate: delegate,
-                fallbackConfig: HeliumFallbackConfig.withMultipleFallbacks(
-                    // As a workaround for required fallback check in iOS, supply empty fallbackPerTrigger
-                    // since currently iOS requires some type of fallback but RN does not.
-                    fallbackPerTrigger: [:],
-                    fallbackBundle: fallbackBundleURL,
-                    useLoadingState: useLoadingState,
-                    loadingBudget: loadingBudget,
-                    perTriggerLoadingConfig: perTriggerLoadingConfig
-                ),
-                customUserId: customUserId,
-                customAPIEndpoint: customAPIEndpoint,
-                customUserTraits: customUserTraits,
-                revenueCatAppUserId: revenueCatAppUserId
-            )
+        let delegate: HeliumPaywallDelegate
+        if useDefaultDelegate {
+            delegate = DefaultPurchaseDelegate(methodChannel: channel)
+        } else {
+            delegate = DemoHeliumPaywallDelegate(delegateType: delegateType, methodChannel: channel)
         }
+
+        var fallbackBundleURL: URL? = nil
+
+        // Get file from Flutter assets
+        if let assetPath = fallbackAssetPath,
+           let key = registrar?.lookupKey(forAsset: assetPath),
+           let path = Bundle.main.path(forResource: key, ofType: nil) {
+            fallbackBundleURL = URL(fileURLWithPath: path)
+        }
+
+        // Parse loading configuration
+        let useLoadingState = paywallLoadingConfig?["useLoadingState"] as? Bool ?? true
+        let loadingBudget = paywallLoadingConfig?["loadingBudget"] as? TimeInterval ?? HeliumFallbackConfig.defaultLoadingBudget
+
+        var perTriggerLoadingConfig: [String: TriggerLoadingConfig]? = nil
+        if let perTriggerDict = paywallLoadingConfig?["perTriggerLoadingConfig"] as? [String: [String: Any]] {
+            var triggerConfigs: [String: TriggerLoadingConfig] = [:]
+            for (trigger, config) in perTriggerDict {
+                triggerConfigs[trigger] = TriggerLoadingConfig(
+                    useLoadingState: config["useLoadingState"] as? Bool,
+                    loadingBudget: config["loadingBudget"] as? TimeInterval
+                )
+            }
+            perTriggerLoadingConfig = triggerConfigs
+        }
+
+        Helium.shared.initialize(
+            apiKey: apiKey,
+            heliumPaywallDelegate: delegate,
+            fallbackConfig: HeliumFallbackConfig.withMultipleFallbacks(
+                // As a workaround for required fallback check in iOS, supply empty fallbackPerTrigger
+                // since currently iOS requires some type of fallback but RN does not.
+                fallbackPerTrigger: [:],
+                fallbackBundle: fallbackBundleURL,
+                useLoadingState: useLoadingState,
+                loadingBudget: loadingBudget,
+                perTriggerLoadingConfig: perTriggerLoadingConfig
+            ),
+            customUserId: customUserId,
+            customAPIEndpoint: customAPIEndpoint,
+            customUserTraits: customUserTraits,
+            revenueCatAppUserId: revenueCatAppUserId
+        )
     }
 
     public func presentUpsell(trigger: String, customPaywallTraits: [String: Any]? = nil, dontShowIfAlreadyEntitled: Bool? = nil) {
