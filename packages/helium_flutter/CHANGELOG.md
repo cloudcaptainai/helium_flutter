@@ -1,3 +1,6 @@
+## 3.1.4
+- Updated helium-swift dependency to 4.1.2
+
 ## 3.1.3
 - Updated helium-swift dependency to 3.1.6
 
