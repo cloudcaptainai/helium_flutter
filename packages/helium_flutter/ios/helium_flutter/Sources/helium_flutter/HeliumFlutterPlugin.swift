@@ -29,6 +29,7 @@ public class HeliumFlutterPlugin: NSObject, FlutterPlugin {
     var channel: FlutterMethodChannel!
     var registrar: FlutterPluginRegistrar?
     private var statusStreamHandler: HeliumStatusStreamHandler?
+    private var logListenerToken: HeliumLogListenerToken?
 
     public static func register(with registrar: FlutterPluginRegistrar) {
         let instance = HeliumFlutterPlugin()
@@ -191,11 +192,14 @@ public class HeliumFlutterPlugin: NSObject, FlutterPlugin {
             }
         case "setRevenueCatAppUserId":
             if let rcAppUserId = call.arguments as? String {
-                Helium.shared.setRevenueCatAppUserId(rcAppUserId)
+                Helium.identify.revenueCatAppUserId = rcAppUserId
                 result("RevenueCat App User ID set!")
             } else {
                 result(FlutterError(code: "BAD_ARGS", message: "rcAppUserId not provided", details: nil))
             }
+        case "hideAllUpsells":
+            Helium.shared.hideAllPaywalls()
+            result(true)
         default:
             result(FlutterMethodNotImplemented)
         }
@@ -215,73 +219,87 @@ public class HeliumFlutterPlugin: NSObject, FlutterPlugin {
         // Set wrapper SDK info for analytics
         HeliumSdkConfig.shared.setWrapperSdkInfo(sdk: "flutter", version: wrapperSdkVersion)
 
+        // Parse loading configuration
+        let useLoadingState = paywallLoadingConfig?["useLoadingState"] as? Bool ?? true
+        let loadingBudget = paywallLoadingConfig?["loadingBudget"] as? TimeInterval
+        if !useLoadingState {
+            // Setting <= 0 will disable loading state
+            Helium.config.defaultLoadingBudget = -1
+        } else {
+            Helium.config.defaultLoadingBudget = loadingBudget ?? 7.0
+        }
+
+        // Set up delegate
         let delegate: HeliumPaywallDelegate
         if useDefaultDelegate {
             delegate = DefaultPurchaseDelegate(methodChannel: channel)
         } else {
             delegate = DemoHeliumPaywallDelegate(delegateType: delegateType, methodChannel: channel)
         }
+        Helium.config.purchaseDelegate = delegate
 
-        var fallbackBundleURL: URL? = nil
+        // Set custom API endpoint
+        if let customAPIEndpoint {
+            Helium.config.customAPIEndpoint = customAPIEndpoint
+        }
 
-        // Get file from Flutter assets
+        // Set up fallback bundle
         if let assetPath = fallbackAssetPath,
            let key = registrar?.lookupKey(forAsset: assetPath),
            let path = Bundle.main.path(forResource: key, ofType: nil) {
-            fallbackBundleURL = URL(fileURLWithPath: path)
+            Helium.config.customFallbacksURL = URL(fileURLWithPath: path)
         }
 
-        // Parse loading configuration
-        let useLoadingState = paywallLoadingConfig?["useLoadingState"] as? Bool ?? true
-        let loadingBudget = paywallLoadingConfig?["loadingBudget"] as? TimeInterval ?? HeliumFallbackConfig.defaultLoadingBudget
+        // Set identity
+        if let customUserId {
+            Helium.identify.userId = customUserId
+        }
+        if let customUserTraits {
+            Helium.identify.setUserTraits(customUserTraits)
+        }
+        if let revenueCatAppUserId {
+            Helium.identify.revenueCatAppUserId = revenueCatAppUserId
+        }
 
-        var perTriggerLoadingConfig: [String: TriggerLoadingConfig]? = nil
-        if let perTriggerDict = paywallLoadingConfig?["perTriggerLoadingConfig"] as? [String: [String: Any]] {
-            var triggerConfigs: [String: TriggerLoadingConfig] = [:]
-            for (trigger, config) in perTriggerDict {
-                triggerConfigs[trigger] = TriggerLoadingConfig(
-                    useLoadingState: config["useLoadingState"] as? Bool,
-                    loadingBudget: config["loadingBudget"] as? TimeInterval
-                )
+        // Set up log listener to forward native SDK logs to Flutter
+        if logListenerToken == nil {
+            logListenerToken = HeliumLogger.addLogListener { [weak self] event in
+                guard let self = self else { return }
+                DispatchQueue.main.async {
+                    let eventData: [String: Any] = [
+                        "level": event.level.rawValue,
+                        "category": event.category.rawValue,
+                        "message": event.message,
+                        "metadata": event.metadata
+                    ]
+                    self.channel.invokeMethod("onHeliumLogEvent", arguments: eventData)
+                }
             }
-            perTriggerLoadingConfig = triggerConfigs
         }
 
-        Helium.shared.initialize(
-            apiKey: apiKey,
-            heliumPaywallDelegate: delegate,
-            fallbackConfig: HeliumFallbackConfig.withMultipleFallbacks(
-                // As a workaround for required fallback check in iOS, supply empty fallbackPerTrigger
-                // since currently iOS requires some type of fallback but RN does not.
-                fallbackPerTrigger: [:],
-                fallbackBundle: fallbackBundleURL,
-                useLoadingState: useLoadingState,
-                loadingBudget: loadingBudget,
-                perTriggerLoadingConfig: perTriggerLoadingConfig
-            ),
-            customUserId: customUserId,
-            customAPIEndpoint: customAPIEndpoint,
-            customUserTraits: customUserTraits,
-            revenueCatAppUserId: revenueCatAppUserId
-        )
+        Helium.shared.initialize(apiKey: apiKey)
     }
 
     public func presentUpsell(trigger: String, customPaywallTraits: [String: Any]? = nil, dontShowIfAlreadyEntitled: Bool? = nil) {
         let convertedTraits = convertMarkersToBooleans(customPaywallTraits)
-        Helium.shared.presentUpsell(
+        Helium.shared.presentPaywall(
             trigger: trigger,
+            config: PaywallPresentationConfig(
+                customPaywallTraits: convertedTraits,
+                dontShowIfAlreadyEntitled: dontShowIfAlreadyEntitled ?? false
+            ),
             eventHandlers: PaywallEventHandlers.withHandlers(
                 onAnyEvent: { [weak self] event in
                     self?.channel.invokeMethod("onPaywallEventHandler", arguments: event.toDictionary())
                 }
-            ),
-            customPaywallTraits: convertedTraits,
-            dontShowIfAlreadyEntitled: dontShowIfAlreadyEntitled ?? false
-        )
+            )
+        ) { _ in
+            // paywallNotShownReason callback - nothing for now
+        }
     }
 
     public func hideUpsell() -> Bool {
-        Helium.shared.hideUpsell()
+        Helium.shared.hidePaywall()
     }
 
     public func getHeliumUserId() -> String? {
@@ -293,7 +311,10 @@ public class HeliumFlutterPlugin: NSObject, FlutterPlugin {
     }
 
     public func overrideUserId(newUserId: String, traits: HeliumUserTraits? = nil) {
-        Helium.shared.overrideUserId(newUserId: newUserId, traits: traits)
+        Helium.identify.userId = newUserId
+        if let traits {
+            Helium.identify.setUserTraits(traits)
+        }
     }
 
     private func fallbackOpenOrCloseEvent(trigger: String?, isOpen: Bool, viewType: String?, paywallUnavailableReason: String?) {
@@ -337,19 +358,19 @@ public class HeliumFlutterPlugin: NSObject, FlutterPlugin {
     }
 
     private func hasAnyActiveSubscription() async -> Bool {
-        return await Helium.shared.hasAnyActiveSubscription()
+        return await Helium.entitlements.hasAnyActiveSubscription()
     }
 
     private func hasAnyEntitlement() async -> Bool {
-        return await Helium.shared.hasAnyEntitlement()
+        return await Helium.entitlements.hasAny()
     }
 
     private func hasEntitlementForPaywall(trigger: String) async -> Bool? {
-        return await Helium.shared.hasEntitlementForPaywall(trigger: trigger)
+        return await Helium.entitlements.hasEntitlementForPaywall(trigger: trigger)
     }
 
     private func getExperimentInfoForTrigger(trigger: String) -> [String: Any?]? {
-        guard let experimentInfo = Helium.shared.getExperimentInfoForTrigger(trigger) else {
+        guard let experimentInfo = Helium.experiments.infoForTrigger(trigger) else {
             return nil
         }
 
@@ -364,7 +385,7 @@ public class HeliumFlutterPlugin: NSObject, FlutterPlugin {
     }
 
     private func disableRestoreFailedDialog() {
-        Helium.restorePurchaseConfig.disableRestoreFailedDialog()
+        Helium.config.restorePurchasesDialog.disableRestoreFailedDialog()
     }
 
     private func setCustomRestoreFailedStrings(
@@ -372,7 +393,7 @@ public class HeliumFlutterPlugin: NSObject, FlutterPlugin {
         customMessage: String?,
         customCloseButtonText: String?
     ) {
-        Helium.restorePurchaseConfig.setCustomRestoreFailedStrings(
+        Helium.config.restorePurchasesDialog.setCustomRestoreFailedStrings(
             customTitle: customTitle,
             customMessage: customMessage,
             customCloseButtonText: customCloseButtonText
@@ -380,6 +401,10 @@ public class HeliumFlutterPlugin: NSObject, FlutterPlugin {
     }
 
     private func resetHelium() {
+        // Clean up log listener
+        logListenerToken?.remove()
+        logListenerToken = nil
+
         NotificationCenter.default.post(name: .heliumReset, object: nil)
         Helium.resetHelium()
     }
@@ -397,7 +422,7 @@ public class HeliumFlutterPlugin: NSObject, FlutterPlugin {
             print("[Helium] Unknown mode: \(mode), defaulting to system")
             heliumMode = .system
         }
-        Helium.shared.setLightDarkModeOverride(heliumMode)
+        Helium.config.lightDarkModeOverride = heliumMode
     }
 
     /// Handler for paywall event notifications posted via NotificationCenter

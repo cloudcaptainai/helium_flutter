@@ -33,15 +33,14 @@ import com.tryhelium.paywall.core.event.HeliumEventDictionaryMapper
 import com.tryhelium.paywall.core.HeliumConfigStatus
 import com.tryhelium.paywall.core.HeliumConfigStatus.*
 import com.tryhelium.paywall.core.HeliumEnvironment
-import com.tryhelium.paywall.core.HeliumFallbackConfig
-import com.tryhelium.paywall.core.HeliumIdentityManager
 import com.tryhelium.paywall.core.HeliumUserTraits
 import com.tryhelium.paywall.core.HeliumUserTraitsArgument
 import com.tryhelium.paywall.core.HeliumPaywallTransactionStatus
 import com.tryhelium.paywall.core.HeliumLightDarkMode
-import com.tryhelium.paywall.core.HeliumSdkConfig
+import com.tryhelium.paywall.core.PaywallPresentationConfig
 import com.tryhelium.paywall.delegate.HeliumPaywallDelegate
 import com.tryhelium.paywall.delegate.PlayStorePaywallDelegate
+import com.tryhelium.paywall.core.logger.HeliumLogger
 import com.android.billingclient.api.ProductDetails
 
 /** HeliumFlutterPlugin */
@@ -145,13 +144,6 @@ class HeliumFlutterPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
           flutterPluginBinding?.flutterAssets?.getAssetFilePathByName(it)
         }
 
-        val fallbackConfig = convertToHeliumFallbackConfig(
-          paywallLoadingConfigMap,
-          fallbackAssetPath,
-          flutterAssetPath,
-          context
-        )
-
         val environment = (args["environment"] as? String).toEnvironment()
 
         val wrapperSdkVersion = args["wrapperSdkVersion"] as? String ?: "unknown"
@@ -167,9 +159,20 @@ class HeliumFlutterPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
           }
 
           // Set wrapper SDK info for analytics
-          HeliumSdkConfig.setWrapperSdkInfo(sdk = "flutter", version = wrapperSdkVersion)
+          Helium.config.setWrapperSdkInfo(sdk = "flutter", version = wrapperSdkVersion)
 
-          // Create delegate
+          // Parse loading configuration
+          val useLoadingState = paywallLoadingConfigMap?.get("useLoadingState") as? Boolean ?: true
+          val loadingBudgetSeconds = (paywallLoadingConfigMap?.get("loadingBudget") as? Number)?.toDouble()
+          val loadingBudgetMs = loadingBudgetSeconds?.let { (it * 1000).toLong() } ?: DEFAULT_LOADING_BUDGET_MS
+          if (!useLoadingState) {
+            // Setting <= 0 will disable loading state
+            Helium.config.defaultLoadingBudgetInMs = -1
+          } else {
+            Helium.config.defaultLoadingBudgetInMs = loadingBudgetMs
+          }
+
+          // Create and set delegate
           val delegate = if (useDefaultDelegate) {
             if (currentActivity != null) {
               PlayStorePaywallDelegate(currentActivity)
@@ -180,17 +183,26 @@ class HeliumFlutterPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
           } else {
             CustomPaywallDelegate(delegateType, channel)
           }
+          Helium.config.heliumPaywallDelegate = delegate
+
+          // Set custom API endpoint
+          customApiEndpoint?.let { Helium.config.customApiEndpoint = it }
+
+          // Set up fallback bundle
+          setupFallbackBundle(currentContext, fallbackAssetPath, flutterAssetPath)
+
+          // Set identity
+          customUserId?.let { Helium.identity.userId = it }
+          customUserTraits?.let { Helium.identity.setUserTraits(it) }
+          revenueCatAppUserId?.let { Helium.identity.revenueCatAppUserId = it }
+
+          // Set up bridging logger to forward native SDK logs to Flutter
+          Helium.config.logger = BridgingLogger(channel)
 
           Helium.initialize(
             context = currentContext,
             apiKey = apiKey,
-            heliumPaywallDelegate = delegate,
-            customUserId = customUserId,
-            customApiEndpoint = customApiEndpoint,
-            customUserTraits = customUserTraits,
-            revenueCatAppUserId = revenueCatAppUserId,
-            fallbackConfig = fallbackConfig,
-            environment = environment
+            environment = environment,
           )
 
           result.success("Initialization started!")
@@ -222,22 +234,31 @@ class HeliumFlutterPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
             }
         }
 
-        Helium.presentUpsell(
+        Helium.presentPaywall(
           trigger = trigger,
-          activityContext = activity,
+          config = PaywallPresentationConfig(
+            fromActivityContext = activity,
+            customPaywallTraits = customPaywallTraits,
+            dontShowIfAlreadyEntitled = dontShowIfAlreadyEntitled
+          ),
           eventListener = eventListener,
-          customPaywallTraits = customPaywallTraits,
-          dontShowIfAlreadyEntitled = dontShowIfAlreadyEntitled
+          onPaywallNotShown = { _ ->
+            // nothing for now
+          }
         )
 
         result.success("Upsell presented!")
       }
       "hideUpsell" -> {
-        Helium.hideUpsell()
+        Helium.hidePaywall()
+        result.success(true)
+      }
+      "hideAllUpsells" -> {
+        Helium.hideAllPaywalls()
         result.success(true)
       }
       "getHeliumUserId" -> {
-        val userId = HeliumIdentityManager.shared.getUserId()
+        val userId = Helium.identity.userId
         result.success(userId)
       }
       "paywallsLoaded" -> {
@@ -258,7 +279,8 @@ class HeliumFlutterPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
         val traitsMap = args["traits"] as? Map<String, Any?>
         val traits = convertToHeliumUserTraits(traitsMap)
 
-        Helium.shared.overrideUserId(customUserId = newUserId, customUserTraits = traits)
+        Helium.identity.userId = newUserId
+        traits?.let { Helium.identity.setUserTraits(it) }
 
         result.success("User id is updated!")
       }
@@ -304,7 +326,7 @@ class HeliumFlutterPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
       "hasAnyActiveSubscription" -> {
         CoroutineScope(Dispatchers.Main).launch {
           try {
-            val hasSubscription: Boolean = Helium.shared.hasAnyActiveSubscription()
+            val hasSubscription: Boolean = Helium.entitlements.hasAnyActiveSubscription()
             result.success(hasSubscription)
           } catch (e: Exception) {
             result.success(null)
@@ -314,7 +336,7 @@ class HeliumFlutterPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
       "hasAnyEntitlement" -> {
         CoroutineScope(Dispatchers.Main).launch {
           try {
-            val hasEntitlement: Boolean = Helium.shared.hasAnyEntitlement()
+            val hasEntitlement: Boolean = Helium.entitlements.hasAnyEntitlement()
             result.success(hasEntitlement)
           } catch (e: Exception) {
             result.success(null)
@@ -329,7 +351,7 @@ class HeliumFlutterPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
         }
         CoroutineScope(Dispatchers.Main).launch {
           try {
-            val hasEntitlement: Boolean? = Helium.shared.hasEntitlementForPaywall(trigger)
+            val hasEntitlement: Boolean? = Helium.entitlements.hasEntitlementForPaywall(trigger)
             result.success(hasEntitlement)
           } catch (e: Exception) {
             result.success(null)
@@ -338,7 +360,7 @@ class HeliumFlutterPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
       }
       "getExperimentInfoForTrigger" -> {
         val trigger = call.arguments as? String ?: ""
-        val experimentInfo = Helium.shared.getExperimentInfoForTrigger(trigger)
+        val experimentInfo = Helium.experiments.getExperimentInfoForTrigger(trigger)
 
         if (experimentInfo == null) {
           result.success(null)
@@ -371,6 +393,8 @@ class HeliumFlutterPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
         result.success("Custom restore failed strings set!")
       }
       "resetHelium" -> {
+        // Reset logger back to default stdout logger
+        Helium.config.logger = HeliumLogger.Stdout
         Helium.resetHelium()
         result.success("Helium reset!")
       }
@@ -394,7 +418,7 @@ class HeliumFlutterPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
           result.error("BAD_ARGS", "rcAppUserId not provided", null)
           return
         }
-        HeliumIdentityManager.shared.setRevenueCatAppUserId(rcAppUserId)
+        Helium.identity.revenueCatAppUserId = rcAppUserId
         result.success("RevenueCat App User ID set!")
       }
       else -> {
@@ -426,5 +450,9 @@ class HeliumFlutterPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
 
   override fun onDetachedFromActivity() {
     activity = null
+  }
+
+  companion object {
+    private const val DEFAULT_LOADING_BUDGET_MS = 7000L
   }
 }

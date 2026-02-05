@@ -28,7 +28,7 @@ abstract class HeliumFlutterPlatform extends PlatformInterface {
     _instance = instance;
   }
 
-  ///Initialize helium sdk at the start up of flutter application. It will download custom paywall view
+  ///Initialize helium sdk at the start-up of your flutter application.
   Future<String?> initialize({
     required String apiKey,
     HeliumCallbacks? callbacks,
@@ -52,8 +52,9 @@ abstract class HeliumFlutterPlatform extends PlatformInterface {
     bool? dontShowIfAlreadyEntitled,
   });
 
-  ///Hides view
   Future<bool> hideUpsell();
+
+  Future<bool> hideAllUpsells();
 
   ///Gets helium user id
   Future<String?> getHeliumUserId();

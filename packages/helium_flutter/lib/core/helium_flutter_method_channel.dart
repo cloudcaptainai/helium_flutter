@@ -118,6 +118,11 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
         final Map<String, dynamic> eventDict =
             (args is Map) ? Map<String, dynamic>.from(args) : {};
         _handlePaywallEventHandlers(HeliumPaywallEvent.fromMap(eventDict));
+      } else if (handler.method == onHeliumLogEventMethodName) {
+        final dynamic args = handler.arguments;
+        final Map<String, dynamic> eventMap =
+            (args is Map) ? Map<String, dynamic>.from(args) : {};
+        _handleLogEvent(eventMap);
       } else {
         log('[Helium] Unknown method from MethodChannel: ${handler.method}');
       }
@@ -136,6 +141,20 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
   Future<bool> hideUpsell() async {
     final result = await methodChannel.invokeMethod<bool>(
       hideUpsellMethodName,
+    );
+    // Hide fallback sheet if it is displaying
+    if (_isFallbackSheetShowing &&
+        _fallbackContext != null &&
+        _fallbackContext!.mounted) {
+      Navigator.of(_fallbackContext!).pop();
+    }
+    return result ?? false;
+  }
+
+  @override
+  Future<bool> hideAllUpsells() async {
+    final result = await methodChannel.invokeMethod<bool>(
+      hideAllUpsellsMethodName,
     );
     // Hide fallback sheet if it is displaying
     if (_isFallbackSheetShowing &&
@@ -436,6 +455,30 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
         break;
     }
     _currentEventHandlers?.onAnyEvent?.call(event);
+  }
+
+  /// Routes native SDK log events to the appropriate log method.
+  /// Log levels: 1=error, 2=warn, 3=info, 4=debug, 5=trace
+  void _handleLogEvent(Map<String, dynamic> eventMap) {
+    final int level = eventMap['level'] as int? ?? 4;
+    final String message = eventMap['message'] as String? ?? '';
+
+    switch (level) {
+      case 1: // error
+        log('[Helium Error] $message');
+        break;
+      case 2: // warn
+        log('[Helium Warn] $message');
+        break;
+      case 3: // info
+        log('[Helium Info] $message');
+        break;
+      case 4: // debug
+      case 5: // trace
+      default:
+        log('[Helium Debug] $message');
+        break;
+    }
   }
 
   void _handlePaywallEvent(HeliumPaywallEvent heliumPaywallEvent) {

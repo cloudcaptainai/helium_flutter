@@ -28,25 +28,6 @@ class CanPresentUpsellResult {
   String? get paywallUnavailableReason => _data['paywallUnavailableReason'] as String?;
 }
 
-class TriggerLoadingConfig {
-  /// Whether to show loading state for this trigger. Set to null to use the global `useLoadingState` setting.
-  final bool? useLoadingState;
-  /// Maximum seconds to show loading for this trigger. Set to null to use the global `loadingBudget` setting.
-  final double? loadingBudget;
-
-  TriggerLoadingConfig({
-    this.useLoadingState,
-    this.loadingBudget,
-  });
-
-  Map<String, dynamic> toMap() {
-    return {
-      if (useLoadingState != null) 'useLoadingState': useLoadingState,
-      if (loadingBudget != null) 'loadingBudget': loadingBudget,
-    };
-  }
-}
-
 class HeliumPaywallLoadingConfig {
   /// Whether to show a loading state while fetching paywall configuration.
   /// When true, shows a loading view for up to `loadingBudget` seconds before falling back.
@@ -58,33 +39,16 @@ class HeliumPaywallLoadingConfig {
   /// Default: 7.0 seconds
   final double loadingBudget;
 
-  /// Optional per-trigger loading configuration overrides.
-  /// Use this to customize loading behavior for specific triggers.
-  /// Keys are trigger names, values are TriggerLoadingConfig instances.
-  /// Example: Disable loading for "onboarding" trigger while keeping it for others.
-  final Map<String, TriggerLoadingConfig>? perTriggerLoadingConfig;
-
   HeliumPaywallLoadingConfig({
     this.useLoadingState = true,
     this.loadingBudget = 7.0,
-    this.perTriggerLoadingConfig,
   });
 
   Map<String, dynamic> toMap() {
-    final map = {
+    return {
       'useLoadingState': useLoadingState,
       'loadingBudget': loadingBudget,
     };
-
-    if (perTriggerLoadingConfig != null) {
-      final perTriggerMap = <String, Map<String, dynamic>>{};
-      perTriggerLoadingConfig!.forEach((key, value) {
-        perTriggerMap[key] = value.toMap();
-      });
-      map['perTriggerLoadingConfig'] = perTriggerMap;
-    }
-
-    return map;
   }
 }
 

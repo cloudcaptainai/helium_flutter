@@ -40,6 +40,11 @@ class MockHeliumFlutterPlatform
   }
 
   @override
+  Future<bool> hideAllUpsells() {
+    return Future.value(true);
+  }
+
+  @override
   Future<String?> overrideUserId({
     required String newUserId,
     Map<String, dynamic>? traits,
@@ -167,6 +172,9 @@ void main() {
   });
   test(hideUpsellMethodName, () async {
     expect(await heliumFlutterPlugin.hideUpsell(), true);
+  });
+  test(hideAllUpsellsMethodName, () async {
+    expect(await heliumFlutterPlugin.hideAllUpsells(), true);
   });
   test(overrideUserIdMethodName, () async {
     expect(

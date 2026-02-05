@@ -31,3 +31,5 @@ const String resetHeliumMethodName = 'resetHelium';
 const String hasEntitlementForPaywallMethodName = 'hasEntitlementForPaywall';
 const String setLightDarkModeOverrideMethodName = 'setLightDarkModeOverride';
 const String setRevenueCatAppUserIdMethodName = 'setRevenueCatAppUserId';
+const String hideAllUpsellsMethodName = 'hideAllUpsells';
+const String onHeliumLogEventMethodName = 'onHeliumLogEvent';
