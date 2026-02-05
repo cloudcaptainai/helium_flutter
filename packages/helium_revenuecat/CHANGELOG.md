@@ -1,5 +1,5 @@
-## 3.1.4
-- Updated helium-swift dependency to 4.1.2
+## 3.2.0
+- Updated helium-swift dependency to 4.1.2 & helium-android to 4.0.1
 
 ## 3.1.3
 - Updated helium-swift dependency to 3.1.6
