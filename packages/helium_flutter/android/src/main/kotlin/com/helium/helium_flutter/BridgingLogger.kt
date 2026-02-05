@@ -23,27 +23,22 @@ class BridgingLogger(private val channel: MethodChannel) : HeliumLogger {
     private val stdoutLogger = HeliumLogger.Stdout
 
     override fun e(message: String) {
-        stdoutLogger.e(message)
         sendLogEvent(level = 1, message = message)
     }
 
     override fun w(message: String) {
-        stdoutLogger.w(message)
         sendLogEvent(level = 2, message = message)
     }
 
     override fun i(message: String) {
-        stdoutLogger.i(message)
         sendLogEvent(level = 3, message = message)
     }
 
     override fun d(message: String) {
-        stdoutLogger.d(message)
         sendLogEvent(level = 4, message = message)
     }
 
     override fun v(message: String) {
-        stdoutLogger.v(message)
         sendLogEvent(level = 5, message = message)
     }
 
