@@ -93,7 +93,7 @@ internal fun setupFallbackBundle(
     fallbackAssetPath: String?,
     flutterAssetPath: String?,
 ) {
-    if (flutterAssetPath == null && fallbackAssetPath == null) {
+    if (flutterAssetPath == null) {
         Helium.config.logger?.e("👷 Failed to load fallbacks!")
         return
     }

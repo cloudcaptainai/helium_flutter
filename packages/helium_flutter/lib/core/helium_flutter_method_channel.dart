@@ -49,7 +49,7 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
       'customAPIEndpoint': customAPIEndpoint,
       'customUserTraits': _convertBooleansToMarkers(customUserTraits),
       'revenueCatAppUserId': revenueCatAppUserId,
-      'fallbackAssetPath': fallbackBundleAssetPath,
+      'fallbackAssetPath': fallbackBundleAssetPath ?? "helium-fallbacks.json",
       'environment': environment?.name,
       'paywallLoadingConfig':
           _convertBooleansToMarkers(paywallLoadingConfig?.toMap()),
@@ -462,21 +462,28 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
   void _handleLogEvent(Map<String, dynamic> eventMap) {
     final int level = eventMap['level'] as int? ?? 4;
     final String message = eventMap['message'] as String? ?? '';
+    final metadata = eventMap['metadata'] as Map?;
+
+    // Build output string with metadata if present and non-empty
+    String output = message;
+    if (metadata != null && metadata.isNotEmpty) {
+      output = '$message $metadata';
+    }
 
     switch (level) {
       case 1: // error
-        log('[Helium Error] $message');
+        log('e $output');
         break;
       case 2: // warn
-        log('[Helium Warn] $message');
+        log('w $output');
         break;
       case 3: // info
-        log('[Helium Info] $message');
+        log('i $output');
         break;
       case 4: // debug
       case 5: // trace
       default:
-        log('[Helium Debug] $message');
+        log('d $output');
         break;
     }
   }

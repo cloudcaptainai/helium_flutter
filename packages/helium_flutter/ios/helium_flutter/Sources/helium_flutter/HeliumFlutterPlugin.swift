@@ -303,7 +303,7 @@ public class HeliumFlutterPlugin: NSObject, FlutterPlugin {
     }
 
     public func getHeliumUserId() -> String? {
-        return Helium.shared.getHeliumUserId()
+        return Helium.identify.userId
     }
 
     public func paywallsLoaded() -> Bool {
