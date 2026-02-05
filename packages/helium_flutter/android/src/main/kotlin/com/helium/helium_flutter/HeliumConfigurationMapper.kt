@@ -91,20 +91,28 @@ internal fun convertToHeliumUserTraitsArgument(value: Any?): HeliumUserTraitsArg
 internal fun setupFallbackBundle(
     context: Context,
     fallbackAssetPath: String?,
-    flutterAssetPath: String?
+    flutterAssetPath: String?,
 ) {
-    if (flutterAssetPath == null || fallbackAssetPath == null) return
+    if (flutterAssetPath == null && fallbackAssetPath == null) {
+        Helium.config.logger?.e("👷 Failed to load fallbacks!")
+        return
+    }
 
     try {
-        val heliumLocalDir = context.getDir("helium_local", Context.MODE_PRIVATE)
-        val destinationFile = File(heliumLocalDir, "helium-flutter-fallbacks.json")
+        // Extract just the filename (remove flutter_assets/ prefix) to avoid path traversal issues
+        val filename = fallbackAssetPath?.substringAfterLast('/') ?: flutterAssetPath.substringAfterLast('/')
 
-        context.assets.open(flutterAssetPath).use { input ->
-            FileOutputStream(destinationFile).use { output ->
-                input.copyTo(output)
+        // Get SDK's local directory
+        val heliumLocalDir = context.getDir("helium_local", Context.MODE_PRIVATE)
+        val destinationFile = File(heliumLocalDir, filename)
+
+        // Re-write every time in case file has changed
+        context.assets.open(flutterAssetPath).use { inputStream ->
+            FileOutputStream(destinationFile).use { outputStream ->
+                inputStream.copyTo(outputStream)
             }
         }
     } catch (e: Exception) {
-        Helium.config.logger?.e("Failed to write fallback bundle: ${e.message}")
+        Helium.config.logger?.e("👷 Failed to write fallbacks: ${e.message}")
     }
 }
