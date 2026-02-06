@@ -427,7 +427,8 @@ public class HeliumFlutterPlugin: NSObject, FlutterPlugin {
 
     /// Handler for paywall event notifications posted via NotificationCenter
     @objc private func handlePaywallEventNotification(_ notification: Notification) {
-        guard let eventDict = notification.userInfo?["event"] as? [String: Any] else {
+        guard let eventDict = notification.userInfo?["event"] as? [String: Any],
+              let channel else {
             return
         }
         channel.invokeMethod("onPaywallEventHandler", arguments: eventDict)
@@ -550,7 +551,8 @@ class DemoHeliumPaywallDelegate: HeliumPaywallDelegate {
 
     func onPaywallEvent(_ event: any HeliumEvent) {
         // Log or handle event
-        DispatchQueue.main.async {
+        DispatchQueue.main.async { [weak self] in
+            guard let self else { return }
             var eventDict = event.toDictionary()
             // Add deprecated fields for backwards compatibility
             if let paywallName = eventDict["paywallName"] {
@@ -591,7 +593,8 @@ fileprivate class DefaultPurchaseDelegate: StoreKitDelegate {
 
     override func onPaywallEvent(_ event: any HeliumEvent) {
         // Log or handle event
-        DispatchQueue.main.async {
+        DispatchQueue.main.async { [weak self] in
+            guard let self else { return }
             var eventDict = event.toDictionary()
             // Add deprecated fields for backwards compatibility
             if let paywallName = eventDict["paywallName"] {
