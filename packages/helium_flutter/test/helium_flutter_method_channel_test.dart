@@ -39,6 +39,8 @@ void main() {
               return 'Test';
             case hideUpsellMethodName:
               return true;
+            case hideAllUpsellsMethodName:
+              return true;
             case overrideUserIdMethodName:
               return methodCall.arguments['newUserId'];
             case paywallsLoadedMethodName:
@@ -73,6 +75,9 @@ void main() {
   });
   test(hideUpsellMethodName, () async {
     expect(await platform.hideUpsell(), true);
+  });
+  test(hideAllUpsellsMethodName, () async {
+    expect(await platform.hideAllUpsells(), true);
   });
   test(overrideUserIdMethodName, () async {
     expect(

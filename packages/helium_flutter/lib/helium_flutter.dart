@@ -12,7 +12,7 @@ export './types/helium_transaction_status.dart';
 export './types/helium_types.dart';
 
 class HeliumFlutter {
-  ///Initialize helium sdk at the start up of flutter application. It will download custom paywall view
+  ///Initialize helium sdk at the start-up of your flutter application.
   Future<String?> initialize({
     required String apiKey,
     HeliumCallbacks? callbacks,
@@ -45,8 +45,12 @@ class HeliumFlutter {
   Future<String?> getHeliumUserId() =>
       HeliumFlutterPlatform.instance.getHeliumUserId();
 
-  ///Hides view
+  ///Hide currently visible Helium paywall.
   Future<bool> hideUpsell() => HeliumFlutterPlatform.instance.hideUpsell();
+
+  ///Hide all Helium paywalls.
+  Future<bool> hideAllUpsells() =>
+      HeliumFlutterPlatform.instance.hideAllUpsells();
 
   ///Overrides user id to given [newUserId]
   Future<String?> overrideUserId({
@@ -58,7 +62,7 @@ class HeliumFlutter {
         traits: traits,
       );
 
-  ///Returns bool based on paywall loaded or not
+  ///Returns true if Helium paywalls are loaded.
   Future<bool> paywallsLoaded() =>
       HeliumFlutterPlatform.instance.paywallsLoaded();
 
