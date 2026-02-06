@@ -60,6 +60,7 @@ class HeliumFlutterPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
   private lateinit var statusChannel: EventChannel
   private val mainScope = CoroutineScope(Dispatchers.Main)
   private var statusJob: Job? = null
+  private var globalEventListener: HeliumEventListener? = null
 
   override fun onAttachedToEngine(flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
     this.flutterPluginBinding = flutterPluginBinding
@@ -198,6 +199,21 @@ class HeliumFlutterPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
             apiKey = apiKey,
             environment = environment,
           )
+
+          // Add global event listener to forward events to Flutter callbacks
+          globalEventListener?.let { Helium.shared.removeHeliumEventListener(it) }
+          val listener = HeliumEventListener { event ->
+            val eventData = HeliumEventDictionaryMapper.toDictionary(event)
+            Handler(Looper.getMainLooper()).post {
+              try {
+                channel.invokeMethod("onPaywallEvent", eventData)
+              } catch (e: Exception) {
+                // Channel may be detached, ignore
+              }
+            }
+          }
+          globalEventListener = listener
+          Helium.shared.addPaywallEventListener(listener)
 
           result.success("Initialization started!")
         } catch (e: Exception) {
@@ -391,6 +407,9 @@ class HeliumFlutterPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
         result.success("Custom restore failed strings set!")
       }
       "resetHelium" -> {
+        // Remove global event listener
+        globalEventListener?.let { Helium.shared.removeHeliumEventListener(it) }
+        globalEventListener = null
         // Reset logger back to default stdout logger
         Helium.config.logger = HeliumLogger.Stdout
         Helium.resetHelium()
@@ -440,8 +459,10 @@ class HeliumFlutterPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
     // Cancel any in-flight coroutines (entitlement checks, etc.)
     mainScope.coroutineContext.cancelChildren()
 
-    // Reset logger to avoid invoking methods on detached channel
+    // Remove global event listener and reset logger to avoid invoking methods on detached channel
     if (Helium.isInitialized) {
+      globalEventListener?.let { Helium.shared.removeHeliumEventListener(it) }
+      globalEventListener = null
       Helium.config.logger = HeliumLogger.Stdout
     }
   }

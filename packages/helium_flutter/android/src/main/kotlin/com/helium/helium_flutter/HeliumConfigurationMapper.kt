@@ -10,7 +10,7 @@ internal fun String?.toEnvironment(): HeliumEnvironment {
     return when (this) {
         "sandbox" -> HeliumEnvironment.SANDBOX
         "production" -> HeliumEnvironment.PRODUCTION
-        else -> HeliumEnvironment.SANDBOX
+        else -> HeliumEnvironment.PRODUCTION
     }
 }
 
