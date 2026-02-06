@@ -11,6 +11,7 @@ import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.common.EventChannel
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.cancelChildren
 import kotlinx.coroutines.flow.collect
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler
 import io.flutter.plugin.common.MethodChannel.Result
@@ -321,7 +322,7 @@ class HeliumFlutterPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
         result.success(handled)
       }
       "hasAnyActiveSubscription" -> {
-        CoroutineScope(Dispatchers.Main).launch {
+        mainScope.launch {
           try {
             val hasSubscription: Boolean = Helium.entitlements.hasAnyActiveSubscription()
             result.success(hasSubscription)
@@ -331,7 +332,7 @@ class HeliumFlutterPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
         }
       }
       "hasAnyEntitlement" -> {
-        CoroutineScope(Dispatchers.Main).launch {
+        mainScope.launch {
           try {
             val hasEntitlement: Boolean = Helium.entitlements.hasAnyEntitlement()
             result.success(hasEntitlement)
@@ -346,7 +347,7 @@ class HeliumFlutterPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
           result.error("BAD_ARGS", "Arguments not passed correctly", null)
           return
         }
-        CoroutineScope(Dispatchers.Main).launch {
+        mainScope.launch {
           try {
             val hasEntitlement: Boolean? = Helium.entitlements.hasEntitlementForPaywall(trigger)
             result.success(hasEntitlement)
@@ -435,6 +436,9 @@ class HeliumFlutterPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
       statusChannel.setStreamHandler(null)
     }
     statusJob?.cancel()
+
+    // Cancel any in-flight coroutines (entitlement checks, etc.)
+    mainScope.coroutineContext.cancelChildren()
 
     // Reset logger to avoid invoking methods on detached channel
     if (Helium.isInitialized) {

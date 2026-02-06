@@ -19,9 +19,6 @@ import io.flutter.plugin.common.MethodChannel
 class BridgingLogger(private val channel: MethodChannel) : HeliumLogger {
     override val logTag: String = "Helium"
 
-    // Also log to stdout so logcat still works
-    private val stdoutLogger = HeliumLogger.Stdout
-
     private val mainHandler = Handler(Looper.getMainLooper())
 
     override fun e(message: String) {
