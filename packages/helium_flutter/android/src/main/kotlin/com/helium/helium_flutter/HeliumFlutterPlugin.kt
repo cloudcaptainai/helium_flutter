@@ -173,18 +173,10 @@ class HeliumFlutterPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
             Helium.config.defaultLoadingBudgetInMs = loadingBudgetMs
           }
 
-          // Create and set delegate
-          val delegate = if (useDefaultDelegate) {
-            if (currentActivity != null) {
-              PlayStorePaywallDelegate(currentActivity)
-            } else {
-              result.error("DELEGATE_ERROR", "Activity not available for PlayStorePaywallDelegate", null)
-              return
-            }
-          } else {
-            CustomPaywallDelegate(delegateType, channel)
+          // Create and set delegate if needed
+          if (!useDefaultDelegate) {
+            Helium.config.heliumPaywallDelegate = CustomPaywallDelegate(delegateType, channel)
           }
-          Helium.config.heliumPaywallDelegate = delegate
 
           // Set custom API endpoint
           customApiEndpoint?.let { Helium.config.customApiEndpoint = it }
@@ -231,7 +223,11 @@ class HeliumFlutterPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
             val eventData = HeliumEventDictionaryMapper.toDictionary(event)
             // Send to Flutter on the Main Thread
             Handler(Looper.getMainLooper()).post {
-                channel.invokeMethod("onPaywallEventHandler", eventData)
+                try {
+                    channel.invokeMethod("onPaywallEventHandler", eventData)
+                } catch (e: Exception) {
+                    // Channel may be detached, ignore
+                }
             }
         }
 
@@ -429,12 +425,21 @@ class HeliumFlutterPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
   }
 
   override fun onDetachedFromEngine(binding: FlutterPlugin.FlutterPluginBinding) {
-    channel.setMethodCallHandler(null)
+    if (::channel.isInitialized) {
+      channel.setMethodCallHandler(null)
+    }
     this.flutterPluginBinding = null
     this.context = null
-    
-    statusChannel.setStreamHandler(null)
+
+    if (::statusChannel.isInitialized) {
+      statusChannel.setStreamHandler(null)
+    }
     statusJob?.cancel()
+
+    // Reset logger to avoid invoking methods on detached channel
+    if (Helium.isInitialized) {
+      Helium.config.logger = HeliumLogger.Stdout
+    }
   }
 
   override fun onAttachedToActivity(binding: ActivityPluginBinding) {

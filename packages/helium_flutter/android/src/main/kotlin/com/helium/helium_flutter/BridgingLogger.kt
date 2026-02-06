@@ -6,8 +6,8 @@ import com.tryhelium.paywall.core.logger.HeliumLogger
 import io.flutter.plugin.common.MethodChannel
 
 /**
- * Bridging logger that forwards native SDK logs to Flutter while also
- * logging to stdout (logcat) for local debugging.
+ * Bridging logger that forwards native SDK logs to Flutter that does not
+ * log to stdout (logcat) otherwise Android Studio has duplicate log messages.
  *
  * Log level mapping to match iOS:
  * - e (error) -> level 1
@@ -21,6 +21,8 @@ class BridgingLogger(private val channel: MethodChannel) : HeliumLogger {
 
     // Also log to stdout so logcat still works
     private val stdoutLogger = HeliumLogger.Stdout
+
+    private val mainHandler = Handler(Looper.getMainLooper())
 
     override fun e(message: String) {
         sendLogEvent(level = 1, message = message)
@@ -49,8 +51,12 @@ class BridgingLogger(private val channel: MethodChannel) : HeliumLogger {
             "message" to "[$logTag] $message",
             "metadata" to emptyMap<String, String>()
         )
-        Handler(Looper.getMainLooper()).post {
-            channel.invokeMethod("onHeliumLogEvent", eventData)
+        mainHandler.post {
+            try {
+                channel.invokeMethod("onHeliumLogEvent", eventData)
+            } catch (e: Exception) {
+                // Channel may be detached, ignore
+            }
         }
     }
 }
