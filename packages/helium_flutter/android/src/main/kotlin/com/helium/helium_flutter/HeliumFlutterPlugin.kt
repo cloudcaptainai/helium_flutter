@@ -41,6 +41,7 @@ import com.tryhelium.paywall.core.PaywallPresentationConfig
 import com.tryhelium.paywall.delegate.HeliumPaywallDelegate
 import com.tryhelium.paywall.delegate.PlayStorePaywallDelegate
 import com.tryhelium.paywall.core.logger.HeliumLogger
+import com.tryhelium.paywall.core.HeliumWrapperSdkConfig
 import com.android.billingclient.api.ProductDetails
 
 /** HeliumFlutterPlugin */
@@ -159,7 +160,7 @@ class HeliumFlutterPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
           }
 
           // Set wrapper SDK info for analytics
-          Helium.config.setWrapperSdkInfo(sdk = "flutter", version = wrapperSdkVersion)
+          HeliumWrapperSdkConfig.setWrapperSdkInfo(sdk = "flutter", version = wrapperSdkVersion)
 
           // Parse loading configuration
           val useLoadingState = paywallLoadingConfigMap?.get("useLoadingState") as? Boolean ?: true
@@ -188,8 +189,8 @@ class HeliumFlutterPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
           // Set custom API endpoint
           customApiEndpoint?.let { Helium.config.customApiEndpoint = it }
 
-          // Set up fallback bundle
-          setupFallbackBundle(currentContext, fallbackAssetPath, flutterAssetPath)
+          // Set fallback asset path - native SDK reads directly from context.assets
+          flutterAssetPath?.let { Helium.config.customFallbacksFileName = it }
 
           // Set identity
           customUserId?.let { Helium.identity.userId = it }
