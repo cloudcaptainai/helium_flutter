@@ -26,23 +26,6 @@ class RevenueCatPurchaseDelegate extends HeliumPurchaseDelegate {
     HeliumFlutter().setRevenueCatAppUserId(await Purchases.appUserID);
   }
 
-  Future<HeliumPurchaseResult> purchaseProduct(String productId) async {
-    try {
-      log('[Helium] Making purchase with RevenueCat for: $productId');
-      final products = await Purchases.getProducts([productId]);
-      if (products.isEmpty) {
-        return _createFailedResult('Product not found: $productId');
-      }
-
-      final purchaseResult = await Purchases.purchase(PurchaseParams.storeProduct(products.first));
-      return _evaluatePurchaseResult(purchaseResult.customerInfo, productId);
-    } on PlatformException catch (e) {
-      return _handlePlatformException(e);
-    } catch (e) {
-      return _createFailedResult('Purchase error: ${e.toString()}');
-    }
-  }
-
   @override
   Future<HeliumPurchaseResult> makePurchaseAndroid(
     String productId, {
@@ -99,7 +82,22 @@ class RevenueCatPurchaseDelegate extends HeliumPurchaseDelegate {
   @override
   Future<HeliumPurchaseResult> makePurchaseIOS(String productId) async {
     await _syncAppUserId();
-    return purchaseProduct(productId);
+
+    try {
+      log('[Helium] Making iOS purchase with RevenueCat for: $productId');
+      final products = await Purchases.getProducts([productId]);
+      if (products.isEmpty) {
+        return _createFailedResult('Product not found: $productId');
+      }
+
+      final purchaseResult = await Purchases.purchase(PurchaseParams.storeProduct(products.first));
+      final transactionId = purchaseResult.storeTransaction.transactionIdentifier;
+      return _evaluatePurchaseResult(purchaseResult.customerInfo, productId, transactionId: transactionId);
+    } on PlatformException catch (e) {
+      return _handlePlatformException(e);
+    } catch (e) {
+      return _createFailedResult('iOS purchase error: ${e.toString()}');
+    }
   }
 
   @override
@@ -185,11 +183,15 @@ class RevenueCatPurchaseDelegate extends HeliumPurchaseDelegate {
 
   /// Evaluates customer info to determine purchase result.
   HeliumPurchaseResult _evaluatePurchaseResult(
-      CustomerInfo customerInfo, String productId) {
+      CustomerInfo customerInfo, String productId, {String? transactionId}) {
     if (!_isProductActive(customerInfo, productId)) {
       log('[Helium] Purchase succeeded but product not immediately active in customerInfo: $productId');
     }
-    return HeliumPurchaseResult(status: HeliumTransactionStatus.purchased);
+    return HeliumPurchaseResult(
+      status: HeliumTransactionStatus.purchased,
+      transactionId: transactionId,
+      productId: productId,
+    );
   }
 
   /// Handles RevenueCat platform exceptions.
