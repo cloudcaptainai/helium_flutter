@@ -12,7 +12,7 @@ resolution: workspace
 dependencies:
   flutter:
     sdk: flutter
-  helium_flutter: ^3.1.0
+  helium_flutter: ^3.2.1
   purchases_flutter: ^9.4.0
 
 dev_dependencies:
