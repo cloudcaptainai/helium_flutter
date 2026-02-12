@@ -472,19 +472,43 @@ public class HeliumFlutterPlugin: NSObject, FlutterPlugin {
     }
 }
 
-class DemoHeliumPaywallDelegate: HeliumPaywallDelegate {
+class DemoHeliumPaywallDelegate: HeliumPaywallDelegate, HeliumDelegateReturnsTransaction {
     private let _delegateType: String?
     public var delegateType: String { _delegateType ?? "custom" }
     let _methodChannel: FlutterMethodChannel
+
+    // Thread-safe storage for transaction result
+    private var _latestTransactionResult: HeliumTransactionIdResult?
+    private let transactionResultLock = NSLock()
+    var latestTransactionResult: HeliumTransactionIdResult? {
+        get {
+            transactionResultLock.lock()
+            defer { transactionResultLock.unlock() }
+            return _latestTransactionResult
+        }
+        set {
+            transactionResultLock.lock()
+            defer { transactionResultLock.unlock() }
+            _latestTransactionResult = newValue
+        }
+    }
 
     init(delegateType: String?, methodChannel: FlutterMethodChannel) {
         _delegateType = delegateType
         _methodChannel = methodChannel
     }
 
+    // HeliumDelegateReturnsTransaction protocol method
+    func getLatestCompletedTransactionIdResult() -> HeliumTransactionIdResult? {
+        return latestTransactionResult
+    }
+
     // Required: Make a purchase
     func makePurchase(productId: String) async -> HeliumPaywallTransactionStatus {
-        await withCheckedContinuation { continuation in
+        // Clear previous transaction result
+        latestTransactionResult = nil
+
+        return await withCheckedContinuation { continuation in
             DispatchQueue.main.async { [weak self] in
                 guard let self else {
                     continuation.resume(returning: .failed(PurchaseError.purchaseFailed(errorMsg: "Plugin instance deallocated")))
@@ -506,6 +530,15 @@ class DemoHeliumPaywallDelegate: HeliumPaywallDelegate {
                         switch lowercasedStatus {
                         case "purchased":
                             status = .purchased
+                            // Store transaction IDs for HeliumDelegateReturnsTransaction
+                            if let transactionId = resultMap["transactionId"] as? String,
+                               let productId = resultMap["productId"] as? String {
+                                self.latestTransactionResult = HeliumTransactionIdResult(
+                                    productId: productId,
+                                    transactionId: transactionId,
+                                    originalTransactionId: resultMap["originalTransactionId"] as? String
+                                )
+                            }
                         case "cancelled":
                             status = .cancelled
                         case "restored":

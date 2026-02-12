@@ -99,6 +99,9 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
         return {
           'status': result.status.name,
           'error': result.error,
+          'transactionId': result.transactionId,
+          'originalTransactionId': result.originalTransactionId,
+          'productId': result.productId,
         };
       } else if (handler.method == restorePurchasesMethodName) {
         if (purchaseDelegate == null) {

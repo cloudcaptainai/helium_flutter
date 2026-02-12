@@ -34,9 +34,15 @@ abstract class HeliumCallbacks {
 class HeliumPurchaseResult {
   final HeliumTransactionStatus status;
   final String? error;
+  final String? transactionId;
+  final String? originalTransactionId;
+  final String? productId;
 
   HeliumPurchaseResult({
     required this.status,
     this.error,
+    this.transactionId,
+    this.originalTransactionId,
+    this.productId,
   });
 }
