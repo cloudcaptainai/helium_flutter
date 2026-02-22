@@ -401,6 +401,7 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
 
   @override
   void setAndroidConsumableProductIds(Set<String> productIds) {
+    if (!Platform.isAndroid) return;
     methodChannel.invokeMethod<void>(
       setAndroidConsumableProductIdsMethodName,
       productIds.toList(),
