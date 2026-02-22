@@ -25,6 +25,7 @@ class HeliumFlutter {
     String? fallbackBundleAssetPath,
     HeliumEnvironment? environment,
     HeliumPaywallLoadingConfig? paywallLoadingConfig,
+    Set<String>? androidConsumableProductIds,
   }) async {
     return await HeliumFlutterPlatform.instance.initialize(
       apiKey: apiKey,
@@ -38,6 +39,7 @@ class HeliumFlutter {
       fallbackBundleAssetPath: fallbackBundleAssetPath,
       environment: environment,
       paywallLoadingConfig: paywallLoadingConfig,
+      androidConsumableProductIds: androidConsumableProductIds,
     );
   }
 
@@ -157,4 +159,11 @@ class HeliumFlutter {
   /// - Parameter rcAppUserId: RevenueCat App User ID (e.g. await Purchases.appUserID)
   void setRevenueCatAppUserId(String rcAppUserId) =>
       HeliumFlutterPlatform.instance.setRevenueCatAppUserId(rcAppUserId);
+
+  /// Set consumable product IDs for Android.
+  /// These IDs will be used to identify consumable products in the Play Store.
+  /// This is only relevant on Android and is a no-op on other platforms.
+  void setAndroidConsumableProductIds(Set<String> productIds) =>
+      HeliumFlutterPlatform.instance
+          .setAndroidConsumableProductIds(productIds);
 }

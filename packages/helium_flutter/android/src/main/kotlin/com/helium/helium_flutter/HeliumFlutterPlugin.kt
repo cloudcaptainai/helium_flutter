@@ -191,6 +191,11 @@ class HeliumFlutterPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
           customUserTraits?.let { Helium.identity.setUserTraits(it) }
           revenueCatAppUserId?.let { Helium.identity.revenueCatAppUserId = it }
 
+          // Set consumable product IDs if provided
+          @Suppress("UNCHECKED_CAST")
+          val consumableProductIds = args["androidConsumableProductIds"] as? List<String>
+          consumableProductIds?.let { Helium.config.consumableIds = it.toSet() }
+
           // Set up bridging logger to forward native SDK logs to Flutter
           Helium.config.logger = BridgingLogger(channel)
 
@@ -437,6 +442,12 @@ class HeliumFlutterPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
         }
         Helium.identity.revenueCatAppUserId = rcAppUserId
         result.success("RevenueCat App User ID set!")
+      }
+      "setAndroidConsumableProductIds" -> {
+        @Suppress("UNCHECKED_CAST")
+        val productIds = call.arguments as? List<String> ?: emptyList()
+        Helium.config.consumableIds = productIds.toSet()
+        result.success("Android consumable product IDs set!")
       }
       else -> {
         result.notImplemented()
