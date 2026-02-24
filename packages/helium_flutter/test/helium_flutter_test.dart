@@ -25,6 +25,7 @@ class MockHeliumFlutterPlatform
     String? fallbackBundleAssetPath,
     HeliumEnvironment? environment,
     HeliumPaywallLoadingConfig? paywallLoadingConfig,
+    Set<String>? androidConsumableProductIds,
   }) {
     return Future.value('Initialization started!');
   }
@@ -127,6 +128,9 @@ class MockHeliumFlutterPlatform
 
   @override
   void setRevenueCatAppUserId(String rcAppUserId) {}
+
+  @override
+  void setAndroidConsumableProductIds(Set<String> productIds) {}
 }
 
 void main() {
@@ -231,5 +235,9 @@ void main() {
   test(resetHeliumMethodName, () async {
     // Test that resetHelium completes without throwing
     await heliumFlutterPlugin.resetHelium();
+  });
+  test(setAndroidConsumableProductIdsMethodName, () {
+    // Test that it doesn't throw
+    heliumFlutterPlugin.setAndroidConsumableProductIds({'product_1', 'product_2'});
   });
 }

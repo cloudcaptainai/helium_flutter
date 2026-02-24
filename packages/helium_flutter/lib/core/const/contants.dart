@@ -33,3 +33,4 @@ const String setLightDarkModeOverrideMethodName = 'setLightDarkModeOverride';
 const String setRevenueCatAppUserIdMethodName = 'setRevenueCatAppUserId';
 const String hideAllUpsellsMethodName = 'hideAllUpsells';
 const String onHeliumLogEventMethodName = 'onHeliumLogEvent';
+const String setAndroidConsumableProductIdsMethodName = 'setAndroidConsumableProductIds';

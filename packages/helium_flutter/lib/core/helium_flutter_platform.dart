@@ -41,6 +41,7 @@ abstract class HeliumFlutterPlatform extends PlatformInterface {
     String? fallbackBundleAssetPath,
     HeliumEnvironment? environment,
     HeliumPaywallLoadingConfig? paywallLoadingConfig,
+    Set<String>? androidConsumableProductIds,
   });
 
   ///Presents view based on [trigger]
@@ -98,4 +99,10 @@ abstract class HeliumFlutterPlatform extends PlatformInterface {
   void setLightDarkModeOverride(HeliumLightDarkMode mode);
 
   void setRevenueCatAppUserId(String rcAppUserId);
+
+  /// Set consumable product IDs for Android.
+  /// These IDs will be used to identify consumable products in the Play Store
+  /// and this is only respected if no custom purchaseDelegate is supplied.
+  /// This is only relevant on Android and is a no-op on other platforms.
+  void setAndroidConsumableProductIds(Set<String> productIds);
 }

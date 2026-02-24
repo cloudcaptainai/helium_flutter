@@ -33,6 +33,7 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
     String? fallbackBundleAssetPath,
     HeliumEnvironment? environment,
     HeliumPaywallLoadingConfig? paywallLoadingConfig,
+    Set<String>? androidConsumableProductIds,
   }) async {
     _setMethodCallHandlers(callbacks, purchaseDelegate);
     _fallbackPaywallWidget = fallbackPaywall;
@@ -56,6 +57,7 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
       'useDefaultDelegate': purchaseDelegate == null,
       'wrapperSdkVersion': heliumFlutterSdkVersion,
       'delegateType': purchaseDelegate?.delegateType,
+      'androidConsumableProductIds': androidConsumableProductIds?.toList(),
     });
     return result;
   }
@@ -394,6 +396,15 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
     methodChannel.invokeMethod<void>(
       setRevenueCatAppUserIdMethodName,
       rcAppUserId,
+    );
+  }
+
+  @override
+  void setAndroidConsumableProductIds(Set<String> productIds) {
+    if (!Platform.isAndroid) return;
+    methodChannel.invokeMethod<void>(
+      setAndroidConsumableProductIdsMethodName,
+      productIds.toList(),
     );
   }
 

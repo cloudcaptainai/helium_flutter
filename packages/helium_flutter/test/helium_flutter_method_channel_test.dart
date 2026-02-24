@@ -66,6 +66,7 @@ void main() {
         customUserId: initializeValue.customUserId,
         customAPIEndpoint: initializeValue.customAPIEndpoint,
         customUserTraits: initializeValue.customUserTraits,
+        androidConsumableProductIds: {'consumable_1'},
       ),
       'Initialization started!',
     );
