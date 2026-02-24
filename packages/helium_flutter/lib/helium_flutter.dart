@@ -161,7 +161,8 @@ class HeliumFlutter {
       HeliumFlutterPlatform.instance.setRevenueCatAppUserId(rcAppUserId);
 
   /// Set consumable product IDs for Android.
-  /// These IDs will be used to identify consumable products in the Play Store.
+  /// These IDs will be used to identify consumable products in the Play Store
+  /// and this is only respected if no custom purchaseDelegate is supplied.
   /// This is only relevant on Android and is a no-op on other platforms.
   void setAndroidConsumableProductIds(Set<String> productIds) =>
       HeliumFlutterPlatform.instance
