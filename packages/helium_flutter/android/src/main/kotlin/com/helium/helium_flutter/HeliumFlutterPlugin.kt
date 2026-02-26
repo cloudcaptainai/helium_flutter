@@ -424,19 +424,23 @@ class HeliumFlutterPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
         Helium.config.logger = HeliumLogger.Stdout
 
         mainScope.launch {
-          suspendCancellableCoroutine { continuation ->
-            Helium.resetHelium(
-              clearUserTraits = clearUserTraits,
-              clearHeliumEventListeners = clearHeliumEventListeners,
-              clearExperimentAllocations = clearExperimentAllocations,
-              onComplete = {
-                if (continuation.isActive) {
-                  continuation.resume(Unit)
+          try {
+            suspendCancellableCoroutine { continuation ->
+              Helium.resetHelium(
+                clearUserTraits = clearUserTraits,
+                clearHeliumEventListeners = clearHeliumEventListeners,
+                clearExperimentAllocations = clearExperimentAllocations,
+                onComplete = {
+                  if (continuation.isActive) {
+                    continuation.resume(Unit)
+                  }
                 }
-              }
-            )
+              )
+            }
+            result.success("Helium reset!")
+          } catch (e: Exception) {
+            result.error("RESET_ERROR", "resetHelium failed: ${e.message}", null)
           }
-          result.success("Helium reset!")
         }
       }
       "setLightDarkModeOverride" -> {
