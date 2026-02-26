@@ -421,7 +421,7 @@ public class HeliumFlutterPlugin: NSObject, FlutterPlugin {
         NotificationCenter.default.post(name: .heliumReset, object: nil)
 
         Task {
-            await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
+            await withUnsafeContinuation { (continuation: UnsafeContinuation<Void, Never>) in
                 Helium.resetHelium(
                     clearUserTraits: clearUserTraits,
                     clearHeliumEventListeners: clearHeliumEventListeners,
