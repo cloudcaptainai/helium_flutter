@@ -121,7 +121,10 @@ class MockHeliumFlutterPlatform
   }) {}
 
   @override
-  Future<void> resetHelium() async {}
+  Future<void> resetHelium({
+    bool clearUserTraits = true,
+    bool clearExperimentAllocations = false,
+  }) async {}
 
   @override
   void setLightDarkModeOverride(HeliumLightDarkMode mode) {}

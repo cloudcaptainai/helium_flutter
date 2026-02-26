@@ -364,7 +364,10 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
   }
 
   @override
-  Future<void> resetHelium() async {
+  Future<void> resetHelium({
+    bool clearUserTraits = true,
+    bool clearExperimentAllocations = false,
+  }) async {
     // Dismiss fallback sheet if it is displaying
     if (_isFallbackSheetShowing &&
         _fallbackContext != null &&
@@ -377,10 +380,22 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
     _fallbackContext = null;
     _currentEventHandlers = null;
     // Reset native SDK state
-    await methodChannel.invokeMethod<void>(
-      resetHeliumMethodName,
-    );
-    _isInitialized = false;
+    try {
+      await methodChannel.invokeMethod<void>(
+        resetHeliumMethodName,
+        {
+          'clearUserTraits': clearUserTraits,
+          'clearHeliumEventListeners': true,
+          'clearExperimentAllocations': clearExperimentAllocations,
+        },
+      );
+    } catch (e) {
+      // Native reset likely completed; the async bridge response may have been
+      // lost (e.g. during module teardown). Dart state is cleaned up regardless.
+      log('[Helium] resetHelium did not receive native completion: $e');
+    } finally {
+      _isInitialized = false;
+    }
   }
 
   @override
