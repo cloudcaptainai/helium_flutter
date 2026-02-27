@@ -147,7 +147,14 @@ class HeliumFlutter {
       );
 
   /// Reset Helium entirely so you can call initialize again. Only for advanced use cases.
-  Future<void> resetHelium() => HeliumFlutterPlatform.instance.resetHelium();
+  Future<void> resetHelium({
+    bool clearUserTraits = true,
+    bool clearExperimentAllocations = false,
+  }) =>
+      HeliumFlutterPlatform.instance.resetHelium(
+        clearUserTraits: clearUserTraits,
+        clearExperimentAllocations: clearExperimentAllocations,
+      );
 
   /// Sets light/dark mode override for Helium paywalls.
   /// - Parameter mode: The desired appearance mode (.light, .dark, or .system)

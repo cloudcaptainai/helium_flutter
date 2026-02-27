@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:helium_flutter/helium_flutter.dart';
 import 'package:helium_flutter/types/helium_config_status.dart';
 import 'package:helium_flutter_example/presentation/revenue_cat_page.dart';
@@ -98,6 +99,17 @@ class _HomePageState extends State<HomePage> {
                 );
               },
               child: Text('Open View for Trigger'),
+            ),
+            SizedBox(height: 8),
+            ElevatedButton(
+              key: ValueKey('reset_helium'),
+              onPressed: () async {
+                await _heliumFlutterPlugin.resetHelium();
+                await _heliumFlutterPlugin.initialize(
+                  apiKey: dotenv.env['API_KEY'] ?? '',
+                );
+              },
+              child: Text('Reset Helium'),
             ),
             ElevatedButton(
               onPressed: () {

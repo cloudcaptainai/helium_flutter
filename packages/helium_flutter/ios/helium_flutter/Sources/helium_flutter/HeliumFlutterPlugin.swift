@@ -181,8 +181,16 @@ public class HeliumFlutterPlugin: NSObject, FlutterPlugin {
                 result(FlutterError(code: "BAD_ARGS", message: "Arguments not passed correctly", details: nil))
             }
         case "resetHelium":
-            resetHelium()
-            result("Helium reset!")
+            let args = call.arguments as? [String: Any]
+            let clearUserTraits = args?["clearUserTraits"] as? Bool ?? true
+            let clearHeliumEventListeners = args?["clearHeliumEventListeners"] as? Bool ?? true
+            let clearExperimentAllocations = args?["clearExperimentAllocations"] as? Bool ?? false
+            resetHelium(
+                clearUserTraits: clearUserTraits,
+                clearHeliumEventListeners: clearHeliumEventListeners,
+                clearExperimentAllocations: clearExperimentAllocations,
+                result: result
+            )
         case "setLightDarkModeOverride":
             if let modeString = call.arguments as? String {
                 setLightDarkModeOverride(mode: modeString)
@@ -400,13 +408,31 @@ public class HeliumFlutterPlugin: NSObject, FlutterPlugin {
         )
     }
 
-    private func resetHelium() {
-        // Clean up log listener
+    private func resetHelium(
+        clearUserTraits: Bool,
+        clearHeliumEventListeners: Bool,
+        clearExperimentAllocations: Bool,
+        result: @escaping FlutterResult
+    ) {
+        // Clean up log listener so initialize() can re-register
         logListenerToken?.remove()
         logListenerToken = nil
 
         NotificationCenter.default.post(name: .heliumReset, object: nil)
-        Helium.resetHelium()
+
+        Task {
+            await withUnsafeContinuation { (continuation: UnsafeContinuation<Void, Never>) in
+                Helium.resetHelium(
+                    clearUserTraits: clearUserTraits,
+                    clearHeliumEventListeners: clearHeliumEventListeners,
+                    clearExperimentAllocations: clearExperimentAllocations,
+                    onComplete: {
+                        continuation.resume()
+                    }
+                )
+            }
+            result("Helium reset!")
+        }
     }
 
     private func setLightDarkModeOverride(mode: String) {
