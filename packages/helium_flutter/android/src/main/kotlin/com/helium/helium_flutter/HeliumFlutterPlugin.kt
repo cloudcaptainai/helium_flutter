@@ -61,6 +61,7 @@ class HeliumFlutterPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
   private val mainScope = CoroutineScope(Dispatchers.Main)
   private var statusJob: Job? = null
   private var globalEventListener: HeliumEventListener? = null
+  private var nativeViewFactory: HeliumNativeViewFactory? = null
 
   override fun onAttachedToEngine(flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
     this.flutterPluginBinding = flutterPluginBinding
@@ -100,9 +101,11 @@ class HeliumFlutterPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
       }
     })
 
+    val factory = HeliumNativeViewFactory(channel)
+    nativeViewFactory = factory
     flutterPluginBinding.platformViewRegistry.registerViewFactory(
         "upsellViewForTrigger",
-        HeliumNativeViewFactory(channel)
+        factory
     )
   }
 
@@ -442,18 +445,22 @@ class HeliumFlutterPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
 
   override fun onAttachedToActivity(binding: ActivityPluginBinding) {
     activity = binding.activity
+    nativeViewFactory?.activity = binding.activity
   }
 
   override fun onDetachedFromActivityForConfigChanges() {
     activity = null
+    nativeViewFactory?.activity = null
   }
 
   override fun onReattachedToActivityForConfigChanges(binding: ActivityPluginBinding) {
     activity = binding.activity
+    nativeViewFactory?.activity = binding.activity
   }
 
   override fun onDetachedFromActivity() {
     activity = null
+    nativeViewFactory?.activity = null
   }
 
   private data class ParsedInitArgs(

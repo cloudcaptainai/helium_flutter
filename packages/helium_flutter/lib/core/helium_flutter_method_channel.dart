@@ -763,11 +763,22 @@ class UpsellViewForTrigger extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return UiKitView(
-      viewType: viewType,
-      layoutDirection: TextDirection.ltr,
-      creationParams: {'trigger': trigger},
-      creationParamsCodec: const StandardMessageCodec(),
-    );
+    if (Platform.isAndroid) {
+      return AndroidView(
+        viewType: viewType,
+        layoutDirection: TextDirection.ltr,
+        creationParams: {'trigger': trigger},
+        creationParamsCodec: const StandardMessageCodec(),
+      );
+    } else if (Platform.isIOS) {
+      return UiKitView(
+        viewType: viewType,
+        layoutDirection: TextDirection.ltr,
+        creationParams: {'trigger': trigger},
+        creationParamsCodec: const StandardMessageCodec(),
+      );
+    } else {
+      return const Text('Unsupported platform for Helium upsell view');
+    }
   }
 }

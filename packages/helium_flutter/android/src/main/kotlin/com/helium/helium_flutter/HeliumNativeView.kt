@@ -3,6 +3,8 @@ package com.helium.helium_flutter
 import android.content.Context
 import android.view.View
 import android.widget.TextView
+import androidx.lifecycle.LifecycleOwner
+import androidx.lifecycle.setViewTreeLifecycleOwner
 import io.flutter.plugin.platform.PlatformView
 import com.tryhelium.paywall.core.Helium
 import com.tryhelium.paywall.core.event.HeliumEventListener
@@ -41,8 +43,26 @@ class HeliumNativeView(
         
         return try {
             val paywallView = HeliumPaywallView(context = context)
-            paywallView.loadPaywall(trigger = trigger, navigationDispatcher = { command ->
-                // Do nothing. Called need to listen to the paywall events
+            paywallView.layoutParams = android.view.ViewGroup.LayoutParams(
+                android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+                android.view.ViewGroup.LayoutParams.MATCH_PARENT
+            )
+
+            (context as? LifecycleOwner)?.let { owner ->
+                paywallView.setViewTreeLifecycleOwner(owner)
+            }
+
+            // Defer loadPaywall until the view is part of the window hierarchy.
+            paywallView.addOnAttachStateChangeListener(object : View.OnAttachStateChangeListener {
+                override fun onViewAttachedToWindow(v: View) {
+                    // Remove listener so loadPaywall is only called once
+                    v.removeOnAttachStateChangeListener(this)
+                    paywallView.loadPaywall(trigger = trigger, navigationDispatcher = { command ->
+                        // Do nothing. Callers need to listen to the paywall events
+                    })
+                }
+
+                override fun onViewDetachedFromWindow(v: View) { }
             })
             paywallView.setPaywallEventHandlers(eventListener)
 
