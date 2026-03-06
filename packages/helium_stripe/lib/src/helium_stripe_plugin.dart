@@ -1,0 +1,130 @@
+import 'dart:developer';
+import 'dart:io';
+
+import 'package:flutter/services.dart';
+import 'package:helium_flutter/helium_flutter.dart';
+
+/// Helium Stripe One Tap Purchase integration for Flutter (iOS only).
+///
+/// On non-iOS platforms, methods either fall back to standard Helium
+/// initialization or return safe defaults.
+class HeliumStripe {
+  static const MethodChannel _channel = MethodChannel('helium_stripe');
+
+  /// Initializes Helium with Stripe One Tap Purchase support.
+  ///
+  /// On iOS, this configures Stripe One Tap and initializes Helium with Stripe
+  /// integration. On other platforms, falls back to standard [HeliumFlutter.initialize].
+  ///
+  /// The [apiKey], [stripePublishableKey], [merchantIdentifier], [merchantName],
+  /// and [managementURL] parameters are required.
+  static Future<void> initializeWithStripe({
+    required String apiKey,
+    required String stripePublishableKey,
+    required String merchantIdentifier,
+    required String merchantName,
+    required String managementURL,
+    String countryCode = 'US',
+    String currencyCode = 'USD',
+    HeliumCallbacks? callbacks,
+    HeliumPurchaseDelegate? purchaseDelegate,
+    String? customUserId,
+    Map<String, dynamic>? customUserTraits,
+    String? fallbackBundleAssetPath,
+    HeliumPaywallLoadingConfig? paywallLoadingConfig,
+  }) async {
+    if (!Platform.isIOS) {
+      log('[HeliumStripe] Stripe One Tap is only available on iOS. Using standard initialization.');
+      await HeliumFlutter().initialize(
+        apiKey: apiKey,
+        callbacks: callbacks,
+        purchaseDelegate: purchaseDelegate,
+        customUserId: customUserId,
+        customUserTraits: customUserTraits,
+        fallbackBundleAssetPath: fallbackBundleAssetPath,
+        paywallLoadingConfig: paywallLoadingConfig,
+      );
+      return;
+    }
+
+    // Initialize core Helium first (sets up delegates, callbacks, etc.)
+    await HeliumFlutter().initialize(
+      apiKey: apiKey,
+      callbacks: callbacks,
+      purchaseDelegate: purchaseDelegate,
+      customUserId: customUserId,
+      customUserTraits: customUserTraits,
+      fallbackBundleAssetPath: fallbackBundleAssetPath,
+      paywallLoadingConfig: paywallLoadingConfig,
+    );
+
+    // Then initialize Stripe on top
+    try {
+      await _channel.invokeMethod('initializeStripe', {
+        'apiKey': apiKey,
+        'stripePublishableKey': stripePublishableKey,
+        'merchantIdentifier': merchantIdentifier,
+        'merchantName': merchantName,
+        'managementURL': managementURL,
+        'countryCode': countryCode,
+        'currencyCode': currencyCode,
+      });
+    } on PlatformException catch (e) {
+      log('[HeliumStripe] Failed to initialize Stripe: ${e.message}');
+    }
+  }
+
+  /// Sets the user ID and syncs Stripe entitlements if needed.
+  ///
+  /// On non-iOS platforms, falls back to [HeliumFlutter.overrideUserId].
+  static void setUserIdAndSyncStripeIfNeeded(String userId) {
+    if (!Platform.isIOS) {
+      HeliumFlutter().overrideUserId(newUserId: userId);
+      return;
+    }
+    _channel.invokeMethod('setUserIdAndSyncStripeIfNeeded', userId);
+  }
+
+  /// Resets Stripe entitlements. Optionally clears the user ID.
+  ///
+  /// Only available on iOS. No-op on other platforms.
+  static void resetStripeEntitlements({bool clearUserId = false}) {
+    if (!Platform.isIOS) {
+      log('[HeliumStripe] resetStripeEntitlements is only available on iOS');
+      return;
+    }
+    _channel.invokeMethod('resetStripeEntitlements', clearUserId);
+  }
+
+  /// Creates a Stripe customer portal session and returns the URL.
+  ///
+  /// Only available on iOS. Returns `null` on other platforms.
+  static Future<String?> createStripePortalSession(String returnUrl) async {
+    if (!Platform.isIOS) {
+      log('[HeliumStripe] createStripePortalSession is only available on iOS');
+      return null;
+    }
+    try {
+      return await _channel.invokeMethod<String>('createStripePortalSession', returnUrl);
+    } on PlatformException catch (e) {
+      log('[HeliumStripe] Failed to create Stripe portal session: ${e.message}');
+      return null;
+    }
+  }
+
+  /// Returns whether the user has an active Stripe entitlement.
+  ///
+  /// Only available on iOS. Returns `false` on other platforms.
+  static Future<bool> hasActiveStripeEntitlement() async {
+    if (!Platform.isIOS) {
+      log('[HeliumStripe] hasActiveStripeEntitlement is only available on iOS');
+      return false;
+    }
+    try {
+      return await _channel.invokeMethod<bool>('hasActiveStripeEntitlement') ?? false;
+    } on PlatformException catch (e) {
+      log('[HeliumStripe] Failed to check Stripe entitlement: ${e.message}');
+      return false;
+    }
+  }
+}
