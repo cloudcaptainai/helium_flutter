@@ -426,6 +426,8 @@ class HeliumFlutterPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
     }
     this.flutterPluginBinding = null
     this.context = null
+    nativeViewFactory?.activity = null
+    nativeViewFactory = null
 
     if (::statusChannel.isInitialized) {
       statusChannel.setStreamHandler(null)

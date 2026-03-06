@@ -57,9 +57,13 @@ class HeliumNativeView(
                 override fun onViewAttachedToWindow(v: View) {
                     // Remove listener so loadPaywall is only called once
                     v.removeOnAttachStateChangeListener(this)
-                    paywallView.loadPaywall(trigger = trigger, navigationDispatcher = { command ->
-                        // Do nothing. Callers need to listen to the paywall events
-                    })
+                    try {
+                        paywallView.loadPaywall(trigger = trigger, navigationDispatcher = { command ->
+                            // Do nothing. Callers need to listen to the paywall events
+                        })
+                    } catch (e: Exception) {
+                        // Swallow to avoid crashing the host app
+                    }
                 }
 
                 override fun onViewDetachedFromWindow(v: View) { }
