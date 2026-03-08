@@ -61,19 +61,15 @@ class HeliumStripe {
     );
 
     // Initialize Helium with Stripe One Tap (the single native init call)
-    try {
-      await _channel.invokeMethod('initializeStripe', {
-        'apiKey': apiKey,
-        'stripePublishableKey': stripePublishableKey,
-        'merchantIdentifier': merchantIdentifier,
-        'merchantName': merchantName,
-        'managementURL': managementURL,
-        'countryCode': countryCode,
-        'currencyCode': currencyCode,
-      });
-    } on PlatformException catch (e) {
-      log('[HeliumStripe] Failed to initialize Stripe: ${e.message}');
-    }
+    await _channel.invokeMethod('initializeStripe', {
+      'apiKey': apiKey,
+      'stripePublishableKey': stripePublishableKey,
+      'merchantIdentifier': merchantIdentifier,
+      'merchantName': merchantName,
+      'managementURL': managementURL,
+      'countryCode': countryCode,
+      'currencyCode': currencyCode,
+    });
   }
 
   /// Sets the user ID and syncs Stripe entitlements if needed.

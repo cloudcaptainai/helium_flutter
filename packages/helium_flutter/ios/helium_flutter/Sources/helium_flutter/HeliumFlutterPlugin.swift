@@ -58,62 +58,16 @@ public class HeliumFlutterPlugin: NSObject, FlutterPlugin {
         switch call.method {
         case "initialize":
             if let args = call.arguments as? [String: Any] {
-                let apiKey = args["apiKey"] as? String ?? ""
-                let customAPIEndpoint = args["customAPIEndpoint"] as? String
-                let customUserId = args["customUserId"] as? String
-                let userTraitsMap = convertMarkersToBooleans(args["customUserTraits"] as? [String: Any])
-                let customUserTraits = userTraitsMap != nil ? HeliumUserTraits(userTraitsMap!) : nil
-                let revenueCatAppUserId = args["revenueCatAppUserId"] as? String
-                let fallbackAssetPath = args["fallbackAssetPath"] as? String
-                let paywallLoadingConfig = convertMarkersToBooleans(args["paywallLoadingConfig"] as? [String: Any])
-
-                let useDefaultDelegate = args["useDefaultDelegate"] as? Bool ?? false
-                let wrapperSdkVersion = args["wrapperSdkVersion"] as? String ?? "unknown"
-                let delegateType = args["delegateType"] as? String
-
-                initializeHelium(
-                    apiKey: apiKey,
-                    customAPIEndpoint: customAPIEndpoint,
-                    customUserId: customUserId,
-                    customUserTraits: customUserTraits,
-                    revenueCatAppUserId: revenueCatAppUserId,
-                    fallbackAssetPath: fallbackAssetPath,
-                    paywallLoadingConfig: paywallLoadingConfig,
-                    useDefaultDelegate: useDefaultDelegate,
-                    wrapperSdkVersion: wrapperSdkVersion,
-                    delegateType: delegateType
-                )
+                let parsed = parseInitArgs(args)
+                initializeHelium(parsed)
                 result("Initialization started!")
             } else {
                 result(FlutterError(code: "BAD_ARGS", message: "Arguments not passed correctly", details: nil))
             }
         case "setupCore":
             if let args = call.arguments as? [String: Any] {
-                let apiKey = args["apiKey"] as? String ?? ""
-                let customAPIEndpoint = args["customAPIEndpoint"] as? String
-                let customUserId = args["customUserId"] as? String
-                let userTraitsMap = convertMarkersToBooleans(args["customUserTraits"] as? [String: Any])
-                let customUserTraits = userTraitsMap != nil ? HeliumUserTraits(userTraitsMap!) : nil
-                let revenueCatAppUserId = args["revenueCatAppUserId"] as? String
-                let fallbackAssetPath = args["fallbackAssetPath"] as? String
-                let paywallLoadingConfig = convertMarkersToBooleans(args["paywallLoadingConfig"] as? [String: Any])
-
-                let useDefaultDelegate = args["useDefaultDelegate"] as? Bool ?? false
-                let wrapperSdkVersion = args["wrapperSdkVersion"] as? String ?? "unknown"
-                let delegateType = args["delegateType"] as? String
-
-                setupCore(
-                    apiKey: apiKey,
-                    customAPIEndpoint: customAPIEndpoint,
-                    customUserId: customUserId,
-                    customUserTraits: customUserTraits,
-                    revenueCatAppUserId: revenueCatAppUserId,
-                    fallbackAssetPath: fallbackAssetPath,
-                    paywallLoadingConfig: paywallLoadingConfig,
-                    useDefaultDelegate: useDefaultDelegate,
-                    wrapperSdkVersion: wrapperSdkVersion,
-                    delegateType: delegateType
-                )
+                let parsed = parseInitArgs(args)
+                setupCore(parsed)
                 result("Core setup complete!")
             } else {
                 result(FlutterError(code: "BAD_ARGS", message: "Arguments not passed correctly", details: nil))
@@ -244,27 +198,48 @@ public class HeliumFlutterPlugin: NSObject, FlutterPlugin {
         }
     }
 
+    private struct ParsedInitArgs {
+        let apiKey: String
+        let customAPIEndpoint: String?
+        let customUserId: String?
+        let customUserTraits: HeliumUserTraits?
+        let revenueCatAppUserId: String?
+        let fallbackAssetPath: String?
+        let paywallLoadingConfig: [String: Any]?
+        let useDefaultDelegate: Bool
+        let wrapperSdkVersion: String
+        let delegateType: String?
+    }
+
+    private func parseInitArgs(_ args: [String: Any]) -> ParsedInitArgs {
+        let userTraitsMap = convertMarkersToBooleans(args["customUserTraits"] as? [String: Any])
+        return ParsedInitArgs(
+            apiKey: args["apiKey"] as? String ?? "",
+            customAPIEndpoint: args["customAPIEndpoint"] as? String,
+            customUserId: args["customUserId"] as? String,
+            customUserTraits: userTraitsMap != nil ? HeliumUserTraits(userTraitsMap!) : nil,
+            revenueCatAppUserId: args["revenueCatAppUserId"] as? String,
+            fallbackAssetPath: args["fallbackAssetPath"] as? String,
+            paywallLoadingConfig: convertMarkersToBooleans(args["paywallLoadingConfig"] as? [String: Any]),
+            useDefaultDelegate: args["useDefaultDelegate"] as? Bool ?? false,
+            wrapperSdkVersion: args["wrapperSdkVersion"] as? String ?? "unknown",
+            delegateType: args["delegateType"] as? String
+        )
+    }
+
     /// Sets up all Helium configuration (delegates, identity, logging, etc.)
     /// without calling Helium.shared.initialize(). This allows wrapper plugins
     /// (e.g. helium_stripe) to configure core Helium before calling their own
     /// specialized initialization method.
-    private func setupCore(
-        apiKey: String, customAPIEndpoint: String?,
-        customUserId: String?, customUserTraits: HeliumUserTraits?,
-        revenueCatAppUserId: String?, fallbackAssetPath: String?,
-        paywallLoadingConfig: [String: Any]?,
-        useDefaultDelegate: Bool,
-        wrapperSdkVersion: String,
-        delegateType: String?
-    ) {
+    private func setupCore(_ parsed: ParsedInitArgs) {
         NotificationCenter.default.post(name: .heliumInitializing, object: nil)
 
         // Set wrapper SDK info for analytics
-        HeliumSdkConfig.shared.setWrapperSdkInfo(sdk: "flutter", version: wrapperSdkVersion)
+        HeliumSdkConfig.shared.setWrapperSdkInfo(sdk: "flutter", version: parsed.wrapperSdkVersion)
 
         // Parse loading configuration
-        let useLoadingState = paywallLoadingConfig?["useLoadingState"] as? Bool ?? true
-        let loadingBudget = paywallLoadingConfig?["loadingBudget"] as? TimeInterval
+        let useLoadingState = parsed.paywallLoadingConfig?["useLoadingState"] as? Bool ?? true
+        let loadingBudget = parsed.paywallLoadingConfig?["loadingBudget"] as? TimeInterval
         if !useLoadingState {
             // Setting <= 0 will disable loading state
             Helium.config.defaultLoadingBudget = -1
@@ -274,33 +249,33 @@ public class HeliumFlutterPlugin: NSObject, FlutterPlugin {
 
         // Set up delegate
         let delegate: HeliumPaywallDelegate
-        if useDefaultDelegate {
+        if parsed.useDefaultDelegate {
             delegate = DefaultPurchaseDelegate(methodChannel: channel)
         } else {
-            delegate = DemoHeliumPaywallDelegate(delegateType: delegateType, methodChannel: channel)
+            delegate = DemoHeliumPaywallDelegate(delegateType: parsed.delegateType, methodChannel: channel)
         }
         Helium.config.purchaseDelegate = delegate
 
         // Set custom API endpoint
-        if let customAPIEndpoint {
+        if let customAPIEndpoint = parsed.customAPIEndpoint {
             Helium.config.customAPIEndpoint = customAPIEndpoint
         }
 
         // Set up fallback bundle
-        if let assetPath = fallbackAssetPath,
+        if let assetPath = parsed.fallbackAssetPath,
            let key = registrar?.lookupKey(forAsset: assetPath),
            let path = Bundle.main.path(forResource: key, ofType: nil) {
             Helium.config.customFallbacksURL = URL(fileURLWithPath: path)
         }
 
         // Set identity
-        if let customUserId {
+        if let customUserId = parsed.customUserId {
             Helium.identify.userId = customUserId
         }
-        if let customUserTraits {
+        if let customUserTraits = parsed.customUserTraits {
             Helium.identify.setUserTraits(customUserTraits)
         }
-        if let revenueCatAppUserId {
+        if let revenueCatAppUserId = parsed.revenueCatAppUserId {
             Helium.identify.revenueCatAppUserId = revenueCatAppUserId
         }
 
@@ -321,28 +296,9 @@ public class HeliumFlutterPlugin: NSObject, FlutterPlugin {
         }
     }
 
-    private func initializeHelium(
-        apiKey: String, customAPIEndpoint: String?,
-        customUserId: String?, customUserTraits: HeliumUserTraits?,
-        revenueCatAppUserId: String?, fallbackAssetPath: String?,
-        paywallLoadingConfig: [String: Any]?,
-        useDefaultDelegate: Bool,
-        wrapperSdkVersion: String,
-        delegateType: String?
-    ) {
-        setupCore(
-            apiKey: apiKey,
-            customAPIEndpoint: customAPIEndpoint,
-            customUserId: customUserId,
-            customUserTraits: customUserTraits,
-            revenueCatAppUserId: revenueCatAppUserId,
-            fallbackAssetPath: fallbackAssetPath,
-            paywallLoadingConfig: paywallLoadingConfig,
-            useDefaultDelegate: useDefaultDelegate,
-            wrapperSdkVersion: wrapperSdkVersion,
-            delegateType: delegateType
-        )
-        Helium.shared.initialize(apiKey: apiKey)
+    private func initializeHelium(_ parsed: ParsedInitArgs) {
+        setupCore(parsed)
+        Helium.shared.initialize(apiKey: parsed.apiKey)
     }
 
     public func presentUpsell(trigger: String, customPaywallTraits: [String: Any]? = nil, dontShowIfAlreadyEntitled: Bool? = nil) {

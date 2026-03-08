@@ -141,6 +141,7 @@ class HeliumFlutterPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
           setupGlobalEventListener()
           result.success("Initialization started!")
         } catch (e: Exception) {
+          android.util.Log.e("HeliumFlutter", "Failed to initialize", e)
           result.error("INIT_ERROR", "Failed to initialize: ${e.message}", null)
         }
       }
@@ -158,6 +159,7 @@ class HeliumFlutterPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
           setupCore(parsed)
           result.success("Core setup complete!")
         } catch (e: Exception) {
+          android.util.Log.e("HeliumFlutter", "Failed to setup core", e)
           result.error("SETUP_ERROR", "Failed to setup core: ${e.message}", null)
         }
       }
