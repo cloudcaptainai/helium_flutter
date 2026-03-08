@@ -2,7 +2,6 @@ import Flutter
 import UIKit
 import Helium
 import StripeOneTapPurchase
-@preconcurrency import StripeApplePay
 
 public class HeliumStripePlugin: NSObject, FlutterPlugin {
     var channel: FlutterMethodChannel!
@@ -37,9 +36,9 @@ public class HeliumStripePlugin: NSObject, FlutterPlugin {
                 Task {
                     do {
                         let url = try await Helium.shared.createStripePortalSession(returnUrl: returnUrl)
-                        result(url.absoluteString)
+                        DispatchQueue.main.async { result(url.absoluteString) }
                     } catch {
-                        result(FlutterError(code: "STRIPE_ERROR", message: "Failed to create Stripe portal session: \(error.localizedDescription)", details: nil))
+                        DispatchQueue.main.async { result(FlutterError(code: "STRIPE_ERROR", message: "Failed to create Stripe portal session: \(error.localizedDescription)", details: nil)) }
                     }
                 }
             } else {
@@ -48,7 +47,7 @@ public class HeliumStripePlugin: NSObject, FlutterPlugin {
         case "hasActiveStripeEntitlement":
             Task {
                 let hasEntitlement = await Helium.shared.hasActiveStripeEntitlement()
-                result(hasEntitlement)
+                DispatchQueue.main.async { result(hasEntitlement) }
             }
         default:
             result(FlutterMethodNotImplemented)
@@ -62,9 +61,18 @@ public class HeliumStripePlugin: NSObject, FlutterPlugin {
               let merchantName = config["merchantName"] as? String,
               let managementURLString = config["managementURL"] as? String,
               let managementURL = URL(string: managementURLString) else {
-            print("[HeliumStripe] Missing or invalid Stripe config, using standard initialization instead")
-            Helium.shared.initialize(apiKey: config["apiKey"] as? String ?? "")
-            result(nil)
+            var missing: [String] = []
+            if config["apiKey"] as? String == nil { missing.append("apiKey") }
+            if config["stripePublishableKey"] as? String == nil { missing.append("stripePublishableKey") }
+            if config["merchantIdentifier"] as? String == nil { missing.append("merchantIdentifier") }
+            if config["merchantName"] as? String == nil { missing.append("merchantName") }
+            if config["managementURL"] as? String == nil { missing.append("managementURL") }
+            else if URL(string: config["managementURL"] as! String) == nil { missing.append("managementURL (invalid URL)") }
+            result(FlutterError(
+                code: "INVALID_STRIPE_CONFIG",
+                message: "Missing or invalid Stripe config parameters: \(missing.joined(separator: ", "))",
+                details: nil
+            ))
             return
         }
 

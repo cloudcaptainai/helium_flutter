@@ -73,6 +73,7 @@ class MockHeliumFlutterPlatform
       'apiKey': apiKey,
       'customUserId': customUserId,
     };
+    _isInitialized = true;
     return 'Initialization started!';
   }
 

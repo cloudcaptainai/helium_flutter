@@ -12,13 +12,15 @@ let package = Package(
         .library(name: "helium-stripe", targets: ["helium_stripe"])
     ],
     dependencies: [
-        .package(url: "https://github.com/cloudcaptainai/helium-swift.git", exact: "4.1.8")
+        .package(url: "https://github.com/cloudcaptainai/helium-swift.git", exact: "4.1.8"),
+        .package(url: "https://github.com/appmonetization/stripe-one-tap-purchase.git", exact: "1.0.6"),
     ],
     targets: [
         .target(
             name: "helium_stripe",
             dependencies: [
-                .product(name: "Helium", package: "helium-swift")
+                .product(name: "Helium", package: "helium-swift"),
+                .product(name: "StripeOneTapPurchase", package: "stripe-one-tap-purchase"),
             ]
         )
     ]
