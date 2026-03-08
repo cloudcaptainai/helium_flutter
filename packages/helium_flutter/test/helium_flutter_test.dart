@@ -13,6 +13,24 @@ class MockHeliumFlutterPlatform
     with MockPlatformInterfaceMixin
     implements HeliumFlutterPlatform {
   @override
+  Future<String?> setupCore({
+    required String apiKey,
+    HeliumCallbacks? callbacks,
+    HeliumPurchaseDelegate? purchaseDelegate,
+    Widget? fallbackPaywall,
+    String? customAPIEndpoint,
+    String? customUserId,
+    Map<String, dynamic>? customUserTraits,
+    String? revenueCatAppUserId,
+    String? fallbackBundleAssetPath,
+    HeliumEnvironment? environment,
+    HeliumPaywallLoadingConfig? paywallLoadingConfig,
+    Set<String>? androidConsumableProductIds,
+  }) {
+    return Future.value('Core setup complete!');
+  }
+
+  @override
   Future<String?> initialize({
     required String apiKey,
     HeliumCallbacks? callbacks,

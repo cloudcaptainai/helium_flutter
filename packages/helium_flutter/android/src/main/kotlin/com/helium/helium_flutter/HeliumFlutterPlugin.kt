@@ -127,102 +127,38 @@ class HeliumFlutterPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
           result.error("BAD_ARGS", "Arguments not passed correctly", null)
           return
         }
-
-        val apiKey = args["apiKey"] as? String ?: ""
-        val customApiEndpoint = args["customAPIEndpoint"] as? String
-        val customUserId = args["customUserId"] as? String
-        val revenueCatAppUserId = args["revenueCatAppUserId"] as? String
-        val useDefaultDelegate = args["useDefaultDelegate"] as? Boolean ?: false
-
-        @Suppress("UNCHECKED_CAST")
-        val customUserTraitsMap = args["customUserTraits"] as? Map<String, Any?>
-        val customUserTraits = convertToHeliumUserTraits(customUserTraitsMap)
-
-        @Suppress("UNCHECKED_CAST")
-        val paywallLoadingConfigMap = args["paywallLoadingConfig"] as? Map<String, Any?>
-
-        // Extract fallbackAssetPath from args and resolve Flutter asset path
-        val fallbackAssetPath = args["fallbackAssetPath"] as? String
-        val flutterAssetPath = fallbackAssetPath?.let {
-          flutterPluginBinding?.flutterAssets?.getAssetFilePathByName(it)
+        val parsed = parseInitArgs(args) ?: run {
+          result.error("NO_CONTEXT", "Context not available", null)
+          return
         }
-
-        val environment = (args["environment"] as? String).toEnvironment()
-
-        val wrapperSdkVersion = args["wrapperSdkVersion"] as? String ?: "unknown"
-        val delegateType = args["delegateType"] as? String ?: "custom"
-
         try {
-          val currentContext = context
-          val currentActivity = activity
-
-          if (currentContext == null) {
-            result.error("NO_CONTEXT", "Context not available", null)
-            return
-          }
-
-          // Set wrapper SDK info for analytics
-          HeliumWrapperSdkConfig.setWrapperSdkInfo(sdk = "flutter", version = wrapperSdkVersion)
-
-          // Parse loading configuration
-          val useLoadingState = paywallLoadingConfigMap?.get("useLoadingState") as? Boolean ?: true
-          val loadingBudgetSeconds = (paywallLoadingConfigMap?.get("loadingBudget") as? Number)?.toDouble()
-          val loadingBudgetMs = loadingBudgetSeconds?.let { (it * 1000).toLong() } ?: DEFAULT_LOADING_BUDGET_MS
-          if (!useLoadingState) {
-            // Setting <= 0 will disable loading state
-            Helium.config.defaultLoadingBudgetInMs = -1
-          } else {
-            Helium.config.defaultLoadingBudgetInMs = loadingBudgetMs
-          }
-
-          // Create and set delegate if needed
-          if (!useDefaultDelegate) {
-            Helium.config.heliumPaywallDelegate = CustomPaywallDelegate(delegateType, channel)
-          }
-
-          // Set custom API endpoint
-          customApiEndpoint?.let { Helium.config.customApiEndpoint = it }
-
-          // Set fallback asset path - native SDK reads directly from context.assets
-          flutterAssetPath?.let { Helium.config.customFallbacksFileName = it }
-
-          // Set identity
-          customUserId?.let { Helium.identity.userId = it }
-          customUserTraits?.let { Helium.identity.setUserTraits(it) }
-          revenueCatAppUserId?.let { Helium.identity.revenueCatAppUserId = it }
-
-          // Set consumable product IDs if provided
-          @Suppress("UNCHECKED_CAST")
-          val consumableProductIds = args["androidConsumableProductIds"] as? List<String>
-          consumableProductIds?.let { Helium.config.consumableIds = it.toSet() }
-
-          // Set up bridging logger to forward native SDK logs to Flutter
-          Helium.config.logger = BridgingLogger(channel)
-
+          setupCore(parsed)
           Helium.initialize(
-            context = currentContext,
-            apiKey = apiKey,
-            environment = environment,
+            context = parsed.context,
+            apiKey = parsed.apiKey,
+            environment = parsed.environment,
           )
-
-          // Add global event listener to forward events to Flutter callbacks
-          globalEventListener?.let { Helium.shared.removeHeliumEventListener(it) }
-          val listener = HeliumEventListener { event ->
-            val eventData = HeliumEventDictionaryMapper.toDictionary(event)
-            Handler(Looper.getMainLooper()).post {
-              try {
-                channel.invokeMethod("onPaywallEvent", eventData)
-              } catch (e: Exception) {
-                // Channel may be detached, ignore
-              }
-            }
-          }
-          globalEventListener = listener
-          Helium.shared.addPaywallEventListener(listener)
-
+          setupGlobalEventListener()
           result.success("Initialization started!")
         } catch (e: Exception) {
           result.error("INIT_ERROR", "Failed to initialize: ${e.message}", null)
+        }
+      }
+      "setupCore" -> {
+        val args = call.arguments as? Map<*, *>
+        if (args == null) {
+          result.error("BAD_ARGS", "Arguments not passed correctly", null)
+          return
+        }
+        val parsed = parseInitArgs(args) ?: run {
+          result.error("NO_CONTEXT", "Context not available", null)
+          return
+        }
+        try {
+          setupCore(parsed)
+          result.success("Core setup complete!")
+        } catch (e: Exception) {
+          result.error("SETUP_ERROR", "Failed to setup core: ${e.message}", null)
         }
       }
       "presentUpsell" -> {
@@ -515,6 +451,109 @@ class HeliumFlutterPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
 
   override fun onDetachedFromActivity() {
     activity = null
+  }
+
+  private data class ParsedInitArgs(
+    val context: Context,
+    val apiKey: String,
+    val customApiEndpoint: String?,
+    val customUserId: String?,
+    val revenueCatAppUserId: String?,
+    val useDefaultDelegate: Boolean,
+    val customUserTraits: HeliumUserTraits?,
+    val paywallLoadingConfigMap: Map<String, Any?>?,
+    val flutterAssetPath: String?,
+    val environment: HeliumEnvironment,
+    val wrapperSdkVersion: String,
+    val delegateType: String,
+    val consumableProductIds: List<String>?,
+  )
+
+  private fun parseInitArgs(args: Map<*, *>): ParsedInitArgs? {
+    val currentContext = context ?: return null
+
+    val fallbackAssetPath = args["fallbackAssetPath"] as? String
+    val flutterAssetPath = fallbackAssetPath?.let {
+      flutterPluginBinding?.flutterAssets?.getAssetFilePathByName(it)
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    val customUserTraitsMap = args["customUserTraits"] as? Map<String, Any?>
+
+    @Suppress("UNCHECKED_CAST")
+    val paywallLoadingConfigMap = args["paywallLoadingConfig"] as? Map<String, Any?>
+
+    @Suppress("UNCHECKED_CAST")
+    val consumableProductIds = args["androidConsumableProductIds"] as? List<String>
+
+    return ParsedInitArgs(
+      context = currentContext,
+      apiKey = args["apiKey"] as? String ?: "",
+      customApiEndpoint = args["customAPIEndpoint"] as? String,
+      customUserId = args["customUserId"] as? String,
+      revenueCatAppUserId = args["revenueCatAppUserId"] as? String,
+      useDefaultDelegate = args["useDefaultDelegate"] as? Boolean ?: false,
+      customUserTraits = convertToHeliumUserTraits(customUserTraitsMap),
+      paywallLoadingConfigMap = paywallLoadingConfigMap,
+      flutterAssetPath = flutterAssetPath,
+      environment = (args["environment"] as? String).toEnvironment(),
+      wrapperSdkVersion = args["wrapperSdkVersion"] as? String ?: "unknown",
+      delegateType = args["delegateType"] as? String ?: "custom",
+      consumableProductIds = consumableProductIds,
+    )
+  }
+
+  private fun setupCore(parsed: ParsedInitArgs) {
+    // Set wrapper SDK info for analytics
+    HeliumWrapperSdkConfig.setWrapperSdkInfo(sdk = "flutter", version = parsed.wrapperSdkVersion)
+
+    // Parse loading configuration
+    val useLoadingState = parsed.paywallLoadingConfigMap?.get("useLoadingState") as? Boolean ?: true
+    val loadingBudgetSeconds = (parsed.paywallLoadingConfigMap?.get("loadingBudget") as? Number)?.toDouble()
+    val loadingBudgetMs = loadingBudgetSeconds?.let { (it * 1000).toLong() } ?: DEFAULT_LOADING_BUDGET_MS
+    if (!useLoadingState) {
+      Helium.config.defaultLoadingBudgetInMs = -1
+    } else {
+      Helium.config.defaultLoadingBudgetInMs = loadingBudgetMs
+    }
+
+    // Create and set delegate if needed
+    if (!parsed.useDefaultDelegate) {
+      Helium.config.heliumPaywallDelegate = CustomPaywallDelegate(parsed.delegateType, channel)
+    }
+
+    // Set custom API endpoint
+    parsed.customApiEndpoint?.let { Helium.config.customApiEndpoint = it }
+
+    // Set fallback asset path - native SDK reads directly from context.assets
+    parsed.flutterAssetPath?.let { Helium.config.customFallbacksFileName = it }
+
+    // Set identity
+    parsed.customUserId?.let { Helium.identity.userId = it }
+    parsed.customUserTraits?.let { Helium.identity.setUserTraits(it) }
+    parsed.revenueCatAppUserId?.let { Helium.identity.revenueCatAppUserId = it }
+
+    // Set consumable product IDs if provided
+    parsed.consumableProductIds?.let { Helium.config.consumableIds = it.toSet() }
+
+    // Set up bridging logger to forward native SDK logs to Flutter
+    Helium.config.logger = BridgingLogger(channel)
+  }
+
+  private fun setupGlobalEventListener() {
+    globalEventListener?.let { Helium.shared.removeHeliumEventListener(it) }
+    val listener = HeliumEventListener { event ->
+      val eventData = HeliumEventDictionaryMapper.toDictionary(event)
+      Handler(Looper.getMainLooper()).post {
+        try {
+          channel.invokeMethod("onPaywallEvent", eventData)
+        } catch (e: Exception) {
+          // Channel may be detached, ignore
+        }
+      }
+    }
+    globalEventListener = listener
+    Helium.shared.addPaywallEventListener(listener)
   }
 
   companion object {
