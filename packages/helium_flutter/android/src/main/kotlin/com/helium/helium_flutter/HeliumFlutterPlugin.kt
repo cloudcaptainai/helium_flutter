@@ -157,7 +157,6 @@ class HeliumFlutterPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
         }
         try {
           setupCore(parsed)
-          setupGlobalEventListener()
           result.success("Core setup complete!")
         } catch (e: Exception) {
           android.util.Log.e("HeliumFlutter", "Failed to setup core", e)

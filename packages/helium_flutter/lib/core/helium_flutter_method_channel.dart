@@ -73,23 +73,28 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
     if (_isInitialized) {
       return "[Helium] Already initialized!";
     }
-
-    final result =
-        await methodChannel.invokeMethod<String?>(setupCoreMethodName,
-            _buildNativeArgs(
-              apiKey: apiKey,
-              purchaseDelegate: purchaseDelegate,
-              customAPIEndpoint: customAPIEndpoint,
-              customUserId: customUserId,
-              customUserTraits: customUserTraits,
-              revenueCatAppUserId: revenueCatAppUserId,
-              fallbackBundleAssetPath: fallbackBundleAssetPath,
-              environment: environment,
-              paywallLoadingConfig: paywallLoadingConfig,
-              androidConsumableProductIds: androidConsumableProductIds,
-            ));
     _isInitialized = true;
-    return result;
+
+    try {
+      final result =
+          await methodChannel.invokeMethod<String?>(setupCoreMethodName,
+              _buildNativeArgs(
+                apiKey: apiKey,
+                purchaseDelegate: purchaseDelegate,
+                customAPIEndpoint: customAPIEndpoint,
+                customUserId: customUserId,
+                customUserTraits: customUserTraits,
+                revenueCatAppUserId: revenueCatAppUserId,
+                fallbackBundleAssetPath: fallbackBundleAssetPath,
+                environment: environment,
+                paywallLoadingConfig: paywallLoadingConfig,
+                androidConsumableProductIds: androidConsumableProductIds,
+              ));
+      return result;
+    } catch (e) {
+      _isInitialized = false;
+      rethrow;
+    }
   }
 
   @override
@@ -113,23 +118,28 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
     if (_isInitialized) {
       return "[Helium] Already initialized!";
     }
-
-    final result =
-        await methodChannel.invokeMethod<String?>(initializeMethodName,
-            _buildNativeArgs(
-              apiKey: apiKey,
-              purchaseDelegate: purchaseDelegate,
-              customAPIEndpoint: customAPIEndpoint,
-              customUserId: customUserId,
-              customUserTraits: customUserTraits,
-              revenueCatAppUserId: revenueCatAppUserId,
-              fallbackBundleAssetPath: fallbackBundleAssetPath,
-              environment: environment,
-              paywallLoadingConfig: paywallLoadingConfig,
-              androidConsumableProductIds: androidConsumableProductIds,
-            ));
     _isInitialized = true;
-    return result;
+
+    try {
+      final result =
+          await methodChannel.invokeMethod<String?>(initializeMethodName,
+              _buildNativeArgs(
+                apiKey: apiKey,
+                purchaseDelegate: purchaseDelegate,
+                customAPIEndpoint: customAPIEndpoint,
+                customUserId: customUserId,
+                customUserTraits: customUserTraits,
+                revenueCatAppUserId: revenueCatAppUserId,
+                fallbackBundleAssetPath: fallbackBundleAssetPath,
+                environment: environment,
+                paywallLoadingConfig: paywallLoadingConfig,
+                androidConsumableProductIds: androidConsumableProductIds,
+              ));
+      return result;
+    } catch (e) {
+      _isInitialized = false;
+      rethrow;
+    }
   }
 
   void _setMethodCallHandlers(
