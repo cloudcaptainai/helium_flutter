@@ -12,6 +12,40 @@ export './types/helium_transaction_status.dart';
 export './types/helium_types.dart';
 
 class HeliumFlutter {
+  /// Sets up core Helium configuration (delegates, callbacks, identity, etc.)
+  /// without triggering native SDK initialization. Used by wrapper plugins
+  /// (e.g. helium_stripe) that need to call their own specialized native
+  /// initialization after core setup.
+  Future<String?> setupCore({
+    required String apiKey,
+    HeliumCallbacks? callbacks,
+    HeliumPurchaseDelegate? purchaseDelegate,
+    Widget? fallbackPaywall,
+    String? customAPIEndpoint,
+    String? customUserId,
+    Map<String, dynamic>? customUserTraits,
+    String? revenueCatAppUserId,
+    String? fallbackBundleAssetPath,
+    HeliumEnvironment? environment,
+    HeliumPaywallLoadingConfig? paywallLoadingConfig,
+    Set<String>? androidConsumableProductIds,
+  }) async {
+    return await HeliumFlutterPlatform.instance.setupCore(
+      apiKey: apiKey,
+      callbacks: callbacks,
+      purchaseDelegate: purchaseDelegate,
+      fallbackPaywall: fallbackPaywall,
+      customAPIEndpoint: customAPIEndpoint,
+      customUserId: customUserId,
+      customUserTraits: customUserTraits,
+      revenueCatAppUserId: revenueCatAppUserId,
+      fallbackBundleAssetPath: fallbackBundleAssetPath,
+      environment: environment,
+      paywallLoadingConfig: paywallLoadingConfig,
+      androidConsumableProductIds: androidConsumableProductIds,
+    );
+  }
+
   ///Initialize helium sdk at the start-up of your flutter application.
   Future<String?> initialize({
     required String apiKey,

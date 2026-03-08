@@ -47,8 +47,10 @@ class HeliumStripe {
       return;
     }
 
-    // Initialize core Helium first (sets up delegates, callbacks, etc.)
-    await HeliumFlutter().initialize(
+    // Set up core Helium configuration (delegates, callbacks, identity, etc.)
+    // without calling Helium.shared.initialize(), since the Stripe native
+    // plugin will call Helium.shared.initializeWithStripeOneTap() instead.
+    await HeliumFlutter().setupCore(
       apiKey: apiKey,
       callbacks: callbacks,
       purchaseDelegate: purchaseDelegate,
@@ -58,7 +60,7 @@ class HeliumStripe {
       paywallLoadingConfig: paywallLoadingConfig,
     );
 
-    // Then initialize Stripe on top
+    // Initialize Helium with Stripe One Tap (the single native init call)
     try {
       await _channel.invokeMethod('initializeStripe', {
         'apiKey': apiKey,

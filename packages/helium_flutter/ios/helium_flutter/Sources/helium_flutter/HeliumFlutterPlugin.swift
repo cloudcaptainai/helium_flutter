@@ -87,6 +87,37 @@ public class HeliumFlutterPlugin: NSObject, FlutterPlugin {
             } else {
                 result(FlutterError(code: "BAD_ARGS", message: "Arguments not passed correctly", details: nil))
             }
+        case "setupCore":
+            if let args = call.arguments as? [String: Any] {
+                let apiKey = args["apiKey"] as? String ?? ""
+                let customAPIEndpoint = args["customAPIEndpoint"] as? String
+                let customUserId = args["customUserId"] as? String
+                let userTraitsMap = convertMarkersToBooleans(args["customUserTraits"] as? [String: Any])
+                let customUserTraits = userTraitsMap != nil ? HeliumUserTraits(userTraitsMap!) : nil
+                let revenueCatAppUserId = args["revenueCatAppUserId"] as? String
+                let fallbackAssetPath = args["fallbackAssetPath"] as? String
+                let paywallLoadingConfig = convertMarkersToBooleans(args["paywallLoadingConfig"] as? [String: Any])
+
+                let useDefaultDelegate = args["useDefaultDelegate"] as? Bool ?? false
+                let wrapperSdkVersion = args["wrapperSdkVersion"] as? String ?? "unknown"
+                let delegateType = args["delegateType"] as? String
+
+                setupCore(
+                    apiKey: apiKey,
+                    customAPIEndpoint: customAPIEndpoint,
+                    customUserId: customUserId,
+                    customUserTraits: customUserTraits,
+                    revenueCatAppUserId: revenueCatAppUserId,
+                    fallbackAssetPath: fallbackAssetPath,
+                    paywallLoadingConfig: paywallLoadingConfig,
+                    useDefaultDelegate: useDefaultDelegate,
+                    wrapperSdkVersion: wrapperSdkVersion,
+                    delegateType: delegateType
+                )
+                result("Core setup complete!")
+            } else {
+                result(FlutterError(code: "BAD_ARGS", message: "Arguments not passed correctly", details: nil))
+            }
         case "presentUpsell":
             if let args = call.arguments as? [String: Any] {
                 let trigger = args["trigger"] as? String ?? ""
@@ -213,7 +244,11 @@ public class HeliumFlutterPlugin: NSObject, FlutterPlugin {
         }
     }
 
-    private func initializeHelium(
+    /// Sets up all Helium configuration (delegates, identity, logging, etc.)
+    /// without calling Helium.shared.initialize(). This allows wrapper plugins
+    /// (e.g. helium_stripe) to configure core Helium before calling their own
+    /// specialized initialization method.
+    private func setupCore(
         apiKey: String, customAPIEndpoint: String?,
         customUserId: String?, customUserTraits: HeliumUserTraits?,
         revenueCatAppUserId: String?, fallbackAssetPath: String?,
@@ -284,7 +319,29 @@ public class HeliumFlutterPlugin: NSObject, FlutterPlugin {
                 }
             }
         }
+    }
 
+    private func initializeHelium(
+        apiKey: String, customAPIEndpoint: String?,
+        customUserId: String?, customUserTraits: HeliumUserTraits?,
+        revenueCatAppUserId: String?, fallbackAssetPath: String?,
+        paywallLoadingConfig: [String: Any]?,
+        useDefaultDelegate: Bool,
+        wrapperSdkVersion: String,
+        delegateType: String?
+    ) {
+        setupCore(
+            apiKey: apiKey,
+            customAPIEndpoint: customAPIEndpoint,
+            customUserId: customUserId,
+            customUserTraits: customUserTraits,
+            revenueCatAppUserId: revenueCatAppUserId,
+            fallbackAssetPath: fallbackAssetPath,
+            paywallLoadingConfig: paywallLoadingConfig,
+            useDefaultDelegate: useDefaultDelegate,
+            wrapperSdkVersion: wrapperSdkVersion,
+            delegateType: delegateType
+        )
         Helium.shared.initialize(apiKey: apiKey)
     }
 

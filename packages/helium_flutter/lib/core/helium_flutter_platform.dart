@@ -28,6 +28,25 @@ abstract class HeliumFlutterPlatform extends PlatformInterface {
     _instance = instance;
   }
 
+  /// Sets up core Helium configuration (delegates, callbacks, identity, etc.)
+  /// without triggering native SDK initialization. Used by wrapper plugins
+  /// (e.g. helium_stripe) that need to call their own specialized native
+  /// initialization after core setup.
+  Future<String?> setupCore({
+    required String apiKey,
+    HeliumCallbacks? callbacks,
+    HeliumPurchaseDelegate? purchaseDelegate,
+    Widget? fallbackPaywall,
+    String? customAPIEndpoint,
+    String? customUserId,
+    Map<String, dynamic>? customUserTraits,
+    String? revenueCatAppUserId,
+    String? fallbackBundleAssetPath,
+    HeliumEnvironment? environment,
+    HeliumPaywallLoadingConfig? paywallLoadingConfig,
+    Set<String>? androidConsumableProductIds,
+  });
+
   ///Initialize helium sdk at the start-up of your flutter application.
   Future<String?> initialize({
     required String apiKey,
