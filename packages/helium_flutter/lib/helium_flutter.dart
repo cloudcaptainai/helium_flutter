@@ -12,6 +12,9 @@ export './types/helium_transaction_status.dart';
 export './types/helium_types.dart';
 
 class HeliumFlutter {
+  /// Whether Helium has already been initialized (via [initialize] or [setupCore]).
+  bool get isInitialized => HeliumFlutterPlatform.instance.isInitialized;
+
   /// Sets up core Helium configuration (delegates, callbacks, identity, etc.)
   /// without triggering native SDK initialization. Used by wrapper plugins
   /// (e.g. helium_stripe) that need to call their own specialized native

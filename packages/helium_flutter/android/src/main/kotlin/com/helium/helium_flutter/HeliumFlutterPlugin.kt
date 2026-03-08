@@ -524,19 +524,19 @@ class HeliumFlutterPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
       Helium.config.heliumPaywallDelegate = CustomPaywallDelegate(parsed.delegateType, channel)
     }
 
-    // Set custom API endpoint
-    parsed.customApiEndpoint?.let { Helium.config.customApiEndpoint = it }
+    // Always write API endpoint (null clears a previous override)
+    Helium.config.customApiEndpoint = parsed.customApiEndpoint
 
-    // Set fallback asset path - native SDK reads directly from context.assets
-    parsed.flutterAssetPath?.let { Helium.config.customFallbacksFileName = it }
+    // Always write fallback asset path (null clears a previous override)
+    Helium.config.customFallbacksFileName = parsed.flutterAssetPath
 
     // Set identity
     parsed.customUserId?.let { Helium.identity.userId = it }
     parsed.customUserTraits?.let { Helium.identity.setUserTraits(it) }
     parsed.revenueCatAppUserId?.let { Helium.identity.revenueCatAppUserId = it }
 
-    // Set consumable product IDs if provided
-    parsed.consumableProductIds?.let { Helium.config.consumableIds = it.toSet() }
+    // Always write consumable product IDs (empty set clears previous values)
+    Helium.config.consumableIds = parsed.consumableProductIds?.toSet() ?: emptySet()
 
     // Set up bridging logger to forward native SDK logs to Flutter
     Helium.config.logger = BridgingLogger(channel)

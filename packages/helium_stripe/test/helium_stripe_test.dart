@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:helium_flutter/core/helium_flutter_platform.dart';
 import 'package:helium_flutter/helium_flutter.dart';
@@ -12,10 +13,15 @@ class MockHeliumFlutterPlatform
     implements HeliumFlutterPlatform {
   final List<String> calls = [];
   final Map<String, Map<String, dynamic>> callArgs = {};
+  bool _isInitialized = false;
+
+  @override
+  bool get isInitialized => _isInitialized;
 
   void reset() {
     calls.clear();
     callArgs.clear();
+    _isInitialized = false;
   }
 
   @override
@@ -38,6 +44,7 @@ class MockHeliumFlutterPlatform
       'apiKey': apiKey,
       'customUserId': customUserId,
     };
+    _isInitialized = true;
     return 'Core setup complete!';
   }
 
@@ -143,6 +150,7 @@ void main() {
 
   tearDown(() {
     mockPlatform.reset();
+    HeliumStripe.isIOSOverride = null;
   });
 
   group('initializeWithStripe (non-iOS)', () {
@@ -189,6 +197,119 @@ void main() {
     });
   });
 
+  group('initializeWithStripe (iOS)', () {
+    const MethodChannel stripeChannel = MethodChannel('helium_stripe');
+    late List<MethodCall> channelCalls;
+
+    setUp(() {
+      HeliumStripe.isIOSOverride = true;
+      channelCalls = [];
+
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(stripeChannel,
+              (MethodCall methodCall) async {
+        channelCalls.add(methodCall);
+        switch (methodCall.method) {
+          case 'initializeStripe':
+            return null;
+          default:
+            return null;
+        }
+      });
+    });
+
+    tearDown(() {
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(stripeChannel, null);
+    });
+
+    test('calls setupCore before initializeStripe', () async {
+      await HeliumStripe.initializeWithStripe(
+        apiKey: 'test-api-key',
+        stripePublishableKey: 'pk_test_123',
+        merchantIdentifier: 'merchant.com.test',
+        merchantName: 'Test Merchant',
+        managementURL: 'https://example.com/manage',
+      );
+
+      // setupCore should be called (not initialize)
+      expect(mockPlatform.calls, ['setupCore']);
+      expect(mockPlatform.calls, isNot(contains('initialize')));
+
+      // Then initializeStripe should be called on the native channel
+      expect(channelCalls, hasLength(1));
+      expect(channelCalls.first.method, 'initializeStripe');
+    });
+
+    test('sends correct payload keys to initializeStripe', () async {
+      await HeliumStripe.initializeWithStripe(
+        apiKey: 'my-api-key',
+        stripePublishableKey: 'pk_live_abc',
+        merchantIdentifier: 'merchant.com.app',
+        merchantName: 'My App',
+        managementURL: 'https://app.com/manage',
+        countryCode: 'GB',
+        currencyCode: 'GBP',
+      );
+
+      final args =
+          channelCalls.first.arguments as Map<Object?, Object?>;
+      expect(args['apiKey'], 'my-api-key');
+      expect(args['stripePublishableKey'], 'pk_live_abc');
+      expect(args['merchantIdentifier'], 'merchant.com.app');
+      expect(args['merchantName'], 'My App');
+      expect(args['managementURL'], 'https://app.com/manage');
+      expect(args['countryCode'], 'GB');
+      expect(args['currencyCode'], 'GBP');
+    });
+
+    test('uses default countryCode and currencyCode', () async {
+      await HeliumStripe.initializeWithStripe(
+        apiKey: 'test-api-key',
+        stripePublishableKey: 'pk_test_123',
+        merchantIdentifier: 'merchant.com.test',
+        merchantName: 'Test Merchant',
+        managementURL: 'https://example.com/manage',
+      );
+
+      final args =
+          channelCalls.first.arguments as Map<Object?, Object?>;
+      expect(args['countryCode'], 'US');
+      expect(args['currencyCode'], 'USD');
+    });
+
+    test('skips initializeStripe when already initialized', () async {
+      mockPlatform._isInitialized = true;
+
+      await HeliumStripe.initializeWithStripe(
+        apiKey: 'test-api-key',
+        stripePublishableKey: 'pk_test_123',
+        merchantIdentifier: 'merchant.com.test',
+        merchantName: 'Test Merchant',
+        managementURL: 'https://example.com/manage',
+      );
+
+      // Neither setupCore nor initializeStripe should be called
+      expect(mockPlatform.calls, isEmpty);
+      expect(channelCalls, isEmpty);
+    });
+
+    test('passes parameters through to setupCore', () async {
+      await HeliumStripe.initializeWithStripe(
+        apiKey: 'stripe-api-key',
+        stripePublishableKey: 'pk_test_123',
+        merchantIdentifier: 'merchant.com.test',
+        merchantName: 'Test Merchant',
+        managementURL: 'https://example.com/manage',
+        customUserId: 'stripe-user',
+      );
+
+      final args = mockPlatform.callArgs['setupCore']!;
+      expect(args['apiKey'], 'stripe-api-key');
+      expect(args['customUserId'], 'stripe-user');
+    });
+  });
+
   group('setUserIdAndSyncStripeIfNeeded (non-iOS)', () {
     test('falls back to overrideUserId', () {
       HeliumStripe.setUserIdAndSyncStripeIfNeeded('user-456');
@@ -201,7 +322,6 @@ void main() {
 
   group('resetStripeEntitlements (non-iOS)', () {
     test('is a no-op and does not throw', () {
-      // Should not throw or call any platform methods
       HeliumStripe.resetStripeEntitlements();
       HeliumStripe.resetStripeEntitlements(clearUserId: true);
 

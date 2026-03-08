@@ -20,6 +20,9 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
   bool _isInitialized = false;
   PaywallEventHandlers? _currentEventHandlers;
 
+  @override
+  bool get isInitialized => _isInitialized;
+
   Map<String, dynamic> _buildNativeArgs({
     required String apiKey,
     HeliumPurchaseDelegate? purchaseDelegate,

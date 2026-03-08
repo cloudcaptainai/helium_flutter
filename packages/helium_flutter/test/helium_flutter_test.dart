@@ -13,6 +13,9 @@ class MockHeliumFlutterPlatform
     with MockPlatformInterfaceMixin
     implements HeliumFlutterPlatform {
   @override
+  bool get isInitialized => false;
+
+  @override
   Future<String?> setupCore({
     required String apiKey,
     HeliumCallbacks? callbacks,

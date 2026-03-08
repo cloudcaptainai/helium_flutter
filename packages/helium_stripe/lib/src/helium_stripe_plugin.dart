@@ -1,6 +1,7 @@
 import 'dart:developer';
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:helium_flutter/helium_flutter.dart';
 
@@ -10,6 +11,12 @@ import 'package:helium_flutter/helium_flutter.dart';
 /// initialization or return safe defaults.
 class HeliumStripe {
   static const MethodChannel _channel = MethodChannel('helium_stripe');
+
+  /// Override for testing. When non-null, used instead of [Platform.isIOS].
+  @visibleForTesting
+  static bool? isIOSOverride;
+
+  static bool get _isIOS => isIOSOverride ?? Platform.isIOS;
 
   /// Initializes Helium with Stripe One Tap Purchase support.
   ///
@@ -33,7 +40,7 @@ class HeliumStripe {
     String? fallbackBundleAssetPath,
     HeliumPaywallLoadingConfig? paywallLoadingConfig,
   }) async {
-    if (!Platform.isIOS) {
+    if (!_isIOS) {
       log('[HeliumStripe] Stripe One Tap is only available on iOS. Using standard initialization.');
       await HeliumFlutter().initialize(
         apiKey: apiKey,
@@ -47,10 +54,17 @@ class HeliumStripe {
       return;
     }
 
+    final helium = HeliumFlutter();
+
+    if (helium.isInitialized) {
+      log('[HeliumStripe] Helium already initialized, skipping Stripe init.');
+      return;
+    }
+
     // Set up core Helium configuration (delegates, callbacks, identity, etc.)
     // without calling Helium.shared.initialize(), since the Stripe native
     // plugin will call Helium.shared.initializeWithStripeOneTap() instead.
-    await HeliumFlutter().setupCore(
+    await helium.setupCore(
       apiKey: apiKey,
       callbacks: callbacks,
       purchaseDelegate: purchaseDelegate,
@@ -76,7 +90,7 @@ class HeliumStripe {
   ///
   /// On non-iOS platforms, falls back to [HeliumFlutter.overrideUserId].
   static void setUserIdAndSyncStripeIfNeeded(String userId) {
-    if (!Platform.isIOS) {
+    if (!_isIOS) {
       HeliumFlutter().overrideUserId(newUserId: userId);
       return;
     }
@@ -87,7 +101,7 @@ class HeliumStripe {
   ///
   /// Only available on iOS. No-op on other platforms.
   static void resetStripeEntitlements({bool clearUserId = false}) {
-    if (!Platform.isIOS) {
+    if (!_isIOS) {
       log('[HeliumStripe] resetStripeEntitlements is only available on iOS');
       return;
     }
@@ -98,7 +112,7 @@ class HeliumStripe {
   ///
   /// Only available on iOS. Returns `null` on other platforms.
   static Future<String?> createStripePortalSession(String returnUrl) async {
-    if (!Platform.isIOS) {
+    if (!_isIOS) {
       log('[HeliumStripe] createStripePortalSession is only available on iOS');
       return null;
     }
@@ -114,7 +128,7 @@ class HeliumStripe {
   ///
   /// Only available on iOS. Returns `false` on other platforms.
   static Future<bool> hasActiveStripeEntitlement() async {
-    if (!Platform.isIOS) {
+    if (!_isIOS) {
       log('[HeliumStripe] hasActiveStripeEntitlement is only available on iOS');
       return false;
     }

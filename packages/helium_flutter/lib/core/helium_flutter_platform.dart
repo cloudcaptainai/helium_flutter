@@ -28,6 +28,9 @@ abstract class HeliumFlutterPlatform extends PlatformInterface {
     _instance = instance;
   }
 
+  /// Whether Helium has already been initialized.
+  bool get isInitialized;
+
   /// Sets up core Helium configuration (delegates, callbacks, identity, etc.)
   /// without triggering native SDK initialization. Used by wrapper plugins
   /// (e.g. helium_stripe) that need to call their own specialized native

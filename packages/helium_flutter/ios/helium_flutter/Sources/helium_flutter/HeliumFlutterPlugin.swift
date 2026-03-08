@@ -256,16 +256,16 @@ public class HeliumFlutterPlugin: NSObject, FlutterPlugin {
         }
         Helium.config.purchaseDelegate = delegate
 
-        // Set custom API endpoint
-        if let customAPIEndpoint = parsed.customAPIEndpoint {
-            Helium.config.customAPIEndpoint = customAPIEndpoint
-        }
+        // Always write API endpoint (nil clears a previous override)
+        Helium.config.customAPIEndpoint = parsed.customAPIEndpoint
 
-        // Set up fallback bundle
+        // Set up fallback bundle (nil clears a previous override)
         if let assetPath = parsed.fallbackAssetPath,
            let key = registrar?.lookupKey(forAsset: assetPath),
            let path = Bundle.main.path(forResource: key, ofType: nil) {
             Helium.config.customFallbacksURL = URL(fileURLWithPath: path)
+        } else {
+            Helium.config.customFallbacksURL = nil
         }
 
         // Set identity
