@@ -73,7 +73,6 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
     if (_isInitialized) {
       return "[Helium] Already initialized!";
     }
-    _isInitialized = true;
 
     final result =
         await methodChannel.invokeMethod<String?>(setupCoreMethodName,
@@ -89,6 +88,7 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
               paywallLoadingConfig: paywallLoadingConfig,
               androidConsumableProductIds: androidConsumableProductIds,
             ));
+    _isInitialized = true;
     return result;
   }
 
@@ -113,7 +113,6 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
     if (_isInitialized) {
       return "[Helium] Already initialized!";
     }
-    _isInitialized = true;
 
     final result =
         await methodChannel.invokeMethod<String?>(initializeMethodName,
@@ -129,6 +128,7 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
               paywallLoadingConfig: paywallLoadingConfig,
               androidConsumableProductIds: androidConsumableProductIds,
             ));
+    _isInitialized = true;
     return result;
   }
 

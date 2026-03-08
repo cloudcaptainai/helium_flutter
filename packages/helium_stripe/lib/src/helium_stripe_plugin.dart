@@ -37,6 +37,7 @@ class HeliumStripe {
     HeliumPurchaseDelegate? purchaseDelegate,
     String? customUserId,
     Map<String, dynamic>? customUserTraits,
+    String? revenueCatAppUserId,
     String? fallbackBundleAssetPath,
     HeliumPaywallLoadingConfig? paywallLoadingConfig,
   }) async {
@@ -48,6 +49,7 @@ class HeliumStripe {
         purchaseDelegate: purchaseDelegate,
         customUserId: customUserId,
         customUserTraits: customUserTraits,
+        revenueCatAppUserId: revenueCatAppUserId,
         fallbackBundleAssetPath: fallbackBundleAssetPath,
         paywallLoadingConfig: paywallLoadingConfig,
       );
@@ -70,20 +72,26 @@ class HeliumStripe {
       purchaseDelegate: purchaseDelegate,
       customUserId: customUserId,
       customUserTraits: customUserTraits,
+      revenueCatAppUserId: revenueCatAppUserId,
       fallbackBundleAssetPath: fallbackBundleAssetPath,
       paywallLoadingConfig: paywallLoadingConfig,
     );
 
     // Initialize Helium with Stripe One Tap (the single native init call)
-    await _channel.invokeMethod('initializeStripe', {
-      'apiKey': apiKey,
-      'stripePublishableKey': stripePublishableKey,
-      'merchantIdentifier': merchantIdentifier,
-      'merchantName': merchantName,
-      'managementURL': managementURL,
-      'countryCode': countryCode,
-      'currencyCode': currencyCode,
-    });
+    try {
+      await _channel.invokeMethod('initializeStripe', {
+        'apiKey': apiKey,
+        'stripePublishableKey': stripePublishableKey,
+        'merchantIdentifier': merchantIdentifier,
+        'merchantName': merchantName,
+        'managementURL': managementURL,
+        'countryCode': countryCode,
+        'currencyCode': currencyCode,
+      });
+    } catch (e) {
+      await helium.resetHelium();
+      rethrow;
+    }
   }
 
   /// Sets the user ID and syncs Stripe entitlements if needed.
@@ -117,7 +125,8 @@ class HeliumStripe {
       return null;
     }
     try {
-      return await _channel.invokeMethod<String>('createStripePortalSession', returnUrl);
+      return await _channel.invokeMethod<String>(
+          'createStripePortalSession', returnUrl);
     } on PlatformException catch (e) {
       log('[HeliumStripe] Failed to create Stripe portal session: ${e.message}');
       return null;
@@ -133,7 +142,8 @@ class HeliumStripe {
       return false;
     }
     try {
-      return await _channel.invokeMethod<bool>('hasActiveStripeEntitlement') ?? false;
+      return await _channel.invokeMethod<bool>('hasActiveStripeEntitlement') ??
+          false;
     } on PlatformException catch (e) {
       log('[HeliumStripe] Failed to check Stripe entitlement: ${e.message}');
       return false;

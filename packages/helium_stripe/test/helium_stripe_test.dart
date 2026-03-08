@@ -15,6 +15,9 @@ class MockHeliumFlutterPlatform
   final Map<String, Map<String, dynamic>> callArgs = {};
   bool _isInitialized = false;
 
+  /// Shared timeline for ordering assertions across platform and channel calls.
+  List<String>? timeline;
+
   @override
   bool get isInitialized => _isInitialized;
 
@@ -40,6 +43,7 @@ class MockHeliumFlutterPlatform
     Set<String>? androidConsumableProductIds,
   }) async {
     calls.add('setupCore');
+    timeline?.add('setupCore');
     callArgs['setupCore'] = {
       'apiKey': apiKey,
       'customUserId': customUserId,
@@ -64,6 +68,7 @@ class MockHeliumFlutterPlatform
     Set<String>? androidConsumableProductIds,
   }) async {
     calls.add('initialize');
+    timeline?.add('initialize');
     callArgs['initialize'] = {
       'apiKey': apiKey,
       'customUserId': customUserId,
@@ -200,15 +205,19 @@ void main() {
   group('initializeWithStripe (iOS)', () {
     const MethodChannel stripeChannel = MethodChannel('helium_stripe');
     late List<MethodCall> channelCalls;
+    late List<String> timeline;
 
     setUp(() {
       HeliumStripe.isIOSOverride = true;
       channelCalls = [];
+      timeline = [];
+      mockPlatform.timeline = timeline;
 
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
           .setMockMethodCallHandler(stripeChannel,
               (MethodCall methodCall) async {
         channelCalls.add(methodCall);
+        timeline.add(methodCall.method);
         switch (methodCall.method) {
           case 'initializeStripe':
             return null;
@@ -219,6 +228,7 @@ void main() {
     });
 
     tearDown(() {
+      mockPlatform.timeline = null;
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
           .setMockMethodCallHandler(stripeChannel, null);
     });
@@ -232,13 +242,9 @@ void main() {
         managementURL: 'https://example.com/manage',
       );
 
-      // setupCore should be called (not initialize)
-      expect(mockPlatform.calls, ['setupCore']);
+      // Verify exact ordering: setupCore must come before initializeStripe
+      expect(timeline, ['setupCore', 'initializeStripe']);
       expect(mockPlatform.calls, isNot(contains('initialize')));
-
-      // Then initializeStripe should be called on the native channel
-      expect(channelCalls, hasLength(1));
-      expect(channelCalls.first.method, 'initializeStripe');
     });
 
     test('sends correct payload keys to initializeStripe', () async {
