@@ -21,6 +21,83 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
   PaywallEventHandlers? _currentEventHandlers;
 
   @override
+  bool get isInitialized => _isInitialized;
+
+  Map<String, dynamic> _buildNativeArgs({
+    required String apiKey,
+    HeliumPurchaseDelegate? purchaseDelegate,
+    String? customAPIEndpoint,
+    String? customUserId,
+    Map<String, dynamic>? customUserTraits,
+    String? revenueCatAppUserId,
+    String? fallbackBundleAssetPath,
+    HeliumEnvironment? environment,
+    HeliumPaywallLoadingConfig? paywallLoadingConfig,
+    Set<String>? androidConsumableProductIds,
+  }) {
+    return {
+      'apiKey': apiKey,
+      'customUserId': customUserId,
+      'customAPIEndpoint': customAPIEndpoint,
+      'customUserTraits': _convertBooleansToMarkers(customUserTraits),
+      'revenueCatAppUserId': revenueCatAppUserId,
+      'fallbackAssetPath': fallbackBundleAssetPath ?? "helium-fallbacks.json",
+      'environment': environment?.name,
+      'paywallLoadingConfig':
+          _convertBooleansToMarkers(paywallLoadingConfig?.toMap()),
+      'useDefaultDelegate': purchaseDelegate == null,
+      'wrapperSdkVersion': heliumFlutterSdkVersion,
+      'delegateType': purchaseDelegate?.delegateType,
+      'androidConsumableProductIds': androidConsumableProductIds?.toList(),
+    };
+  }
+
+  @override
+  Future<String?> setupCore({
+    required String apiKey,
+    HeliumCallbacks? callbacks,
+    HeliumPurchaseDelegate? purchaseDelegate,
+    Widget? fallbackPaywall,
+    String? customAPIEndpoint,
+    String? customUserId,
+    Map<String, dynamic>? customUserTraits,
+    String? revenueCatAppUserId,
+    String? fallbackBundleAssetPath,
+    HeliumEnvironment? environment,
+    HeliumPaywallLoadingConfig? paywallLoadingConfig,
+    Set<String>? androidConsumableProductIds,
+  }) async {
+    _setMethodCallHandlers(callbacks, purchaseDelegate);
+    _fallbackPaywallWidget = fallbackPaywall;
+
+    if (_isInitialized) {
+      return "[Helium] Already initialized!";
+    }
+    _isInitialized = true;
+
+    try {
+      final result =
+          await methodChannel.invokeMethod<String?>(setupCoreMethodName,
+              _buildNativeArgs(
+                apiKey: apiKey,
+                purchaseDelegate: purchaseDelegate,
+                customAPIEndpoint: customAPIEndpoint,
+                customUserId: customUserId,
+                customUserTraits: customUserTraits,
+                revenueCatAppUserId: revenueCatAppUserId,
+                fallbackBundleAssetPath: fallbackBundleAssetPath,
+                environment: environment,
+                paywallLoadingConfig: paywallLoadingConfig,
+                androidConsumableProductIds: androidConsumableProductIds,
+              ));
+      return result;
+    } catch (e) {
+      _isInitialized = false;
+      rethrow;
+    }
+  }
+
+  @override
   Future<String?> initialize({
     required String apiKey,
     HeliumCallbacks? callbacks,
@@ -43,23 +120,26 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
     }
     _isInitialized = true;
 
-    final result =
-        await methodChannel.invokeMethod<String?>(initializeMethodName, {
-      'apiKey': apiKey,
-      'customUserId': customUserId,
-      'customAPIEndpoint': customAPIEndpoint,
-      'customUserTraits': _convertBooleansToMarkers(customUserTraits),
-      'revenueCatAppUserId': revenueCatAppUserId,
-      'fallbackAssetPath': fallbackBundleAssetPath ?? "helium-fallbacks.json",
-      'environment': environment?.name,
-      'paywallLoadingConfig':
-          _convertBooleansToMarkers(paywallLoadingConfig?.toMap()),
-      'useDefaultDelegate': purchaseDelegate == null,
-      'wrapperSdkVersion': heliumFlutterSdkVersion,
-      'delegateType': purchaseDelegate?.delegateType,
-      'androidConsumableProductIds': androidConsumableProductIds?.toList(),
-    });
-    return result;
+    try {
+      final result =
+          await methodChannel.invokeMethod<String?>(initializeMethodName,
+              _buildNativeArgs(
+                apiKey: apiKey,
+                purchaseDelegate: purchaseDelegate,
+                customAPIEndpoint: customAPIEndpoint,
+                customUserId: customUserId,
+                customUserTraits: customUserTraits,
+                revenueCatAppUserId: revenueCatAppUserId,
+                fallbackBundleAssetPath: fallbackBundleAssetPath,
+                environment: environment,
+                paywallLoadingConfig: paywallLoadingConfig,
+                androidConsumableProductIds: androidConsumableProductIds,
+              ));
+      return result;
+    } catch (e) {
+      _isInitialized = false;
+      rethrow;
+    }
   }
 
   void _setMethodCallHandlers(

@@ -12,6 +12,30 @@ import 'core/const.dart';
 class MockHeliumFlutterPlatform
     with MockPlatformInterfaceMixin
     implements HeliumFlutterPlatform {
+  bool _isInitialized = false;
+
+  @override
+  bool get isInitialized => _isInitialized;
+
+  @override
+  Future<String?> setupCore({
+    required String apiKey,
+    HeliumCallbacks? callbacks,
+    HeliumPurchaseDelegate? purchaseDelegate,
+    Widget? fallbackPaywall,
+    String? customAPIEndpoint,
+    String? customUserId,
+    Map<String, dynamic>? customUserTraits,
+    String? revenueCatAppUserId,
+    String? fallbackBundleAssetPath,
+    HeliumEnvironment? environment,
+    HeliumPaywallLoadingConfig? paywallLoadingConfig,
+    Set<String>? androidConsumableProductIds,
+  }) {
+    _isInitialized = true;
+    return Future.value('Core setup complete!');
+  }
+
   @override
   Future<String?> initialize({
     required String apiKey,
@@ -27,6 +51,7 @@ class MockHeliumFlutterPlatform
     HeliumPaywallLoadingConfig? paywallLoadingConfig,
     Set<String>? androidConsumableProductIds,
   }) {
+    _isInitialized = true;
     return Future.value('Initialization started!');
   }
 
