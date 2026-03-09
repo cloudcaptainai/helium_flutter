@@ -32,7 +32,9 @@ class HeliumNativeView(
         return view
     }
 
-    override fun dispose() {}
+    override fun dispose() {
+        view.setViewTreeLifecycleOwner(null)
+    }
 
     private fun upsellViewForTrigger(context: Context, trigger: String): View {
         val eventListener = HeliumEventListener { event ->
