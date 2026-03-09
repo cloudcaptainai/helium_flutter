@@ -13,6 +13,7 @@ import com.tryhelium.paywall.ui.HeliumPaywallView
 import io.flutter.plugin.common.MethodChannel
 import android.os.Handler
 import android.os.Looper
+import android.util.Log
 
 class HeliumNativeView(
     context: Context,
@@ -48,8 +49,11 @@ class HeliumNativeView(
                 android.view.ViewGroup.LayoutParams.MATCH_PARENT
             )
 
-            (context as? LifecycleOwner)?.let { owner ->
-                paywallView.setViewTreeLifecycleOwner(owner)
+            val lifecycleOwner = context as? LifecycleOwner
+            if (lifecycleOwner != null) {
+                paywallView.setViewTreeLifecycleOwner(lifecycleOwner)
+            } else {
+                Log.w("HeliumNativeView", "Context is not a LifecycleOwner; paywall view may not render correctly")
             }
 
             // Defer loadPaywall until the view is part of the window hierarchy.
@@ -62,7 +66,7 @@ class HeliumNativeView(
                             // Do nothing. Callers need to listen to the paywall events
                         })
                     } catch (e: Exception) {
-                        // Swallow to avoid crashing the host app
+                        Log.e("HeliumNativeView", "Failed to load paywall for trigger '$trigger'", e)
                     }
                 }
 
