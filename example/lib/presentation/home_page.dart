@@ -1,9 +1,12 @@
+import 'dart:developer';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:helium_flutter/helium_flutter.dart';
 import 'package:helium_flutter/types/helium_config_status.dart';
 import 'package:helium_flutter_example/presentation/revenue_cat_page.dart';
 import 'package:helium_flutter_example/presentation/view_for_trigger_page.dart';
+import 'package:helium_stripe/helium_stripe.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -84,7 +87,7 @@ class _HomePageState extends State<HomePage> {
               key: ValueKey('present_upsell'),
               onPressed: () async {
                 await _heliumFlutterPlugin.presentUpsell(
-                  trigger: 'sdk_test',
+                  trigger: 'stripe',
                   context: context,
                 );
               },
@@ -118,6 +121,50 @@ class _HomePageState extends State<HomePage> {
                 );
               },
               child: Text('Open RevenueCat Paywall'),
+            ),
+            SizedBox(height: 16),
+            Text('Stripe', style: Theme.of(context).textTheme.titleMedium),
+            SizedBox(height: 8),
+            ElevatedButton(
+              onPressed: () {
+                HeliumStripe.setUserIdAndSyncStripeIfNeeded('test-user-123');
+                log('[HeliumStripe] setUserIdAndSyncStripeIfNeeded called');
+              },
+              child: Text('Set User & Sync Stripe'),
+            ),
+            SizedBox(height: 8),
+            ElevatedButton(
+              onPressed: () async {
+                final hasEntitlement = await HeliumStripe.hasActiveStripeEntitlement();
+                log('[HeliumStripe] hasActiveStripeEntitlement: $hasEntitlement');
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Active Stripe Entitlement: $hasEntitlement')),
+                  );
+                }
+              },
+              child: Text('Check Stripe Entitlement'),
+            ),
+            SizedBox(height: 8),
+            ElevatedButton(
+              onPressed: () async {
+                final url = await HeliumStripe.createStripePortalSession('heliumexample://stripe-return');
+                log('[HeliumStripe] Portal session URL: $url');
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Portal URL: ${url ?? "null"}')),
+                  );
+                }
+              },
+              child: Text('Create Stripe Portal Session'),
+            ),
+            SizedBox(height: 8),
+            ElevatedButton(
+              onPressed: () {
+                HeliumStripe.resetStripeEntitlements();
+                log('[HeliumStripe] resetStripeEntitlements called');
+              },
+              child: Text('Reset Stripe Entitlements'),
             ),
           ],
         ),
