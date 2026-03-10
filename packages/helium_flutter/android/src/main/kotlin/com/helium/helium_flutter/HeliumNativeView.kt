@@ -3,6 +3,8 @@ package com.helium.helium_flutter
 import android.content.Context
 import android.view.View
 import android.widget.TextView
+import androidx.lifecycle.LifecycleOwner
+import androidx.lifecycle.setViewTreeLifecycleOwner
 import io.flutter.plugin.platform.PlatformView
 import com.tryhelium.paywall.core.Helium
 import com.tryhelium.paywall.core.event.HeliumEventListener
@@ -11,6 +13,7 @@ import com.tryhelium.paywall.ui.HeliumPaywallView
 import io.flutter.plugin.common.MethodChannel
 import android.os.Handler
 import android.os.Looper
+import android.util.Log
 
 class HeliumNativeView(
     context: Context,
@@ -29,7 +32,9 @@ class HeliumNativeView(
         return view
     }
 
-    override fun dispose() {}
+    override fun dispose() {
+        view.setViewTreeLifecycleOwner(null)
+    }
 
     private fun upsellViewForTrigger(context: Context, trigger: String): View {
         val eventListener = HeliumEventListener { event ->
@@ -41,8 +46,33 @@ class HeliumNativeView(
         
         return try {
             val paywallView = HeliumPaywallView(context = context)
-            paywallView.loadPaywall(trigger = trigger, navigationDispatcher = { command ->
-                // Do nothing. Called need to listen to the paywall events
+            paywallView.layoutParams = android.view.ViewGroup.LayoutParams(
+                android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+                android.view.ViewGroup.LayoutParams.MATCH_PARENT
+            )
+
+            val lifecycleOwner = context as? LifecycleOwner
+            if (lifecycleOwner != null) {
+                paywallView.setViewTreeLifecycleOwner(lifecycleOwner)
+            } else {
+                Log.w("HeliumNativeView", "Context is not a LifecycleOwner; paywall view may not render correctly")
+            }
+
+            // Defer loadPaywall until the view is part of the window hierarchy.
+            paywallView.addOnAttachStateChangeListener(object : View.OnAttachStateChangeListener {
+                override fun onViewAttachedToWindow(v: View) {
+                    // Remove listener so loadPaywall is only called once
+                    v.removeOnAttachStateChangeListener(this)
+                    try {
+                        paywallView.loadPaywall(trigger = trigger, navigationDispatcher = { command ->
+                            // Do nothing. Callers need to listen to the paywall events
+                        })
+                    } catch (e: Exception) {
+                        Log.e("HeliumNativeView", "Failed to load paywall for trigger '$trigger'", e)
+                    }
+                }
+
+                override fun onViewDetachedFromWindow(v: View) { }
             })
             paywallView.setPaywallEventHandlers(eventListener)
 
