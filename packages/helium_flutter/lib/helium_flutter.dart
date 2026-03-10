@@ -9,7 +9,6 @@ import 'package:helium_flutter/types/helium_types.dart';
 export './core/helium_callbacks.dart';
 export './types/experiment_info.dart';
 export './types/helium_transaction_status.dart';
-export './types/helium_environment.dart';
 export './types/helium_types.dart';
 
 class HeliumFlutter {

@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:helium_flutter/helium_flutter.dart';
+import 'package:helium_flutter/types/helium_environment.dart';
 
 /// Helium Stripe One Tap Purchase integration for Flutter (iOS only).
 ///
