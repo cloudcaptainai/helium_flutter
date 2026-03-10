@@ -7,6 +7,7 @@ import io.flutter.plugin.platform.PlatformView
 import com.tryhelium.paywall.core.Helium
 import com.tryhelium.paywall.core.event.HeliumEventListener
 import com.tryhelium.paywall.core.event.HeliumEventDictionaryMapper
+import com.tryhelium.paywall.core.event.PaywallEventHandlers
 import com.tryhelium.paywall.ui.HeliumPaywallView
 import io.flutter.plugin.common.MethodChannel
 import android.os.Handler
@@ -32,7 +33,7 @@ class HeliumNativeView(
     override fun dispose() {}
 
     private fun upsellViewForTrigger(context: Context, trigger: String): View {
-        val eventListener = HeliumEventListener { event ->
+        val eventListener = PaywallEventHandlers { event ->
             val eventData = HeliumEventDictionaryMapper.toDictionary(event)
             Handler(Looper.getMainLooper()).post {
                 channel.invokeMethod("onPaywallEventHandler", eventData)
