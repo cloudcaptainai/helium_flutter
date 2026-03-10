@@ -7,8 +7,8 @@ import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.setViewTreeLifecycleOwner
 import io.flutter.plugin.platform.PlatformView
 import com.tryhelium.paywall.core.Helium
-import com.tryhelium.paywall.core.event.HeliumEventListener
 import com.tryhelium.paywall.core.event.HeliumEventDictionaryMapper
+import com.tryhelium.paywall.core.event.PaywallEventHandlers
 import com.tryhelium.paywall.ui.HeliumPaywallView
 import io.flutter.plugin.common.MethodChannel
 import android.os.Handler
@@ -37,12 +37,16 @@ class HeliumNativeView(
     }
 
     private fun upsellViewForTrigger(context: Context, trigger: String): View {
-        val eventListener = HeliumEventListener { event ->
+        val eventListener = PaywallEventHandlers(onAnyEvent = { event ->
             val eventData = HeliumEventDictionaryMapper.toDictionary(event)
             Handler(Looper.getMainLooper()).post {
-                channel.invokeMethod("onPaywallEventHandler", eventData)
+                try {
+                    channel.invokeMethod("onPaywallEventHandler", eventData)
+                } catch (e: Exception) {
+                    // Channel may be detached, ignore
+                }
             }
-        }
+        })
         
         return try {
             val paywallView = HeliumPaywallView(context = context)
