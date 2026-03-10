@@ -1,5 +1,5 @@
 ## 3.2.4
-- Update Helium Android dependency. Add support for iOS Stripe. 
+- Update Helium Android dependency. Add support for iOS Stripe.
 
 ## 3.2.3
 - Updated helium-swift dependency to 4.1.8
