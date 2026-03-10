@@ -1,9 +1,10 @@
 import 'dart:developer';
 import 'dart:io';
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/widgets.dart';
 import 'package:helium_flutter/helium_flutter.dart';
+import 'package:helium_flutter/types/helium_environment.dart';
 
 /// Helium Stripe One Tap Purchase integration for Flutter (iOS only).
 ///
@@ -35,10 +36,13 @@ class HeliumStripe {
     String currencyCode = 'USD',
     HeliumCallbacks? callbacks,
     HeliumPurchaseDelegate? purchaseDelegate,
+    Widget? fallbackPaywall,
+    String? customAPIEndpoint,
     String? customUserId,
     Map<String, dynamic>? customUserTraits,
     String? revenueCatAppUserId,
     String? fallbackBundleAssetPath,
+    HeliumEnvironment? environment,
     HeliumPaywallLoadingConfig? paywallLoadingConfig,
   }) async {
     if (!_isIOS) {
@@ -47,10 +51,13 @@ class HeliumStripe {
         apiKey: apiKey,
         callbacks: callbacks,
         purchaseDelegate: purchaseDelegate,
+        fallbackPaywall: fallbackPaywall,
+        customAPIEndpoint: customAPIEndpoint,
         customUserId: customUserId,
         customUserTraits: customUserTraits,
         revenueCatAppUserId: revenueCatAppUserId,
         fallbackBundleAssetPath: fallbackBundleAssetPath,
+        environment: environment,
         paywallLoadingConfig: paywallLoadingConfig,
       );
       return;
@@ -70,10 +77,13 @@ class HeliumStripe {
       apiKey: apiKey,
       callbacks: callbacks,
       purchaseDelegate: purchaseDelegate,
+      fallbackPaywall: fallbackPaywall,
+      customAPIEndpoint: customAPIEndpoint,
       customUserId: customUserId,
       customUserTraits: customUserTraits,
       revenueCatAppUserId: revenueCatAppUserId,
       fallbackBundleAssetPath: fallbackBundleAssetPath,
+      environment: environment,
       paywallLoadingConfig: paywallLoadingConfig,
     );
 

@@ -31,6 +31,7 @@ import com.tryhelium.paywall.core.Helium
 import com.tryhelium.paywall.core.event.HeliumEvent
 import com.tryhelium.paywall.core.event.HeliumEventListener
 import com.tryhelium.paywall.core.event.HeliumEventDictionaryMapper
+import com.tryhelium.paywall.core.event.PaywallEventHandlers
 import com.tryhelium.paywall.core.HeliumConfigStatus
 import com.tryhelium.paywall.core.HeliumConfigStatus.*
 import com.tryhelium.paywall.core.HeliumEnvironment
@@ -182,7 +183,7 @@ class HeliumFlutterPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
 
         val dontShowIfAlreadyEntitled = args["dontShowIfAlreadyEntitled"] as? Boolean ?: false
 
-        val eventListener = HeliumEventListener { event ->
+        val eventListener = PaywallEventHandlers(onAnyEvent = { event ->
             // Convert the sealed class object to a Map
             val eventData = HeliumEventDictionaryMapper.toDictionary(event)
             // Send to Flutter on the Main Thread
@@ -193,7 +194,7 @@ class HeliumFlutterPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
                     // Channel may be detached, ignore
                 }
             }
-        }
+        })
 
         Helium.presentPaywall(
           trigger = trigger,
@@ -380,6 +381,8 @@ class HeliumFlutterPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
               )
             }
             result.success("Helium reset!")
+          } catch (e: kotlinx.coroutines.CancellationException) {
+            throw e
           } catch (e: Exception) {
             result.error("RESET_ERROR", "resetHelium failed: ${e.message}", null)
           }

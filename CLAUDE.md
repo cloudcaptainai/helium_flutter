@@ -10,6 +10,7 @@ We also maintain an Expo/React Native SDK (`helium-expo`) that wraps the same na
 - `packages/helium_flutter/ios/` — iOS plugin (Swift), bridges to `helium-swift` SDK
 - `packages/helium_flutter/android/` — Android plugin (Kotlin), bridges to Helium Android SDK
 - `packages/helium_revenuecat/` — Optional RevenueCat integration package
+- `packages/helium_stripe/` — Optional Stripe One Tap Purchase integration package
 - `example/` — Example app for development and testing
 
 ## Key Principles

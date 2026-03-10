@@ -1,6 +1,6 @@
 name: helium_stripe
 description: "Helium Stripe One Tap Purchase SDK for Flutter (iOS only). Remotely build and auto-optimize paywalls (tryhelium.com)"
-version: 3.2.3
+version: 1.0.0
 homepage: https://tryhelium.com
 
 environment:
@@ -12,12 +12,13 @@ resolution: workspace
 dependencies:
   flutter:
     sdk: flutter
-  helium_flutter: ^3.2.1
+  helium_flutter: ^3.2.4
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^5.0.0
+  plugin_platform_interface: ^2.1.0
 
 flutter:
   plugin:
