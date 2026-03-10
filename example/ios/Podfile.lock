@@ -1,32 +1,57 @@
 PODS:
   - Flutter (1.0.0)
-  - purchases_flutter (8.7.3):
+  - Helium (4.1.8):
+    - Helium/Core (= 4.1.8)
+  - Helium/Core (4.1.8)
+  - helium_flutter (3.2.3):
     - Flutter
-    - PurchasesHybridCommon (= 13.28.1)
-  - PurchasesHybridCommon (13.28.1):
-    - RevenueCat (= 5.21.2)
-  - RevenueCat (5.21.2)
+    - Helium (= 4.1.8)
+  - integration_test (0.0.1):
+    - Flutter
+  - path_provider_foundation (0.0.1):
+    - Flutter
+    - FlutterMacOS
+  - purchases_flutter (9.10.3):
+    - Flutter
+    - PurchasesHybridCommon (= 17.26.0)
+  - PurchasesHybridCommon (17.26.0):
+    - RevenueCat (= 5.52.0)
+  - RevenueCat (5.52.0)
 
 DEPENDENCIES:
   - Flutter (from `Flutter`)
+  - helium_flutter (from `.symlinks/plugins/helium_flutter/ios`)
+  - integration_test (from `.symlinks/plugins/integration_test/ios`)
+  - path_provider_foundation (from `.symlinks/plugins/path_provider_foundation/darwin`)
   - purchases_flutter (from `.symlinks/plugins/purchases_flutter/ios`)
 
 SPEC REPOS:
   trunk:
+    - Helium
     - PurchasesHybridCommon
     - RevenueCat
 
 EXTERNAL SOURCES:
   Flutter:
     :path: Flutter
+  helium_flutter:
+    :path: ".symlinks/plugins/helium_flutter/ios"
+  integration_test:
+    :path: ".symlinks/plugins/integration_test/ios"
+  path_provider_foundation:
+    :path: ".symlinks/plugins/path_provider_foundation/darwin"
   purchases_flutter:
     :path: ".symlinks/plugins/purchases_flutter/ios"
 
 SPEC CHECKSUMS:
-  Flutter: e0871f40cf51350855a761d2e70bf5af5b9b5de7
-  purchases_flutter: 60844032c222595e7647099ad8a90ca49c78527f
-  PurchasesHybridCommon: bb4c1ddc8683a18859da35f45a0717379f889d94
-  RevenueCat: d8174cfd72fab33f3b877d38c9f033142dc87c60
+  Flutter: cabc95a1d2626b1b06e7179b784ebcf0c0cde467
+  Helium: f3de0cbb2aee69d2014c6b1ef9036e8caf4cdf93
+  helium_flutter: 4fd7786d30cad1229977008813f5c85ff705f2e4
+  integration_test: 4a889634ef21a45d28d50d622cf412dc6d9f586e
+  path_provider_foundation: bb55f6dbba17d0dccd6737fe6f7f34fbd0376880
+  purchases_flutter: 5727d7312e3a565aee127fe69af0b1d9b5544f2d
+  PurchasesHybridCommon: 93399cb2ba29164dbab79d6398e79f7723b41653
+  RevenueCat: 946aceaf97c1eee083dd7fad65a0e0d0c64c837e
 
 PODFILE CHECKSUM: 53a6aebc29ccee84c41f92f409fc20cd4ca011f1
 
