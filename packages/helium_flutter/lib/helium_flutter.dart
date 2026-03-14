@@ -32,6 +32,7 @@ class HeliumFlutter {
     HeliumEnvironment? environment,
     HeliumPaywallLoadingConfig? paywallLoadingConfig,
     Set<String>? androidConsumableProductIds,
+    bool paywallNotShownDiagnosticDisplayEnabled = true,
   }) async {
     return await HeliumFlutterPlatform.instance.setupCore(
       apiKey: apiKey,
@@ -46,6 +47,8 @@ class HeliumFlutter {
       environment: environment,
       paywallLoadingConfig: paywallLoadingConfig,
       androidConsumableProductIds: androidConsumableProductIds,
+      paywallNotShownDiagnosticDisplayEnabled:
+          paywallNotShownDiagnosticDisplayEnabled,
     );
   }
 
@@ -63,6 +66,7 @@ class HeliumFlutter {
     HeliumEnvironment? environment,
     HeliumPaywallLoadingConfig? paywallLoadingConfig,
     Set<String>? androidConsumableProductIds,
+    bool paywallNotShownDiagnosticDisplayEnabled = true,
   }) async {
     return await HeliumFlutterPlatform.instance.initialize(
       apiKey: apiKey,
@@ -77,6 +81,8 @@ class HeliumFlutter {
       environment: environment,
       paywallLoadingConfig: paywallLoadingConfig,
       androidConsumableProductIds: androidConsumableProductIds,
+      paywallNotShownDiagnosticDisplayEnabled:
+          paywallNotShownDiagnosticDisplayEnabled,
     );
   }
 

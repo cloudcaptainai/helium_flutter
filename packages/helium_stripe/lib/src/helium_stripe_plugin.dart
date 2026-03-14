@@ -44,6 +44,7 @@ class HeliumStripe {
     String? fallbackBundleAssetPath,
     HeliumEnvironment? environment,
     HeliumPaywallLoadingConfig? paywallLoadingConfig,
+    bool paywallNotShownDiagnosticDisplayEnabled = true,
   }) async {
     if (!_isIOS) {
       log('[HeliumStripe] Stripe One Tap is only available on iOS. Using standard initialization.');
@@ -59,6 +60,8 @@ class HeliumStripe {
         fallbackBundleAssetPath: fallbackBundleAssetPath,
         environment: environment,
         paywallLoadingConfig: paywallLoadingConfig,
+        paywallNotShownDiagnosticDisplayEnabled:
+            paywallNotShownDiagnosticDisplayEnabled,
       );
       return;
     }
@@ -85,6 +88,8 @@ class HeliumStripe {
       fallbackBundleAssetPath: fallbackBundleAssetPath,
       environment: environment,
       paywallLoadingConfig: paywallLoadingConfig,
+      paywallNotShownDiagnosticDisplayEnabled:
+          paywallNotShownDiagnosticDisplayEnabled,
     );
 
     // Initialize Helium with Stripe One Tap (the single native init call)

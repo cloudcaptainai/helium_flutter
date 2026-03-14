@@ -482,6 +482,7 @@ class HeliumFlutterPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
     val wrapperSdkVersion: String,
     val delegateType: String,
     val consumableProductIds: List<String>?,
+    val paywallNotShownDiagnosticDisplayEnabled: Boolean,
   )
 
   private fun parseInitArgs(args: Map<*, *>): ParsedInitArgs? {
@@ -515,6 +516,7 @@ class HeliumFlutterPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
       wrapperSdkVersion = args["wrapperSdkVersion"] as? String ?: "unknown",
       delegateType = args["delegateType"] as? String ?: "custom",
       consumableProductIds = consumableProductIds,
+      paywallNotShownDiagnosticDisplayEnabled = args["paywallNotShownDiagnosticDisplayEnabled"] as? Boolean ?: true,
     )
   }
 
@@ -530,6 +532,12 @@ class HeliumFlutterPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
       Helium.config.defaultLoadingBudgetInMs = -1
     } else {
       Helium.config.defaultLoadingBudgetInMs = loadingBudgetMs
+    }
+
+    try {
+      Helium.config.paywallNotShownDiagnosticDisplayEnabled = parsed.paywallNotShownDiagnosticDisplayEnabled
+    } catch (_: Exception) {
+      // Property may not be available in the current Android SDK version
     }
 
     // Create and set delegate if needed
