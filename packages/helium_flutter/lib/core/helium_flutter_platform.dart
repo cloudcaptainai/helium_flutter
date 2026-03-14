@@ -48,6 +48,7 @@ abstract class HeliumFlutterPlatform extends PlatformInterface {
     HeliumEnvironment? environment,
     HeliumPaywallLoadingConfig? paywallLoadingConfig,
     Set<String>? androidConsumableProductIds,
+    bool paywallNotShownDiagnosticDisplayEnabled = true,
   });
 
   ///Initialize helium sdk at the start-up of your flutter application.
@@ -64,6 +65,7 @@ abstract class HeliumFlutterPlatform extends PlatformInterface {
     HeliumEnvironment? environment,
     HeliumPaywallLoadingConfig? paywallLoadingConfig,
     Set<String>? androidConsumableProductIds,
+    bool paywallNotShownDiagnosticDisplayEnabled = true,
   });
 
   ///Presents view based on [trigger]

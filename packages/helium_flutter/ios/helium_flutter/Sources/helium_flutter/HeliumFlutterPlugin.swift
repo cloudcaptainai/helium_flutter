@@ -209,6 +209,7 @@ public class HeliumFlutterPlugin: NSObject, FlutterPlugin {
         let useDefaultDelegate: Bool
         let wrapperSdkVersion: String
         let delegateType: String?
+        let paywallNotShownDiagnosticDisplayEnabled: Bool
     }
 
     private func parseInitArgs(_ args: [String: Any]) -> ParsedInitArgs {
@@ -223,7 +224,8 @@ public class HeliumFlutterPlugin: NSObject, FlutterPlugin {
             paywallLoadingConfig: convertMarkersToBooleans(args["paywallLoadingConfig"] as? [String: Any]),
             useDefaultDelegate: args["useDefaultDelegate"] as? Bool ?? false,
             wrapperSdkVersion: args["wrapperSdkVersion"] as? String ?? "unknown",
-            delegateType: args["delegateType"] as? String
+            delegateType: args["delegateType"] as? String,
+            paywallNotShownDiagnosticDisplayEnabled: args["paywallNotShownDiagnosticDisplayEnabled"] as? Bool ?? true
         )
     }
 
@@ -246,6 +248,8 @@ public class HeliumFlutterPlugin: NSObject, FlutterPlugin {
         } else {
             Helium.config.defaultLoadingBudget = loadingBudget ?? 7.0
         }
+
+        Helium.config.paywallNotShownDiagnosticDisplayEnabled = parsed.paywallNotShownDiagnosticDisplayEnabled
 
         // Set up delegate
         let delegate: HeliumPaywallDelegate

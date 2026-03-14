@@ -34,6 +34,7 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
     HeliumEnvironment? environment,
     HeliumPaywallLoadingConfig? paywallLoadingConfig,
     Set<String>? androidConsumableProductIds,
+    bool paywallNotShownDiagnosticDisplayEnabled = true,
   }) {
     return {
       'apiKey': apiKey,
@@ -49,6 +50,8 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
       'wrapperSdkVersion': heliumFlutterSdkVersion,
       'delegateType': purchaseDelegate?.delegateType,
       'androidConsumableProductIds': androidConsumableProductIds?.toList(),
+      'paywallNotShownDiagnosticDisplayEnabled':
+          paywallNotShownDiagnosticDisplayEnabled,
     };
   }
 
@@ -66,6 +69,7 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
     HeliumEnvironment? environment,
     HeliumPaywallLoadingConfig? paywallLoadingConfig,
     Set<String>? androidConsumableProductIds,
+    bool paywallNotShownDiagnosticDisplayEnabled = true,
   }) async {
     _setMethodCallHandlers(callbacks, purchaseDelegate);
     _fallbackPaywallWidget = fallbackPaywall;
@@ -89,6 +93,8 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
                 environment: environment,
                 paywallLoadingConfig: paywallLoadingConfig,
                 androidConsumableProductIds: androidConsumableProductIds,
+                paywallNotShownDiagnosticDisplayEnabled:
+                    paywallNotShownDiagnosticDisplayEnabled,
               ));
       return result;
     } catch (e) {
@@ -111,6 +117,7 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
     HeliumEnvironment? environment,
     HeliumPaywallLoadingConfig? paywallLoadingConfig,
     Set<String>? androidConsumableProductIds,
+    bool paywallNotShownDiagnosticDisplayEnabled = true,
   }) async {
     _setMethodCallHandlers(callbacks, purchaseDelegate);
     _fallbackPaywallWidget = fallbackPaywall;
@@ -134,6 +141,8 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
                 environment: environment,
                 paywallLoadingConfig: paywallLoadingConfig,
                 androidConsumableProductIds: androidConsumableProductIds,
+                paywallNotShownDiagnosticDisplayEnabled:
+                    paywallNotShownDiagnosticDisplayEnabled,
               ));
       return result;
     } catch (e) {

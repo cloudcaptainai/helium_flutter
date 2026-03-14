@@ -41,6 +41,7 @@ class MockHeliumFlutterPlatform
     HeliumEnvironment? environment,
     HeliumPaywallLoadingConfig? paywallLoadingConfig,
     Set<String>? androidConsumableProductIds,
+    bool paywallNotShownDiagnosticDisplayEnabled = true,
   }) async {
     calls.add('setupCore');
     timeline?.add('setupCore');
@@ -66,6 +67,7 @@ class MockHeliumFlutterPlatform
     HeliumEnvironment? environment,
     HeliumPaywallLoadingConfig? paywallLoadingConfig,
     Set<String>? androidConsumableProductIds,
+    bool paywallNotShownDiagnosticDisplayEnabled = true,
   }) async {
     calls.add('initialize');
     timeline?.add('initialize');

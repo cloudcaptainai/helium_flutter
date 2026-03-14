@@ -31,6 +31,7 @@ class MockHeliumFlutterPlatform
     HeliumEnvironment? environment,
     HeliumPaywallLoadingConfig? paywallLoadingConfig,
     Set<String>? androidConsumableProductIds,
+    bool paywallNotShownDiagnosticDisplayEnabled = true,
   }) {
     _isInitialized = true;
     return Future.value('Core setup complete!');
@@ -50,6 +51,7 @@ class MockHeliumFlutterPlatform
     HeliumEnvironment? environment,
     HeliumPaywallLoadingConfig? paywallLoadingConfig,
     Set<String>? androidConsumableProductIds,
+    bool paywallNotShownDiagnosticDisplayEnabled = true,
   }) {
     _isInitialized = true;
     return Future.value('Initialization started!');
