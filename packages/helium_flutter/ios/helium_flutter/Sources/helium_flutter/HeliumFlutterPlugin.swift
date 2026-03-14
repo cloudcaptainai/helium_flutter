@@ -193,6 +193,16 @@ public class HeliumFlutterPlugin: NSObject, FlutterPlugin {
         case "hideAllUpsells":
             Helium.shared.hideAllPaywalls()
             result(true)
+        case "setUserTraits":
+            if let traitsMap = call.arguments as? [String: Any] {
+                let converted = convertMarkersToBooleans(traitsMap)
+                if let converted = converted {
+                    Helium.identify.setUserTraits(HeliumUserTraits(converted))
+                }
+                result("User traits updated!")
+            } else {
+                result(FlutterError(code: "BAD_ARGS", message: "Traits map not provided", details: nil))
+            }
         default:
             result(FlutterMethodNotImplemented)
         }

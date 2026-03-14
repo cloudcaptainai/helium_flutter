@@ -142,6 +142,8 @@ class MockHeliumFlutterPlatform
   void setRevenueCatAppUserId(String rcAppUserId) {}
   @override
   void setAndroidConsumableProductIds(Set<String> productIds) {}
+  @override
+  Future<void> setUserTraits(Map<String, dynamic> traits) async {}
 }
 
 void main() {

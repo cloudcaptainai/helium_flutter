@@ -503,6 +503,14 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
     );
   }
 
+  @override
+  Future<void> setUserTraits(Map<String, dynamic> traits) async {
+    await methodChannel.invokeMethod<void>(
+      setUserTraitsMethodName,
+      _convertBooleansToMarkers(traits),
+    );
+  }
+
   void _handlePaywallEventHandlers(HeliumPaywallEvent event) {
     if (_currentEventHandlers == null) return;
 
