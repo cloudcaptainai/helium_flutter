@@ -417,6 +417,18 @@ class HeliumFlutterPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
         Helium.config.consumableIds = productIds.toSet()
         result.success("Android consumable product IDs set!")
       }
+      "setUserTraits" -> {
+        try {
+          @Suppress("UNCHECKED_CAST")
+          val traitsMap = call.arguments as? Map<String, Any?>
+          val traits = convertToHeliumUserTraits(traitsMap)
+          traits?.let { Helium.identity.setUserTraits(it) }
+          result.success("User traits updated!")
+        } catch (e: Exception) {
+          android.util.Log.e("HeliumFlutter", "Failed to set user traits", e)
+          result.error("SET_TRAITS_ERROR", "Failed to set user traits: ${e.message}", null)
+        }
+      }
       else -> {
         result.notImplemented()
       }

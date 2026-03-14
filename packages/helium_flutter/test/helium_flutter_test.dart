@@ -159,6 +159,9 @@ class MockHeliumFlutterPlatform
 
   @override
   void setAndroidConsumableProductIds(Set<String> productIds) {}
+
+  @override
+  Future<void> setUserTraits(Map<String, dynamic> traits) async {}
 }
 
 void main() {
@@ -267,5 +270,13 @@ void main() {
   test(setAndroidConsumableProductIdsMethodName, () {
     // Test that it doesn't throw
     heliumFlutterPlugin.setAndroidConsumableProductIds({'product_1', 'product_2'});
+  });
+  test(setUserTraitsMethodName, () async {
+    await heliumFlutterPlugin.setUserTraits({
+      'name': 'Jane',
+      'age': 30,
+      'premium': true,
+      'score': 99.5,
+    });
   });
 }
