@@ -1,3 +1,6 @@
+## 3.2.5
+- Updated helium-swift dependency to 4.2.0
+
 ## 3.2.4
 - Updated helium_flutter.
 
