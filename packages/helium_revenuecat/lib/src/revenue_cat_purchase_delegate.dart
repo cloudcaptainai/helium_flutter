@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/services.dart';
 import 'package:helium_flutter/helium_flutter.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
@@ -8,12 +10,21 @@ import 'dart:developer';
 /// Handles purchases through RevenueCat's SDK, supporting both iOS and Android
 /// platforms with proper handling of Android subscription options (base plans
 /// and offers).
-class RevenueCatPurchaseDelegate extends HeliumPurchaseDelegate {
+class RevenueCatPurchaseDelegate extends HeliumPurchaseDelegate
+    implements HeliumCallbacks {
   @override
   String get delegateType => 'h_revenuecat';
 
+  final bool _stripePurchaseSyncDisabled;
+  bool _isSyncingStripePurchase = false;
+
   /// Creates a new [RevenueCatPurchaseDelegate].
-  RevenueCatPurchaseDelegate() {
+  ///
+  /// Set [disableStripePurchaseSync] to `true` to disable automatic RevenueCat
+  /// entitlement syncing after Stripe purchases.
+  RevenueCatPurchaseDelegate({
+    bool disableStripePurchaseSync = false,
+  }) : _stripePurchaseSyncDisabled = disableStripePurchaseSync {
     _syncAppUserId();
   }
 
@@ -215,4 +226,70 @@ class RevenueCatPurchaseDelegate extends HeliumPurchaseDelegate {
       error: '[RevenueCat] $error',
     );
   }
+
+  // ---------------------------------------------------------------------------
+  // Stripe Auto-Syncing
+  // ---------------------------------------------------------------------------
+
+  @override
+  Future<void> onPaywallEvent(HeliumPaywallEvent event) async {
+    if (!_stripePurchaseSyncDisabled &&
+        event.type == 'purchaseSucceeded' &&
+        _isStripePurchase(event)) {
+      _syncRevenueCatAfterStripePurchase();
+    }
+  }
+
+  bool _isStripePurchase(HeliumPaywallEvent event) {
+    final txId = event.canonicalJoinTransactionId;
+    if (txId != null && txId.startsWith('si_')) {
+      return true;
+    }
+    final pid = event.productId;
+    if (pid != null && RegExp(r'^prod_\w+:price_\w+$').hasMatch(pid)) {
+      return true;
+    }
+    return false;
+  }
+
+  /// After a Stripe purchase completes, the RevenueCat SDK on-device has no way
+  /// to know that a new entitlement exists until its backend processes the Stripe
+  /// webhook. This method polls RevenueCat with progressive back-off to force a
+  /// customer info refresh, stopping early if the update listener fires
+  /// (~50s max).
+  Future<void> _syncRevenueCatAfterStripePurchase() async {
+    if (_isSyncingStripePurchase) return;
+    _isSyncingStripePurchase = true;
+
+    bool synced = false;
+
+    void listener(CustomerInfo info) {
+      synced = true;
+    }
+
+    Purchases.addCustomerInfoUpdateListener(listener);
+
+    Future<void> pollPhase(int attempts, Duration interval) async {
+      for (int i = 0; i < attempts && !synced; i++) {
+        await Future<void>.delayed(interval);
+        if (synced) break;
+        try {
+          await Purchases.invalidateCustomerInfoCache();
+          await Purchases.getCustomerInfo();
+        } catch (e) {
+          // Swallow unexpected errors like network failures
+        }
+      }
+    }
+
+    try {
+      await pollPhase(5, const Duration(seconds: 1));
+      await pollPhase(3, const Duration(seconds: 5));
+      await pollPhase(2, const Duration(seconds: 15));
+    } finally {
+      Purchases.removeCustomerInfoUpdateListener(listener);
+      _isSyncingStripePurchase = false;
+    }
+  }
+
 }
