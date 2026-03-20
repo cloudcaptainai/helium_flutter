@@ -263,8 +263,13 @@ class RevenueCatPurchaseDelegate extends HeliumPurchaseDelegate
 
     try {
       bool synced = false;
+      bool hasInvalidatedCache = false;
 
       void listener(CustomerInfo info) {
+        // The Flutter RC SDK fires the listener immediately with cached data
+        // on subscribe. Ignore emissions until we've invalidated the cache,
+        // so we only react to fresh updates triggered by our polling.
+        if (!hasInvalidatedCache) return;
         synced = true;
       }
 
@@ -275,6 +280,7 @@ class RevenueCatPurchaseDelegate extends HeliumPurchaseDelegate
           await Future<void>.delayed(interval);
           if (synced) break;
           try {
+            hasInvalidatedCache = true;
             await Purchases.invalidateCustomerInfoCache();
             await Purchases.getCustomerInfo();
           } catch (e) {
