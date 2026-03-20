@@ -232,7 +232,7 @@ class RevenueCatPurchaseDelegate extends HeliumPurchaseDelegate
   // ---------------------------------------------------------------------------
 
   @override
-  Future<void> onPaywallEvent(HeliumPaywallEvent event) async {
+  void onPaywallEvent(HeliumPaywallEvent event) {
     if (!_stripePurchaseSyncDisabled &&
         event.type == 'purchaseSucceeded' &&
         _isStripePurchase(event)) {
@@ -261,33 +261,38 @@ class RevenueCatPurchaseDelegate extends HeliumPurchaseDelegate
     if (_isSyncingStripePurchase) return;
     _isSyncingStripePurchase = true;
 
-    bool synced = false;
+    try {
+      bool synced = false;
 
-    void listener(CustomerInfo info) {
-      synced = true;
-    }
+      void listener(CustomerInfo info) {
+        synced = true;
+      }
 
-    Purchases.addCustomerInfoUpdateListener(listener);
+      Purchases.addCustomerInfoUpdateListener(listener);
 
-    Future<void> pollPhase(int attempts, Duration interval) async {
-      for (int i = 0; i < attempts && !synced; i++) {
-        await Future<void>.delayed(interval);
-        if (synced) break;
-        try {
-          await Purchases.invalidateCustomerInfoCache();
-          await Purchases.getCustomerInfo();
-        } catch (e) {
-          // Swallow unexpected errors like network failures
+      Future<void> pollPhase(int attempts, Duration interval) async {
+        for (int i = 0; i < attempts && !synced; i++) {
+          await Future<void>.delayed(interval);
+          if (synced) break;
+          try {
+            await Purchases.invalidateCustomerInfoCache();
+            await Purchases.getCustomerInfo();
+          } catch (e) {
+            // Swallow unexpected errors like network failures
+          }
         }
       }
-    }
 
-    try {
-      await pollPhase(5, const Duration(seconds: 1));
-      await pollPhase(3, const Duration(seconds: 5));
-      await pollPhase(2, const Duration(seconds: 15));
+      try {
+        await pollPhase(5, const Duration(seconds: 1));
+        await pollPhase(3, const Duration(seconds: 5));
+        await pollPhase(2, const Duration(seconds: 15));
+      } finally {
+        Purchases.removeCustomerInfoUpdateListener(listener);
+      }
+    } catch (e) {
+      log('[Helium] Error syncing RevenueCat after Stripe purchase: $e');
     } finally {
-      Purchases.removeCustomerInfoUpdateListener(listener);
       _isSyncingStripePurchase = false;
     }
   }

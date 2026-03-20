@@ -28,7 +28,7 @@ abstract class HeliumPurchaseDelegate {
 }
 
 abstract class HeliumCallbacks {
-  Future<void> onPaywallEvent(HeliumPaywallEvent heliumPaywallEvent);
+  void onPaywallEvent(HeliumPaywallEvent heliumPaywallEvent);
 }
 
 class HeliumPurchaseResult {
