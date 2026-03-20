@@ -220,6 +220,7 @@ class HeliumPaywallEvent {
   int? get configDownloadTimeMs => _data['configDownloadTimeMs'];
   int? get fontsDownloadTimeTakenMS => _data['fontsDownloadTimeTakenMS'];
   int? get bundleDownloadTimeMS => _data['bundleDownloadTimeMS'];
+  String? get canonicalJoinTransactionId => _data['canonicalJoinTransactionId'];
   bool? get dismissAll => _data['dismissAll'];
   bool? get isSecondTry => _data['isSecondTry'];
   String? get error => _data['error'];
