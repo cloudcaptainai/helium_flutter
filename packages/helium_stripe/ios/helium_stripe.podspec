@@ -20,7 +20,7 @@ A Flutter plugin that integrates the Helium SDK with Stripe One Tap Purchase for
   s.dependency 'Flutter'
 
   # note that the dependency in Package.swift is what's actually used for Helium... we might be able to remove this podspec but safer to keep in for now
-  s.dependency 'StripeOneTapPurchase', '1.0.6'
+  s.dependency 'StripeOneTapPurchase', '1.0.7'
 
   s.platform = :ios, '15.0'
 

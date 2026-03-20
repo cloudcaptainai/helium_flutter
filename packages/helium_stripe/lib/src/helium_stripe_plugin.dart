@@ -45,9 +45,31 @@ class HeliumStripe {
     HeliumEnvironment? environment,
     HeliumPaywallLoadingConfig? paywallLoadingConfig,
   }) async {
+    final helium = HeliumFlutter();
+
+    if (helium.isInitialized) {
+      log('[HeliumStripe] Helium already initialized, skipping Stripe init.');
+      return;
+    }
+
+    String? standardInitializeReason;
     if (!_isIOS) {
-      log('[HeliumStripe] Stripe One Tap is only available on iOS. Using standard initialization.');
-      await HeliumFlutter().initialize(
+      standardInitializeReason = 'Stripe One Tap is only available on iOS';
+    } else {
+      final emptyFields = <String>[
+        if (stripePublishableKey.isEmpty) 'stripePublishableKey',
+        if (merchantIdentifier.isEmpty) 'merchantIdentifier',
+        if (merchantName.isEmpty) 'merchantName',
+        if (managementURL.isEmpty) 'managementURL',
+      ];
+      if (emptyFields.isNotEmpty) {
+        standardInitializeReason = 'Empty Stripe config fields: ${emptyFields.join(', ')}';
+      }
+    }
+
+    if (standardInitializeReason != null) {
+      log('[HeliumStripe] $standardInitializeReason. Using standard initialization.');
+      await helium.initialize(
         apiKey: apiKey,
         callbacks: callbacks,
         purchaseDelegate: purchaseDelegate,
@@ -60,13 +82,6 @@ class HeliumStripe {
         environment: environment,
         paywallLoadingConfig: paywallLoadingConfig,
       );
-      return;
-    }
-
-    final helium = HeliumFlutter();
-
-    if (helium.isInitialized) {
-      log('[HeliumStripe] Helium already initialized, skipping Stripe init.');
       return;
     }
 
