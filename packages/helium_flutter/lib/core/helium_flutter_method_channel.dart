@@ -197,7 +197,18 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
             (args is Map) ? Map<String, dynamic>.from(args) : {};
         HeliumPaywallEvent event = HeliumPaywallEvent.fromMap(eventMap);
         _handlePaywallEvent(event);
-        callbacks?.onPaywallEvent(event);
+        if (purchaseDelegate is HeliumCallbacks) {
+          try {
+            (purchaseDelegate as HeliumCallbacks).onPaywallEvent(event);
+          } catch (e) {
+            log('[Helium] Error in purchaseDelegate.onPaywallEvent: $e');
+          }
+        }
+        try {
+          callbacks?.onPaywallEvent(event);
+        } catch (e) {
+          log('[Helium] Error in callbacks.onPaywallEvent: $e');
+        }
       } else if (handler.method == onPaywallEventHandlerMethodName) {
         final dynamic args = handler.arguments;
         final Map<String, dynamic> eventDict =

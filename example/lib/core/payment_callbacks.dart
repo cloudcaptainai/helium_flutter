@@ -4,7 +4,7 @@ import 'package:helium_flutter/helium_flutter.dart';
 
 class LogCallbacks implements HeliumCallbacks {
   @override
-  Future<void> onPaywallEvent(HeliumPaywallEvent heliumPaywallEvent) async {
+  void onPaywallEvent(HeliumPaywallEvent heliumPaywallEvent) {
     log('onPaywallEvent: ${heliumPaywallEvent.type} - trigger: ${heliumPaywallEvent.triggerName}');
   }
 }
