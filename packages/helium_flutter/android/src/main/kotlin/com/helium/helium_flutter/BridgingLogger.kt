@@ -2,6 +2,7 @@ package com.helium.helium_flutter
 
 import android.os.Handler
 import android.os.Looper
+import com.tryhelium.paywall.core.logger.HeliumLogLevel
 import com.tryhelium.paywall.core.logger.HeliumLogger
 import io.flutter.plugin.common.MethodChannel
 
@@ -18,6 +19,7 @@ import io.flutter.plugin.common.MethodChannel
  */
 class BridgingLogger(private val channel: MethodChannel) : HeliumLogger {
     override val logTag: String = "Helium"
+    override var logLevel: HeliumLogLevel = HeliumLogLevel.ERROR
 
     private val mainHandler = Handler(Looper.getMainLooper())
 

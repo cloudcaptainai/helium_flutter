@@ -12,7 +12,7 @@ let package = Package(
         .library(name: "helium-stripe", targets: ["helium_stripe"])
     ],
     dependencies: [
-        .package(url: "https://github.com/appmonetization/stripe-one-tap-purchase.git", exact: "1.0.6"),
+        .package(url: "https://github.com/appmonetization/stripe-one-tap-purchase.git", exact: "1.0.7"),
     ],
     targets: [
         .target(
