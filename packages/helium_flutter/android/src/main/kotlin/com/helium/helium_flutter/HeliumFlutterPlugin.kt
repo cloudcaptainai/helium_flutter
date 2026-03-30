@@ -42,6 +42,7 @@ import com.tryhelium.paywall.core.HeliumLightDarkMode
 import com.tryhelium.paywall.core.PaywallPresentationConfig
 import com.tryhelium.paywall.delegate.HeliumPaywallDelegate
 import com.tryhelium.paywall.delegate.PlayStorePaywallDelegate
+import com.tryhelium.paywall.core.IActivityProvider
 import com.tryhelium.paywall.core.logger.HeliumLogger
 import com.tryhelium.paywall.core.HeliumWrapperSdkConfig
 import com.android.billingclient.api.ProductDetails
@@ -532,9 +533,26 @@ class HeliumFlutterPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
       Helium.config.defaultLoadingBudgetInMs = loadingBudgetMs
     }
 
-    // Create and set delegate if needed
+    // Create and set delegate.
+    // When useDefaultDelegate is true, we still explicitly create a PlayStorePaywallDelegate
+    // so that its activityProvider can fall back to the Flutter plugin's activity reference.
     if (!parsed.useDefaultDelegate) {
       Helium.config.heliumPaywallDelegate = CustomPaywallDelegate(parsed.delegateType, channel)
+    } else {
+      Helium.config.heliumPaywallDelegate = PlayStorePaywallDelegate(
+        activityProvider = {
+          IActivityProvider {
+            // Prefer the SDK's own tracker (works for presentPaywall flows where a new
+            // Activity is launched), then fall back to the Flutter plugin's activity
+            // reference (needed for embedded-view flows).
+            Helium.activityTracker?.getCurrentActivity()
+              ?: activity?.takeIf { !it.isFinishing }
+          }
+        },
+        context = parsed.context,
+        consumableIds = parsed.consumableProductIds?.toSet(),
+        logger = Helium.config.logger
+      )
     }
 
     // Always write API endpoint (null clears a previous override)
@@ -568,7 +586,7 @@ class HeliumFlutterPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
       }
     }
     globalEventListener = listener
-    Helium.shared.addPaywallEventListener(listener)
+    Helium.shared.addHeliumEventListener(listener)
   }
 
   companion object {
