@@ -535,7 +535,8 @@ class HeliumFlutterPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
 
     // Create and set delegate.
     // When useDefaultDelegate is true, we still explicitly create a PlayStorePaywallDelegate
-    // so that its activityProvider can fall back to the Flutter plugin's activity reference.
+    // so that its activityProvider can use the Flutter plugin's activity reference as a
+    // secondary option when the SDK's tracker has no activity (e.g. embedded-view flows).
     if (!parsed.useDefaultDelegate) {
       Helium.config.heliumPaywallDelegate = CustomPaywallDelegate(parsed.delegateType, channel)
     } else {
@@ -543,8 +544,8 @@ class HeliumFlutterPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
         activityProvider = {
           IActivityProvider {
             // Prefer the SDK's own tracker (works for presentPaywall flows where a new
-            // Activity is launched), then fall back to the Flutter plugin's activity
-            // reference (needed for embedded-view flows).
+            // Activity is launched), then use the Flutter plugin's activity reference
+            // for embedded-view flows.
             Helium.activityTracker?.getCurrentActivity()
               ?: activity?.takeIf { !it.isFinishing }
           }
