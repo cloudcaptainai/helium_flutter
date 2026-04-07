@@ -130,4 +130,12 @@ abstract class HeliumFlutterPlatform extends PlatformInterface {
   /// and this is only respected if no custom purchaseDelegate is supplied.
   /// This is only relevant on Android and is a no-op on other platforms.
   void setAndroidConsumableProductIds(Set<String> productIds);
+
+  /// Update user traits after initialization.
+  ///
+  /// Accepts a flexible [Map<String, dynamic>] — values are converted to the
+  /// native SDK's typed trait system. Supported value types: String, int,
+  /// double, bool, List, and nested Map. Unsupported types are dropped with a
+  /// warning log.
+  Future<void> setUserTraits(Map<String, dynamic> traits);
 }
