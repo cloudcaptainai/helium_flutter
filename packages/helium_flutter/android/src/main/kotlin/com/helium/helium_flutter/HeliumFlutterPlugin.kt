@@ -40,6 +40,7 @@ import com.tryhelium.paywall.core.HeliumLightDarkMode
 import com.tryhelium.paywall.core.PaywallPresentationConfig
 import com.tryhelium.paywall.delegate.HeliumPaywallDelegate
 import com.tryhelium.paywall.delegate.PlayStorePaywallDelegate
+import com.tryhelium.paywall.core.IActivityProvider
 import com.tryhelium.paywall.core.logger.HeliumLogger
 import com.tryhelium.paywall.core.HeliumWrapperSdkConfig
 import com.android.billingclient.api.ProductDetails
@@ -530,11 +531,6 @@ class HeliumFlutterPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
       Helium.config.defaultLoadingBudgetInMs = loadingBudgetMs
     }
 
-    // Create and set delegate if needed
-    if (!parsed.useDefaultDelegate) {
-      Helium.config.heliumPaywallDelegate = CustomPaywallDelegate(parsed.delegateType, channel)
-    }
-
     // Always write API endpoint (null clears a previous override)
     Helium.config.customApiEndpoint = parsed.customApiEndpoint
 
@@ -551,6 +547,30 @@ class HeliumFlutterPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
 
     // Set up bridging logger to forward native SDK logs to Flutter
     Helium.config.logger = BridgingLogger(channel)
+
+    // Create and set delegate.
+    // When useDefaultDelegate is true, we still explicitly create a PlayStorePaywallDelegate
+    // so that its activityProvider can use the Flutter plugin's activity reference
+    // (needed for embedded-view flows where the SDK's ActivityLifecycleTracker may not
+    // have the current activity).
+    if (!parsed.useDefaultDelegate) {
+      Helium.config.heliumPaywallDelegate = CustomPaywallDelegate(parsed.delegateType, channel)
+    } else {
+      Helium.config.heliumPaywallDelegate = PlayStorePaywallDelegate(
+        activityProvider = {
+          IActivityProvider {
+            // Prefer the Flutter plugin's activity reference (needed for embedded-view
+            // flows), then check the SDK's tracker (picks up new Activities launched by
+            // presentPaywall).
+            activity?.takeIf { !it.isFinishing }
+              ?: Helium.activityTracker?.getCurrentActivity()
+          }
+        },
+        context = parsed.context,
+        consumableIds = Helium.config.consumableIds,
+        logger = Helium.config.logger
+      )
+    }
   }
 
   private fun setupGlobalEventListener() {
@@ -566,7 +586,7 @@ class HeliumFlutterPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
       }
     }
     globalEventListener = listener
-    Helium.shared.addPaywallEventListener(listener)
+    Helium.shared.addHeliumEventListener(listener)
   }
 
   companion object {
