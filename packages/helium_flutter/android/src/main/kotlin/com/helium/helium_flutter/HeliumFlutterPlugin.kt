@@ -25,7 +25,6 @@ import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import com.helium.helium_flutter.toEnvironment
 import com.helium.helium_flutter.convertToHeliumUserTraits
-import com.helium.helium_flutter.convertToHeliumUserTraitsArgument
 import com.helium.helium_flutter.CustomPaywallDelegate
 import com.tryhelium.paywall.core.Helium
 import com.tryhelium.paywall.core.event.HeliumEvent
@@ -36,7 +35,6 @@ import com.tryhelium.paywall.core.HeliumConfigStatus
 import com.tryhelium.paywall.core.HeliumConfigStatus.*
 import com.tryhelium.paywall.core.HeliumEnvironment
 import com.tryhelium.paywall.core.HeliumUserTraits
-import com.tryhelium.paywall.core.HeliumUserTraitsArgument
 import com.tryhelium.paywall.core.HeliumPaywallTransactionStatus
 import com.tryhelium.paywall.core.HeliumLightDarkMode
 import com.tryhelium.paywall.core.PaywallPresentationConfig
@@ -178,7 +176,7 @@ class HeliumFlutterPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
         val trigger = args["trigger"] as? String ?: ""
 
         @Suppress("UNCHECKED_CAST")
-        val customPaywallTraitsMap = args["customPaywallTraits"] as? Map<String, Any?>
+        val customPaywallTraitsMap = args["customPaywallTraits"] as? Map<String, Any>
         val customPaywallTraits = convertToHeliumUserTraits(customPaywallTraitsMap)
 
         val dontShowIfAlreadyEntitled = args["dontShowIfAlreadyEntitled"] as? Boolean ?: false
@@ -238,7 +236,7 @@ class HeliumFlutterPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
         val newUserId = args["newUserId"] as? String ?: ""
 
         @Suppress("UNCHECKED_CAST")
-        val traitsMap = args["traits"] as? Map<String, Any?>
+        val traitsMap = args["traits"] as? Map<String, Any>
         val traits = convertToHeliumUserTraits(traitsMap)
 
         Helium.identity.userId = newUserId
@@ -399,7 +397,7 @@ class HeliumFlutterPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
             HeliumLightDarkMode.SYSTEM
           }
         }
-        Helium.shared.setLightDarkModeOverride(heliumMode)
+        Helium.config.lightDarkModeOverride = heliumMode
         result.success("Light/Dark mode override set!")
       }
       "setRevenueCatAppUserId" -> {
@@ -476,7 +474,7 @@ class HeliumFlutterPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
     val revenueCatAppUserId: String?,
     val useDefaultDelegate: Boolean,
     val customUserTraits: HeliumUserTraits?,
-    val paywallLoadingConfigMap: Map<String, Any?>?,
+    val paywallLoadingConfigMap: Map<String, Any>?,
     val flutterAssetPath: String?,
     val environment: HeliumEnvironment,
     val wrapperSdkVersion: String,
@@ -493,10 +491,10 @@ class HeliumFlutterPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
     }
 
     @Suppress("UNCHECKED_CAST")
-    val customUserTraitsMap = args["customUserTraits"] as? Map<String, Any?>
+    val customUserTraitsMap = args["customUserTraits"] as? Map<String, Any>
 
     @Suppress("UNCHECKED_CAST")
-    val paywallLoadingConfigMap = args["paywallLoadingConfig"] as? Map<String, Any?>
+    val paywallLoadingConfigMap = args["paywallLoadingConfig"] as? Map<String, Any>
 
     @Suppress("UNCHECKED_CAST")
     val consumableProductIds = args["androidConsumableProductIds"] as? List<String>
