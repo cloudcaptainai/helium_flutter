@@ -302,11 +302,14 @@ public class HeliumFlutterPlugin: NSObject, FlutterPlugin {
     }
 
     public func presentUpsell(trigger: String, customPaywallTraits: [String: Any]? = nil, dontShowIfAlreadyEntitled: Bool? = nil) {
-        let convertedTraits = convertMarkersToBooleans(customPaywallTraits)
+        var paywallTraits: HeliumUserTraits? = nil
+        if let paywallTraitsMap = convertMarkersToBooleans(customPaywallTraits) {
+            paywallTraits = HeliumUserTraits(paywallTraitsMap)
+        }
         Helium.shared.presentPaywall(
             trigger: trigger,
             config: PaywallPresentationConfig(
-                customPaywallTraits: convertedTraits,
+                customPaywallTraits: paywallTraits,
                 dontShowIfAlreadyEntitled: dontShowIfAlreadyEntitled ?? false
             ),
             eventHandlers: PaywallEventHandlers.withHandlers(

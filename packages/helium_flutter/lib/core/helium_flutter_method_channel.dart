@@ -680,8 +680,14 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
   Map<String, dynamic>? _convertBooleansToMarkers(Map<String, dynamic>? input) {
     if (input == null) return null;
 
-    return input.map(
-        (key, value) => MapEntry(key, _convertValueBooleansToMarkers(value)));
+    final result = <String, dynamic>{};
+    for (final entry in input.entries) {
+      // Strip null values — native SDKs ignore them and it complicates bridging code
+      // (at least on expo, and this keeps logic consistent with expo)
+      if (entry.value == null) continue;
+      result[entry.key] = _convertValueBooleansToMarkers(entry.value);
+    }
+    return result;
   }
 
   /// Helper to recursively convert booleans in any value type
