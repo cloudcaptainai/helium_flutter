@@ -19,6 +19,7 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
 
   bool _isInitialized = false;
   PaywallEventHandlers? _currentEventHandlers;
+  VoidCallback? _currentOnEntitled;
 
   @override
   bool get isInitialized => _isInitialized;
@@ -214,6 +215,8 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
         final Map<String, dynamic> eventDict =
             (args is Map) ? Map<String, dynamic>.from(args) : {};
         _handlePaywallEventHandlers(HeliumPaywallEvent.fromMap(eventDict));
+      } else if (handler.method == onEntitledMethodName) {
+        _currentOnEntitled?.call();
       } else if (handler.method == onHeliumLogEventMethodName) {
         final dynamic args = handler.arguments;
         final Map<String, dynamic> eventMap =
@@ -323,11 +326,13 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
     PaywallEventHandlers? eventHandlers,
     Map<String, dynamic>? customPaywallTraits,
     bool? dontShowIfAlreadyEntitled,
+    VoidCallback? onEntitled,
   }) async {
     _fallbackContext = context;
 
     // Store current event handlers
     _currentEventHandlers = eventHandlers;
+    _currentOnEntitled = onEntitled;
 
     try {
       final result = await methodChannel.invokeMethod<String?>(
@@ -342,6 +347,7 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
     } on PlatformException catch (e) {
       log('[Helium] Unexpected present upsell error: ${e.message}');
       _currentEventHandlers = null;
+      _currentOnEntitled = null;
       await methodChannel.invokeMethod<String?>(
         fallbackOpenEventMethodName,
         {
@@ -470,6 +476,7 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
     _isFallbackSheetShowing = false;
     _fallbackContext = null;
     _currentEventHandlers = null;
+    _currentOnEntitled = null;
     // Reset native SDK state
     try {
       await methodChannel.invokeMethod<void>(
@@ -614,15 +621,18 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
       case 'paywallClose':
         if (heliumPaywallEvent.isSecondTry != true) {
           _currentEventHandlers = null;
+          _currentOnEntitled = null;
           _fallbackContext = null;
         }
         break;
       case 'paywallSkipped':
         _currentEventHandlers = null;
+        _currentOnEntitled = null;
         _fallbackContext = null;
         break;
       case 'paywallOpenFailed':
         _currentEventHandlers = null;
+        _currentOnEntitled = null;
         final unavailableReason = heliumPaywallEvent.paywallUnavailableReason;
         if (trigger != null &&
             unavailableReason != "alreadyPresented" &&

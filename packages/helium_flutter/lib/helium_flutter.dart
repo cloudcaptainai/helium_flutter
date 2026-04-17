@@ -116,12 +116,18 @@ class HeliumFlutter {
   }
 
   ///Presents view based on [trigger]
+  ///
+  /// [onEntitled] is called upon purchase success or purchase restore.
+  /// If [dontShowIfAlreadyEntitled] is true, this handler will also be
+  /// called when the paywall is not shown because the user already has
+  /// entitlement for a product in the paywall.
   Future<String?> presentUpsell({
     required BuildContext context,
     required String trigger,
     PaywallEventHandlers? eventHandlers,
     Map<String, dynamic>? customPaywallTraits,
     bool? dontShowIfAlreadyEntitled,
+    VoidCallback? onEntitled,
   }) =>
       HeliumFlutterPlatform.instance.presentUpsell(
         context: context,
@@ -129,6 +135,7 @@ class HeliumFlutter {
         eventHandlers: eventHandlers,
         customPaywallTraits: customPaywallTraits,
         dontShowIfAlreadyEntitled: dontShowIfAlreadyEntitled,
+        onEntitled: onEntitled,
       );
 
   Future<PaywallInfo?> getPaywallInfo(String trigger) =>
