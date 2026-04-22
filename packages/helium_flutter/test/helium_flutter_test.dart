@@ -159,6 +159,38 @@ class MockHeliumFlutterPlatform
 
   @override
   void setAndroidConsumableProductIds(Set<String> productIds) {}
+
+  @override
+  void enableExternalWebCheckout({
+    required String successURL,
+    required String cancelURL,
+    Set<HeliumWebCheckoutProcessor>? paymentProcessors,
+  }) {}
+
+  @override
+  void disableExternalWebCheckout() {}
+
+  @override
+  void setAllowWebCheckoutWithoutUserId(bool allow) {}
+
+  @override
+  Future<bool> hasActiveStripeEntitlement() async => false;
+
+  @override
+  Future<bool> hasActivePaddleEntitlement() async => false;
+
+  @override
+  Future<String?> createStripePortalSession({required String returnUrl}) async =>
+      null;
+
+  @override
+  Future<String?> createPaddlePortalSession() async => null;
+
+  @override
+  Future<void> resetStripeEntitlements() async {}
+
+  @override
+  Future<void> resetPaddleEntitlements() async {}
 }
 
 void main() {
@@ -267,5 +299,46 @@ void main() {
   test(setAndroidConsumableProductIdsMethodName, () {
     // Test that it doesn't throw
     heliumFlutterPlugin.setAndroidConsumableProductIds({'product_1', 'product_2'});
+  });
+  test(enableExternalWebCheckoutMethodName, () {
+    heliumFlutterPlugin.enableExternalWebCheckout(
+      successURL: 'https://example.com/success',
+      cancelURL: 'https://example.com/cancel',
+    );
+    heliumFlutterPlugin.enableExternalWebCheckout(
+      successURL: 'https://example.com/success',
+      cancelURL: 'https://example.com/cancel',
+      paymentProcessors: {HeliumWebCheckoutProcessor.stripe},
+    );
+  });
+  test(disableExternalWebCheckoutMethodName, () {
+    heliumFlutterPlugin.disableExternalWebCheckout();
+  });
+  test(setAllowWebCheckoutWithoutUserIdMethodName, () {
+    heliumFlutterPlugin.setAllowWebCheckoutWithoutUserId(true);
+    heliumFlutterPlugin.setAllowWebCheckoutWithoutUserId(false);
+  });
+  test(hasActiveStripeEntitlementMethodName, () async {
+    expect(await heliumFlutterPlugin.hasActiveStripeEntitlement(), false);
+  });
+  test(hasActivePaddleEntitlementMethodName, () async {
+    expect(await heliumFlutterPlugin.hasActivePaddleEntitlement(), false);
+  });
+  test(createStripePortalSessionMethodName, () async {
+    expect(
+      await heliumFlutterPlugin.createStripePortalSession(
+        returnUrl: 'https://return.url',
+      ),
+      isNull,
+    );
+  });
+  test(createPaddlePortalSessionMethodName, () async {
+    expect(await heliumFlutterPlugin.createPaddlePortalSession(), isNull);
+  });
+  test(resetStripeEntitlementsMethodName, () async {
+    await heliumFlutterPlugin.resetStripeEntitlements();
+  });
+  test(resetPaddleEntitlementsMethodName, () async {
+    await heliumFlutterPlugin.resetPaddleEntitlements();
   });
 }

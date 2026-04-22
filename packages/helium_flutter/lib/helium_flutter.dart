@@ -211,4 +211,91 @@ class HeliumFlutter {
   void setAndroidConsumableProductIds(Set<String> productIds) =>
       HeliumFlutterPlatform.instance
           .setAndroidConsumableProductIds(productIds);
+
+  /// Enable External Web Checkout Flow for Paddle/Stripe products in your
+  /// paywalls. If not enabled, paywalls with Paddle/Stripe products will not
+  /// show and your fallback paywall will show instead.
+  ///
+  /// - [successURL]: URL to redirect to after a successful payment. Include
+  ///   `{CHECKOUT_SESSION_ID}` to receive the session ID.
+  /// - [cancelURL]: URL the provider redirects to when the user cancels
+  ///   checkout.
+  /// - [paymentProcessors]: Which processors to enable. Omit to enable both
+  ///   Paddle and Stripe. Pass a single-value set to skip the unused
+  ///   processor's entitlement network calls.
+  ///
+  /// Currently only supported on iOS; a no-op on Android.
+  void enableExternalWebCheckout({
+    required String successURL,
+    required String cancelURL,
+    Set<HeliumWebCheckoutProcessor>? paymentProcessors,
+  }) =>
+      HeliumFlutterPlatform.instance.enableExternalWebCheckout(
+        successURL: successURL,
+        cancelURL: cancelURL,
+        paymentProcessors: paymentProcessors,
+      );
+
+  /// Disable External Web Checkout Flow. Paywalls with Paddle/Stripe products
+  /// will not show; your fallback paywall will show instead.
+  ///
+  /// Currently only supported on iOS; a no-op on Android.
+  void disableExternalWebCheckout() =>
+      HeliumFlutterPlatform.instance.disableExternalWebCheckout();
+
+  /// Allow Web Checkout paywalls (Paddle/Stripe) to show even when no custom
+  /// user ID has been set via [overrideUserId]. Use for purchase-before-signup
+  /// flows — once a user ID is set later, Helium will link the
+  /// Paddle/Stripe customer to that user ID.
+  ///
+  /// Defaults to false on the native side. Currently only supported on iOS;
+  /// a no-op on Android.
+  void setAllowWebCheckoutWithoutUserId(bool allow) =>
+      HeliumFlutterPlatform.instance.setAllowWebCheckoutWithoutUserId(allow);
+
+  /// Returns `true` if the user has any active Stripe entitlement.
+  /// Currently only supported on iOS; returns `false` on Android.
+  Future<bool> hasActiveStripeEntitlement() =>
+      HeliumFlutterPlatform.instance.hasActiveStripeEntitlement();
+
+  /// Returns `true` if the user has any active Paddle entitlement.
+  /// Currently only supported on iOS; returns `false` on Android.
+  Future<bool> hasActivePaddleEntitlement() =>
+      HeliumFlutterPlatform.instance.hasActivePaddleEntitlement();
+
+  /// Creates a Stripe customer portal session and returns the portal URL.
+  /// The host app can open this URL in a browser or in-app webview to let the
+  /// user manage their subscriptions, payment methods, and invoices.
+  ///
+  /// - [returnUrl]: The URL Stripe redirects to after the user finishes in
+  ///   the portal.
+  ///
+  /// Currently only supported on iOS; returns `null` on Android.
+  Future<String?> createStripePortalSession({required String returnUrl}) =>
+      HeliumFlutterPlatform.instance
+          .createStripePortalSession(returnUrl: returnUrl);
+
+  /// Creates a Paddle customer portal session for the current user and returns
+  /// the portal URL. The host app can open this URL in a browser or in-app
+  /// webview to let the user manage their subscriptions.
+  ///
+  /// Currently only supported on iOS; returns `null` on Android.
+  Future<String?> createPaddlePortalSession() =>
+      HeliumFlutterPlatform.instance.createPaddlePortalSession();
+
+  /// Resets Stripe entitlements and clears the user ID. Call this to
+  /// effectively "log out" a Stripe user if your app supports multiple Stripe
+  /// users on the same device.
+  ///
+  /// Currently only supported on iOS; a no-op on Android.
+  Future<void> resetStripeEntitlements() =>
+      HeliumFlutterPlatform.instance.resetStripeEntitlements();
+
+  /// Resets Paddle entitlements and clears the user ID. Call this to
+  /// effectively "log out" a Paddle user if your app supports multiple Paddle
+  /// users on the same device.
+  ///
+  /// Currently only supported on iOS; a no-op on Android.
+  Future<void> resetPaddleEntitlements() =>
+      HeliumFlutterPlatform.instance.resetPaddleEntitlements();
 }

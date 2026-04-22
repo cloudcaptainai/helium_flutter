@@ -8,6 +8,12 @@ enum HeliumLightDarkMode {
   system,
 }
 
+/// Payment processors supported by External Web Checkout.
+enum HeliumWebCheckoutProcessor {
+  paddle,
+  stripe,
+}
+
 class PaywallInfo {
   final String paywallTemplateName;
   final bool shouldShow;

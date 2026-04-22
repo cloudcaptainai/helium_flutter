@@ -142,6 +142,29 @@ class MockHeliumFlutterPlatform
   void setRevenueCatAppUserId(String rcAppUserId) {}
   @override
   void setAndroidConsumableProductIds(Set<String> productIds) {}
+  @override
+  void enableExternalWebCheckout({
+    required String successURL,
+    required String cancelURL,
+    Set<HeliumWebCheckoutProcessor>? paymentProcessors,
+  }) {}
+  @override
+  void disableExternalWebCheckout() {}
+  @override
+  void setAllowWebCheckoutWithoutUserId(bool allow) {}
+  @override
+  Future<bool> hasActiveStripeEntitlement() async => false;
+  @override
+  Future<bool> hasActivePaddleEntitlement() async => false;
+  @override
+  Future<String?> createStripePortalSession({required String returnUrl}) async =>
+      null;
+  @override
+  Future<String?> createPaddlePortalSession() async => null;
+  @override
+  Future<void> resetStripeEntitlements() async {}
+  @override
+  Future<void> resetPaddleEntitlements() async {}
 }
 
 void main() {
@@ -324,34 +347,6 @@ void main() {
       expect(mockPlatform.calls, ['overrideUserId']);
       expect(
           mockPlatform.callArgs['overrideUserId']!['newUserId'], 'user-456');
-    });
-  });
-
-  group('resetStripeEntitlements (non-iOS)', () {
-    test('is a no-op and does not throw', () {
-      HeliumStripe.resetStripeEntitlements();
-      HeliumStripe.resetStripeEntitlements(clearUserId: true);
-
-      expect(mockPlatform.calls, isEmpty);
-    });
-  });
-
-  group('createStripePortalSession (non-iOS)', () {
-    test('returns null', () async {
-      final result =
-          await HeliumStripe.createStripePortalSession('https://return.url');
-
-      expect(result, isNull);
-      expect(mockPlatform.calls, isEmpty);
-    });
-  });
-
-  group('hasActiveStripeEntitlement (non-iOS)', () {
-    test('returns false', () async {
-      final result = await HeliumStripe.hasActiveStripeEntitlement();
-
-      expect(result, isFalse);
-      expect(mockPlatform.calls, isEmpty);
     });
   });
 }

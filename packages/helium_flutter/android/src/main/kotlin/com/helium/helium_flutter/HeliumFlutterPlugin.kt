@@ -416,6 +416,21 @@ class HeliumFlutterPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
         Helium.config.consumableIds = productIds.toSet()
         result.success("Android consumable product IDs set!")
       }
+      "enableExternalWebCheckout",
+      "disableExternalWebCheckout",
+      "setAllowWebCheckoutWithoutUserId",
+      "createStripePortalSession",
+      "createPaddlePortalSession",
+      "resetStripeEntitlements",
+      "resetPaddleEntitlements" -> {
+        // Web Checkout (Stripe/Paddle) is not yet supported on Android.
+        result.success(null)
+      }
+      "hasActiveStripeEntitlement",
+      "hasActivePaddleEntitlement" -> {
+        // Web Checkout entitlements are not yet supported on Android.
+        result.success(false)
+      }
       else -> {
         result.notImplemented()
       }

@@ -130,4 +130,42 @@ abstract class HeliumFlutterPlatform extends PlatformInterface {
   /// and this is only respected if no custom purchaseDelegate is supplied.
   /// This is only relevant on Android and is a no-op on other platforms.
   void setAndroidConsumableProductIds(Set<String> productIds);
+
+  /// Enable External Web Checkout (Paddle/Stripe). iOS only; no-op on Android.
+  void enableExternalWebCheckout({
+    required String successURL,
+    required String cancelURL,
+    Set<HeliumWebCheckoutProcessor>? paymentProcessors,
+  });
+
+  /// Disable External Web Checkout. iOS only; no-op on Android.
+  void disableExternalWebCheckout();
+
+  /// Allow Web Checkout paywalls to show even when no custom user ID has been
+  /// set via `overrideUserId`. iOS only; no-op on Android.
+  void setAllowWebCheckoutWithoutUserId(bool allow);
+
+  /// Returns `true` if the user has any active Stripe entitlement.
+  /// iOS only; returns `false` on Android.
+  Future<bool> hasActiveStripeEntitlement();
+
+  /// Returns `true` if the user has any active Paddle entitlement.
+  /// iOS only; returns `false` on Android.
+  Future<bool> hasActivePaddleEntitlement();
+
+  /// Creates a Stripe customer portal session and returns the portal URL.
+  /// iOS only; returns `null` on Android.
+  Future<String?> createStripePortalSession({required String returnUrl});
+
+  /// Creates a Paddle customer portal session and returns the portal URL.
+  /// iOS only; returns `null` on Android.
+  Future<String?> createPaddlePortalSession();
+
+  /// Resets Stripe entitlements and clears the user ID.
+  /// iOS only; no-op on Android.
+  Future<void> resetStripeEntitlements();
+
+  /// Resets Paddle entitlements and clears the user ID.
+  /// iOS only; no-op on Android.
+  Future<void> resetPaddleEntitlements();
 }

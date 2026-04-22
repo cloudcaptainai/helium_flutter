@@ -193,9 +193,102 @@ public class HeliumFlutterPlugin: NSObject, FlutterPlugin {
         case "hideAllUpsells":
             Helium.shared.hideAllPaywalls()
             result(true)
+        case "enableExternalWebCheckout":
+            if let args = call.arguments as? [String: Any],
+               let successURL = args["successURL"] as? String,
+               let cancelURL = args["cancelURL"] as? String {
+                let processors = parseWebCheckoutProcessors(args["paymentProcessors"] as? [String])
+                Helium.config.enableExternalWebCheckout(
+                    successURL: successURL,
+                    cancelURL: cancelURL,
+                    paymentProcessors: processors
+                )
+                result("External Web Checkout enabled!")
+            } else {
+                result(FlutterError(code: "BAD_ARGS", message: "successURL and cancelURL required", details: nil))
+            }
+        case "disableExternalWebCheckout":
+            Helium.config.disableExternalWebCheckout()
+            result("External Web Checkout disabled!")
+        case "setAllowWebCheckoutWithoutUserId":
+            let allow = call.arguments as? Bool ?? false
+            Helium.config.allowWebCheckoutWithoutUserId = allow
+            result("allowWebCheckoutWithoutUserId set!")
+        case "hasActiveStripeEntitlement":
+            Task {
+                let hasEntitlement = await Helium.entitlements.hasActiveStripeEntitlement()
+                DispatchQueue.main.async { result(hasEntitlement) }
+            }
+        case "hasActivePaddleEntitlement":
+            Task {
+                let hasEntitlement = await Helium.entitlements.hasActivePaddleEntitlement()
+                DispatchQueue.main.async { result(hasEntitlement) }
+            }
+        case "createStripePortalSession":
+            if let returnUrl = call.arguments as? String {
+                Task {
+                    do {
+                        let url = try await Helium.shared.createStripePortalSession(returnUrl: returnUrl)
+                        DispatchQueue.main.async { result(url.absoluteString) }
+                    } catch {
+                        DispatchQueue.main.async {
+                            result(FlutterError(
+                                code: "STRIPE_ERROR",
+                                message: "Failed to create Stripe portal session: \(error.localizedDescription)",
+                                details: nil
+                            ))
+                        }
+                    }
+                }
+            } else {
+                result(FlutterError(code: "BAD_ARGS", message: "returnUrl not provided", details: nil))
+            }
+        case "createPaddlePortalSession":
+            Task {
+                do {
+                    let url = try await Helium.shared.createPaddlePortalSession()
+                    DispatchQueue.main.async { result(url.absoluteString) }
+                } catch {
+                    DispatchQueue.main.async {
+                        result(FlutterError(
+                            code: "PADDLE_ERROR",
+                            message: "Failed to create Paddle portal session: \(error.localizedDescription)",
+                            details: nil
+                        ))
+                    }
+                }
+            }
+        case "resetStripeEntitlements":
+            Helium.shared.resetStripeEntitlements()
+            result(nil)
+        case "resetPaddleEntitlements":
+            Helium.shared.resetPaddleEntitlements()
+            result(nil)
         default:
             result(FlutterMethodNotImplemented)
         }
+    }
+
+    private func parseWebCheckoutProcessors(_ names: [String]?) -> WebCheckoutProcessors {
+        // nil = key absent from the Dart side = caller didn't specify → default to all.
+        // An explicit empty list (or a non-empty list where nothing parses) is returned
+        // as empty so the native SDK's own guard surfaces the error rather than
+        // silently enabling a processor the caller meant to skip.
+        guard let names else {
+            return .all
+        }
+        var processors: WebCheckoutProcessors = []
+        for name in names {
+            switch name.lowercased() {
+            case "paddle":
+                processors.insert(.paddle)
+            case "stripe":
+                processors.insert(.stripe)
+            default:
+                print("[Helium] Unknown web checkout processor: \(name)")
+            }
+        }
+        return processors
     }
 
     private struct ParsedInitArgs {

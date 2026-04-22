@@ -514,6 +514,155 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
     );
   }
 
+  @override
+  void enableExternalWebCheckout({
+    required String successURL,
+    required String cancelURL,
+    Set<HeliumWebCheckoutProcessor>? paymentProcessors,
+  }) {
+    if (!Platform.isIOS) {
+      log('[Helium] enableExternalWebCheckout is only available on iOS');
+      return;
+    }
+    if (paymentProcessors != null && paymentProcessors.isEmpty) {
+      log('[Helium] enableExternalWebCheckout: paymentProcessors must not be empty. '
+          'Omit it to enable all, or pass {HeliumWebCheckoutProcessor.paddle} or {HeliumWebCheckoutProcessor.stripe}.');
+      return;
+    }
+    methodChannel.invokeMethod<void>(
+      enableExternalWebCheckoutMethodName,
+      {
+        'successURL': successURL,
+        'cancelURL': cancelURL,
+        if (paymentProcessors != null)
+          'paymentProcessors':
+              paymentProcessors.map((p) => p.name).toList(),
+      },
+    ).catchError((e) {
+      log('[Helium] Failed to enable External Web Checkout: $e');
+    });
+  }
+
+  @override
+  void disableExternalWebCheckout() {
+    if (!Platform.isIOS) {
+      log('[Helium] disableExternalWebCheckout is only available on iOS');
+      return;
+    }
+    methodChannel
+        .invokeMethod<void>(disableExternalWebCheckoutMethodName)
+        .catchError((e) {
+      log('[Helium] Failed to disable External Web Checkout: $e');
+    });
+  }
+
+  @override
+  void setAllowWebCheckoutWithoutUserId(bool allow) {
+    if (!Platform.isIOS) {
+      log('[Helium] setAllowWebCheckoutWithoutUserId is only available on iOS');
+      return;
+    }
+    methodChannel.invokeMethod<void>(
+      setAllowWebCheckoutWithoutUserIdMethodName,
+      allow,
+    ).catchError((e) {
+      log('[Helium] Failed to set allowWebCheckoutWithoutUserId: $e');
+    });
+  }
+
+  @override
+  Future<bool> hasActiveStripeEntitlement() async {
+    if (!Platform.isIOS) {
+      log('[Helium] hasActiveStripeEntitlement is only available on iOS');
+      return false;
+    }
+    try {
+      final result = await methodChannel.invokeMethod<bool>(
+        hasActiveStripeEntitlementMethodName,
+      );
+      return result ?? false;
+    } on PlatformException catch (e) {
+      log('[Helium] Failed to check Stripe entitlement: ${e.message}');
+      return false;
+    }
+  }
+
+  @override
+  Future<bool> hasActivePaddleEntitlement() async {
+    if (!Platform.isIOS) {
+      log('[Helium] hasActivePaddleEntitlement is only available on iOS');
+      return false;
+    }
+    try {
+      final result = await methodChannel.invokeMethod<bool>(
+        hasActivePaddleEntitlementMethodName,
+      );
+      return result ?? false;
+    } on PlatformException catch (e) {
+      log('[Helium] Failed to check Paddle entitlement: ${e.message}');
+      return false;
+    }
+  }
+
+  @override
+  Future<String?> createStripePortalSession({required String returnUrl}) async {
+    if (!Platform.isIOS) {
+      log('[Helium] createStripePortalSession is only available on iOS');
+      return null;
+    }
+    try {
+      return await methodChannel.invokeMethod<String>(
+        createStripePortalSessionMethodName,
+        returnUrl,
+      );
+    } on PlatformException catch (e) {
+      log('[Helium] Failed to create Stripe portal session: ${e.message}');
+      return null;
+    }
+  }
+
+  @override
+  Future<String?> createPaddlePortalSession() async {
+    if (!Platform.isIOS) {
+      log('[Helium] createPaddlePortalSession is only available on iOS');
+      return null;
+    }
+    try {
+      return await methodChannel.invokeMethod<String>(
+        createPaddlePortalSessionMethodName,
+      );
+    } on PlatformException catch (e) {
+      log('[Helium] Failed to create Paddle portal session: ${e.message}');
+      return null;
+    }
+  }
+
+  @override
+  Future<void> resetStripeEntitlements() async {
+    if (!Platform.isIOS) {
+      log('[Helium] resetStripeEntitlements is only available on iOS');
+      return;
+    }
+    try {
+      await methodChannel.invokeMethod<void>(resetStripeEntitlementsMethodName);
+    } on PlatformException catch (e) {
+      log('[Helium] Failed to reset Stripe entitlements: ${e.message}');
+    }
+  }
+
+  @override
+  Future<void> resetPaddleEntitlements() async {
+    if (!Platform.isIOS) {
+      log('[Helium] resetPaddleEntitlements is only available on iOS');
+      return;
+    }
+    try {
+      await methodChannel.invokeMethod<void>(resetPaddleEntitlementsMethodName);
+    } on PlatformException catch (e) {
+      log('[Helium] Failed to reset Paddle entitlements: ${e.message}');
+    }
+  }
+
   void _handlePaywallEventHandlers(HeliumPaywallEvent event) {
     if (_currentEventHandlers == null) return;
 
