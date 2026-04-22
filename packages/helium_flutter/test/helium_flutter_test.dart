@@ -172,6 +172,25 @@ class MockHeliumFlutterPlatform
 
   @override
   void setAllowWebCheckoutWithoutUserId(bool allow) {}
+
+  @override
+  Future<bool> hasActiveStripeEntitlement() async => false;
+
+  @override
+  Future<bool> hasActivePaddleEntitlement() async => false;
+
+  @override
+  Future<String?> createStripePortalSession({required String returnUrl}) async =>
+      null;
+
+  @override
+  Future<String?> createPaddlePortalSession() async => null;
+
+  @override
+  Future<void> resetStripeEntitlements() async {}
+
+  @override
+  Future<void> resetPaddleEntitlements() async {}
 }
 
 void main() {

@@ -214,6 +214,56 @@ public class HeliumFlutterPlugin: NSObject, FlutterPlugin {
             let allow = call.arguments as? Bool ?? false
             Helium.config.allowWebCheckoutWithoutUserId = allow
             result("allowWebCheckoutWithoutUserId set!")
+        case "hasActiveStripeEntitlement":
+            Task {
+                let hasEntitlement = await Helium.entitlements.hasActiveStripeEntitlement()
+                DispatchQueue.main.async { result(hasEntitlement) }
+            }
+        case "hasActivePaddleEntitlement":
+            Task {
+                let hasEntitlement = await Helium.entitlements.hasActivePaddleEntitlement()
+                DispatchQueue.main.async { result(hasEntitlement) }
+            }
+        case "createStripePortalSession":
+            if let returnUrl = call.arguments as? String {
+                Task {
+                    do {
+                        let url = try await Helium.shared.createStripePortalSession(returnUrl: returnUrl)
+                        DispatchQueue.main.async { result(url.absoluteString) }
+                    } catch {
+                        DispatchQueue.main.async {
+                            result(FlutterError(
+                                code: "STRIPE_ERROR",
+                                message: "Failed to create Stripe portal session: \(error.localizedDescription)",
+                                details: nil
+                            ))
+                        }
+                    }
+                }
+            } else {
+                result(FlutterError(code: "BAD_ARGS", message: "returnUrl not provided", details: nil))
+            }
+        case "createPaddlePortalSession":
+            Task {
+                do {
+                    let url = try await Helium.shared.createPaddlePortalSession()
+                    DispatchQueue.main.async { result(url.absoluteString) }
+                } catch {
+                    DispatchQueue.main.async {
+                        result(FlutterError(
+                            code: "PADDLE_ERROR",
+                            message: "Failed to create Paddle portal session: \(error.localizedDescription)",
+                            details: nil
+                        ))
+                    }
+                }
+            }
+        case "resetStripeEntitlements":
+            Helium.shared.resetStripeEntitlements()
+            result(nil)
+        case "resetPaddleEntitlements":
+            Helium.shared.resetPaddleEntitlements()
+            result(nil)
         default:
             result(FlutterMethodNotImplemented)
         }

@@ -27,28 +27,6 @@ public class HeliumStripePlugin: NSObject, FlutterPlugin {
             } else {
                 result(FlutterError(code: "BAD_ARGS", message: "userId not provided", details: nil))
             }
-        case "resetStripeEntitlements":
-            let clearUserId = call.arguments as? Bool ?? false
-            Helium.shared.resetStripeEntitlements(clearUserId: clearUserId)
-            result(nil)
-        case "createStripePortalSession":
-            if let returnUrl = call.arguments as? String {
-                Task {
-                    do {
-                        let url = try await Helium.shared.createStripePortalSession(returnUrl: returnUrl)
-                        DispatchQueue.main.async { result(url.absoluteString) }
-                    } catch {
-                        DispatchQueue.main.async { result(FlutterError(code: "STRIPE_ERROR", message: "Failed to create Stripe portal session: \(error.localizedDescription)", details: nil)) }
-                    }
-                }
-            } else {
-                result(FlutterError(code: "BAD_ARGS", message: "returnUrl not provided", details: nil))
-            }
-        case "hasActiveStripeEntitlement":
-            Task {
-                let hasEntitlement = await Helium.shared.hasActiveStripeEntitlement()
-                DispatchQueue.main.async { result(hasEntitlement) }
-            }
         default:
             result(FlutterMethodNotImplemented)
         }

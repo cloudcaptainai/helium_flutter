@@ -129,49 +129,4 @@ class HeliumStripe {
     }
     _channel.invokeMethod('setUserIdAndSyncStripeIfNeeded', userId);
   }
-
-  /// Resets Stripe entitlements. Optionally clears the user ID.
-  ///
-  /// Only available on iOS. No-op on other platforms.
-  static void resetStripeEntitlements({bool clearUserId = false}) {
-    if (!_isIOS) {
-      log('[HeliumStripe] resetStripeEntitlements is only available on iOS');
-      return;
-    }
-    _channel.invokeMethod('resetStripeEntitlements', clearUserId);
-  }
-
-  /// Creates a Stripe customer portal session and returns the URL.
-  ///
-  /// Only available on iOS. Returns `null` on other platforms.
-  static Future<String?> createStripePortalSession(String returnUrl) async {
-    if (!_isIOS) {
-      log('[HeliumStripe] createStripePortalSession is only available on iOS');
-      return null;
-    }
-    try {
-      return await _channel.invokeMethod<String>(
-          'createStripePortalSession', returnUrl);
-    } on PlatformException catch (e) {
-      log('[HeliumStripe] Failed to create Stripe portal session: ${e.message}');
-      return null;
-    }
-  }
-
-  /// Returns whether the user has an active Stripe entitlement.
-  ///
-  /// Only available on iOS. Returns `false` on other platforms.
-  static Future<bool> hasActiveStripeEntitlement() async {
-    if (!_isIOS) {
-      log('[HeliumStripe] hasActiveStripeEntitlement is only available on iOS');
-      return false;
-    }
-    try {
-      return await _channel.invokeMethod<bool>('hasActiveStripeEntitlement') ??
-          false;
-    } on PlatformException catch (e) {
-      log('[HeliumStripe] Failed to check Stripe entitlement: ${e.message}');
-      return false;
-    }
-  }
 }

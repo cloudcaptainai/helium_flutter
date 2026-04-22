@@ -252,4 +252,50 @@ class HeliumFlutter {
   /// a no-op on Android.
   void setAllowWebCheckoutWithoutUserId(bool allow) =>
       HeliumFlutterPlatform.instance.setAllowWebCheckoutWithoutUserId(allow);
+
+  /// Returns `true` if the user has any active Stripe entitlement.
+  /// Currently only supported on iOS; returns `false` on Android.
+  Future<bool> hasActiveStripeEntitlement() =>
+      HeliumFlutterPlatform.instance.hasActiveStripeEntitlement();
+
+  /// Returns `true` if the user has any active Paddle entitlement.
+  /// Currently only supported on iOS; returns `false` on Android.
+  Future<bool> hasActivePaddleEntitlement() =>
+      HeliumFlutterPlatform.instance.hasActivePaddleEntitlement();
+
+  /// Creates a Stripe customer portal session and returns the portal URL.
+  /// The host app can open this URL in a browser or in-app webview to let the
+  /// user manage their subscriptions, payment methods, and invoices.
+  ///
+  /// - [returnUrl]: The URL Stripe redirects to after the user finishes in
+  ///   the portal.
+  ///
+  /// Currently only supported on iOS; returns `null` on Android.
+  Future<String?> createStripePortalSession({required String returnUrl}) =>
+      HeliumFlutterPlatform.instance
+          .createStripePortalSession(returnUrl: returnUrl);
+
+  /// Creates a Paddle customer portal session for the current user and returns
+  /// the portal URL. The host app can open this URL in a browser or in-app
+  /// webview to let the user manage their subscriptions.
+  ///
+  /// Currently only supported on iOS; returns `null` on Android.
+  Future<String?> createPaddlePortalSession() =>
+      HeliumFlutterPlatform.instance.createPaddlePortalSession();
+
+  /// Resets Stripe entitlements and clears the user ID. Call this to
+  /// effectively "log out" a Stripe user if your app supports multiple Stripe
+  /// users on the same device.
+  ///
+  /// Currently only supported on iOS; a no-op on Android.
+  Future<void> resetStripeEntitlements() =>
+      HeliumFlutterPlatform.instance.resetStripeEntitlements();
+
+  /// Resets Paddle entitlements and clears the user ID. Call this to
+  /// effectively "log out" a Paddle user if your app supports multiple Paddle
+  /// users on the same device.
+  ///
+  /// Currently only supported on iOS; a no-op on Android.
+  Future<void> resetPaddleEntitlements() =>
+      HeliumFlutterPlatform.instance.resetPaddleEntitlements();
 }

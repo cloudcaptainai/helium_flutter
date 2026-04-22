@@ -418,9 +418,18 @@ class HeliumFlutterPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
       }
       "enableExternalWebCheckout",
       "disableExternalWebCheckout",
-      "setAllowWebCheckoutWithoutUserId" -> {
-        // External Web Checkout is not yet supported on Android.
+      "setAllowWebCheckoutWithoutUserId",
+      "createStripePortalSession",
+      "createPaddlePortalSession",
+      "resetStripeEntitlements",
+      "resetPaddleEntitlements" -> {
+        // Web Checkout (Stripe/Paddle) is not yet supported on Android.
         result.success(null)
+      }
+      "hasActiveStripeEntitlement",
+      "hasActivePaddleEntitlement" -> {
+        // Web Checkout entitlements are not yet supported on Android.
+        result.success(false)
       }
       else -> {
         result.notImplemented()
