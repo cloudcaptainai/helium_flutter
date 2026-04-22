@@ -14,6 +14,21 @@ enum HeliumWebCheckoutProcessor {
   stripe,
 }
 
+/// Identifies which payment processor completed a purchase.
+enum HeliumPaymentProcessor {
+  appStore,
+  stripe,
+  paddle;
+
+  static HeliumPaymentProcessor? fromValue(String? value) {
+    if (value == null) return null;
+    for (final p in HeliumPaymentProcessor.values) {
+      if (p.name == value) return p;
+    }
+    return null;
+  }
+}
+
 class PaywallInfo {
   final String paywallTemplateName;
   final bool shouldShow;
@@ -127,12 +142,14 @@ class PurchaseSucceededEvent {
   final String triggerName;
   final String paywallName;
   final bool isSecondTry;
+  final HeliumPaymentProcessor? paymentProcessor;
 
   PurchaseSucceededEvent({
     required this.productId,
     required this.triggerName,
     required this.paywallName,
     required this.isSecondTry,
+    this.paymentProcessor,
   });
 }
 
@@ -227,6 +244,8 @@ class HeliumPaywallEvent {
   int? get fontsDownloadTimeTakenMS => _data['fontsDownloadTimeTakenMS'];
   int? get bundleDownloadTimeMS => _data['bundleDownloadTimeMS'];
   String? get canonicalJoinTransactionId => _data['canonicalJoinTransactionId'];
+  HeliumPaymentProcessor? get paymentProcessor =>
+      HeliumPaymentProcessor.fromValue(_data['paymentProcessor'] as String?);
   bool? get dismissAll => _data['dismissAll'];
   bool? get isSecondTry => _data['isSecondTry'];
   String? get error => _data['error'];
