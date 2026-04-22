@@ -211,4 +211,45 @@ class HeliumFlutter {
   void setAndroidConsumableProductIds(Set<String> productIds) =>
       HeliumFlutterPlatform.instance
           .setAndroidConsumableProductIds(productIds);
+
+  /// Enable External Web Checkout Flow for Paddle/Stripe products in your
+  /// paywalls. If not enabled, paywalls with Paddle/Stripe products will not
+  /// show and your fallback paywall will show instead.
+  ///
+  /// - [successURL]: URL to redirect to after a successful payment. Include
+  ///   `{CHECKOUT_SESSION_ID}` to receive the session ID.
+  /// - [cancelURL]: URL the provider redirects to when the user cancels
+  ///   checkout.
+  /// - [paymentProcessors]: Which processors to enable. Omit to enable both
+  ///   Paddle and Stripe. Pass a single-value set to skip the unused
+  ///   processor's entitlement network calls.
+  ///
+  /// Currently only supported on iOS; a no-op on Android.
+  void enableExternalWebCheckout({
+    required String successURL,
+    required String cancelURL,
+    Set<HeliumWebCheckoutProcessor>? paymentProcessors,
+  }) =>
+      HeliumFlutterPlatform.instance.enableExternalWebCheckout(
+        successURL: successURL,
+        cancelURL: cancelURL,
+        paymentProcessors: paymentProcessors,
+      );
+
+  /// Disable External Web Checkout Flow. Paywalls with Paddle/Stripe products
+  /// will not show; your fallback paywall will show instead.
+  ///
+  /// Currently only supported on iOS; a no-op on Android.
+  void disableExternalWebCheckout() =>
+      HeliumFlutterPlatform.instance.disableExternalWebCheckout();
+
+  /// Allow Web Checkout paywalls (Paddle/Stripe) to show even when no custom
+  /// user ID has been set via [overrideUserId]. Use for purchase-before-signup
+  /// flows — once a user ID is set later, Helium will link the
+  /// Paddle/Stripe customer to that user ID.
+  ///
+  /// Defaults to false on the native side. Currently only supported on iOS;
+  /// a no-op on Android.
+  void setAllowWebCheckoutWithoutUserId(bool allow) =>
+      HeliumFlutterPlatform.instance.setAllowWebCheckoutWithoutUserId(allow);
 }

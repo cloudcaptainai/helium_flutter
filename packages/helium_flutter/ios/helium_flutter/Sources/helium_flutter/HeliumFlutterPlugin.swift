@@ -193,9 +193,48 @@ public class HeliumFlutterPlugin: NSObject, FlutterPlugin {
         case "hideAllUpsells":
             Helium.shared.hideAllPaywalls()
             result(true)
+        case "enableExternalWebCheckout":
+            if let args = call.arguments as? [String: Any],
+               let successURL = args["successURL"] as? String,
+               let cancelURL = args["cancelURL"] as? String {
+                let processors = parseWebCheckoutProcessors(args["paymentProcessors"] as? [String])
+                Helium.config.enableExternalWebCheckout(
+                    successURL: successURL,
+                    cancelURL: cancelURL,
+                    paymentProcessors: processors
+                )
+                result("External Web Checkout enabled!")
+            } else {
+                result(FlutterError(code: "BAD_ARGS", message: "successURL and cancelURL required", details: nil))
+            }
+        case "disableExternalWebCheckout":
+            Helium.config.disableExternalWebCheckout()
+            result("External Web Checkout disabled!")
+        case "setAllowWebCheckoutWithoutUserId":
+            let allow = call.arguments as? Bool ?? false
+            Helium.config.allowWebCheckoutWithoutUserId = allow
+            result("allowWebCheckoutWithoutUserId set!")
         default:
             result(FlutterMethodNotImplemented)
         }
+    }
+
+    private func parseWebCheckoutProcessors(_ names: [String]?) -> WebCheckoutProcessors {
+        guard let names, !names.isEmpty else {
+            return .all
+        }
+        var processors: WebCheckoutProcessors = []
+        for name in names {
+            switch name.lowercased() {
+            case "paddle":
+                processors.insert(.paddle)
+            case "stripe":
+                processors.insert(.stripe)
+            default:
+                print("[Helium] Unknown web checkout processor: \(name)")
+            }
+        }
+        return processors.isEmpty ? .all : processors
     }
 
     private struct ParsedInitArgs {

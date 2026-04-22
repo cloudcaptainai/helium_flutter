@@ -514,6 +514,37 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
     );
   }
 
+  @override
+  void enableExternalWebCheckout({
+    required String successURL,
+    required String cancelURL,
+    Set<HeliumWebCheckoutProcessor>? paymentProcessors,
+  }) {
+    methodChannel.invokeMethod<void>(
+      enableExternalWebCheckoutMethodName,
+      {
+        'successURL': successURL,
+        'cancelURL': cancelURL,
+        if (paymentProcessors != null)
+          'paymentProcessors':
+              paymentProcessors.map((p) => p.name).toList(),
+      },
+    );
+  }
+
+  @override
+  void disableExternalWebCheckout() {
+    methodChannel.invokeMethod<void>(disableExternalWebCheckoutMethodName);
+  }
+
+  @override
+  void setAllowWebCheckoutWithoutUserId(bool allow) {
+    methodChannel.invokeMethod<void>(
+      setAllowWebCheckoutWithoutUserIdMethodName,
+      allow,
+    );
+  }
+
   void _handlePaywallEventHandlers(HeliumPaywallEvent event) {
     if (_currentEventHandlers == null) return;
 

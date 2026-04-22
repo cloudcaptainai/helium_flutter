@@ -159,6 +159,19 @@ class MockHeliumFlutterPlatform
 
   @override
   void setAndroidConsumableProductIds(Set<String> productIds) {}
+
+  @override
+  void enableExternalWebCheckout({
+    required String successURL,
+    required String cancelURL,
+    Set<HeliumWebCheckoutProcessor>? paymentProcessors,
+  }) {}
+
+  @override
+  void disableExternalWebCheckout() {}
+
+  @override
+  void setAllowWebCheckoutWithoutUserId(bool allow) {}
 }
 
 void main() {
