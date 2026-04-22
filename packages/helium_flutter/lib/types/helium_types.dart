@@ -14,6 +14,21 @@ enum HeliumWebCheckoutProcessor {
   stripe,
 }
 
+/// Identifies which payment processor completed a purchase.
+enum HeliumPaymentProcessor {
+  appStore,
+  stripe,
+  paddle;
+
+  static HeliumPaymentProcessor? fromValue(String? value) {
+    if (value == null) return null;
+    for (final p in HeliumPaymentProcessor.values) {
+      if (p.name == value) return p;
+    }
+    return null;
+  }
+}
+
 class PaywallInfo {
   final String paywallTemplateName;
   final bool shouldShow;
@@ -127,12 +142,14 @@ class PurchaseSucceededEvent {
   final String triggerName;
   final String paywallName;
   final bool isSecondTry;
+  final HeliumPaymentProcessor? paymentProcessor;
 
   PurchaseSucceededEvent({
     required this.productId,
     required this.triggerName,
     required this.paywallName,
     required this.isSecondTry,
+    this.paymentProcessor,
   });
 }
 
@@ -213,36 +230,45 @@ class HeliumPaywallEvent {
     return null;
   }
 
+  /// Returns `_data[key]` if it is of type [T], otherwise `null`. Guards
+  /// against native sending an unexpected value type for a given key.
+  T? _get<T>(String key) {
+    final v = _data[key];
+    return v is T ? v : null;
+  }
+
   // Type-safe getters
   Map<String, dynamic> get rawData => _data;
-  String get type => _data['type'] ?? '';
-  String? get triggerName => _data['triggerName'];
-  String? get paywallName => _data['paywallName'];
-  String? get productId => _data['productId'];
-  String? get buttonName => _data['buttonName'];
-  String? get configId => _data['configId'];
-  String? get impressionId => _data['impressionId'];
-  int? get responseTimeMs => _data['responseTimeMs'];
-  int? get configDownloadTimeMs => _data['configDownloadTimeMs'];
-  int? get fontsDownloadTimeTakenMS => _data['fontsDownloadTimeTakenMS'];
-  int? get bundleDownloadTimeMS => _data['bundleDownloadTimeMS'];
-  String? get canonicalJoinTransactionId => _data['canonicalJoinTransactionId'];
-  bool? get dismissAll => _data['dismissAll'];
-  bool? get isSecondTry => _data['isSecondTry'];
-  String? get error => _data['error'];
-  String? get paywallUnavailableReason => _data['paywallUnavailableReason'];
-  String? get customPaywallActionName => _data['actionName'];
+  String get type => _get<String>('type') ?? '';
+  String? get triggerName => _get<String>('triggerName');
+  String? get paywallName => _get<String>('paywallName');
+  String? get productId => _get<String>('productId');
+  String? get buttonName => _get<String>('buttonName');
+  String? get configId => _get<String>('configId');
+  String? get impressionId => _get<String>('impressionId');
+  int? get responseTimeMs => _get<int>('responseTimeMs');
+  int? get configDownloadTimeMs => _get<int>('configDownloadTimeMs');
+  int? get fontsDownloadTimeTakenMS => _get<int>('fontsDownloadTimeTakenMS');
+  int? get bundleDownloadTimeMS => _get<int>('bundleDownloadTimeMS');
+  String? get canonicalJoinTransactionId => _get<String>('canonicalJoinTransactionId');
+  HeliumPaymentProcessor? get paymentProcessor =>
+      HeliumPaymentProcessor.fromValue(_get<String>('paymentProcessor'));
+  bool? get dismissAll => _get<bool>('dismissAll');
+  bool? get isSecondTry => _get<bool>('isSecondTry');
+  String? get error => _get<String>('error');
+  String? get paywallUnavailableReason => _get<String>('paywallUnavailableReason');
+  String? get customPaywallActionName => _get<String>('actionName');
   Map<String, dynamic>? get customPaywallActionParams => getSafeData(_data['params']);
   /// Unix timestamp in seconds
-  int? get timestamp => _data['timestamp'];
+  int? get timestamp => _get<int>('timestamp');
 
   // Deprecated getters for backwards compatibility
   /// @deprecated Use `paywallName` instead.
-  String? get paywallTemplateName => _data['paywallTemplateName'];
+  String? get paywallTemplateName => _get<String>('paywallTemplateName');
   /// @deprecated Use `productId` instead.
-  String? get productKey => _data['productKey'];
+  String? get productKey => _get<String>('productKey');
   /// @deprecated Use `buttonName` instead.
-  String? get ctaName => _data['ctaName'];
+  String? get ctaName => _get<String>('ctaName');
   /// @deprecated Use `error` instead.
-  String? get errorDescription => _data['errorDescription'];
+  String? get errorDescription => _get<String>('errorDescription');
 }

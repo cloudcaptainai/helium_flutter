@@ -16,15 +16,19 @@ class RevenueCatPurchaseDelegate extends HeliumPurchaseDelegate
   String get delegateType => 'h_revenuecat';
 
   final bool _stripePurchaseSyncDisabled;
-  bool _isSyncingStripePurchase = false;
+  final bool _paddlePurchaseSyncDisabled;
+  bool _isSyncingThirdPartyPayment = false;
 
   /// Creates a new [RevenueCatPurchaseDelegate].
   ///
-  /// Set [disableStripePurchaseSync] to `true` to disable automatic RevenueCat
-  /// entitlement syncing after Stripe purchases.
+  /// Set [disableStripePurchaseSync] or [disablePaddlePurchaseSync] to `true`
+  /// to disable automatic RevenueCat customer info refresh after a purchase
+  /// completed by that processor.
   RevenueCatPurchaseDelegate({
     bool disableStripePurchaseSync = false,
-  }) : _stripePurchaseSyncDisabled = disableStripePurchaseSync {
+    bool disablePaddlePurchaseSync = false,
+  })  : _stripePurchaseSyncDisabled = disableStripePurchaseSync,
+        _paddlePurchaseSyncDisabled = disablePaddlePurchaseSync {
     _syncAppUserId();
   }
 
@@ -228,38 +232,36 @@ class RevenueCatPurchaseDelegate extends HeliumPurchaseDelegate
   }
 
   // ---------------------------------------------------------------------------
-  // Stripe Auto-Syncing
+  // Third-Party Payment Sync
   // ---------------------------------------------------------------------------
 
   @override
   void onPaywallEvent(HeliumPaywallEvent event) {
-    if (!_stripePurchaseSyncDisabled &&
-        event.type == 'purchaseSucceeded' &&
-        _isStripePurchase(event)) {
-      _syncRevenueCatAfterStripePurchase();
+    if (event.type != 'purchaseSucceeded') return;
+    if (!_shouldSyncAfterThirdPartyPayment(event.paymentProcessor)) return;
+    _syncRevenueCatAfterThirdPartyPayment();
+  }
+
+  bool _shouldSyncAfterThirdPartyPayment(HeliumPaymentProcessor? processor) {
+    switch (processor) {
+      case HeliumPaymentProcessor.stripe:
+        return !_stripePurchaseSyncDisabled;
+      case HeliumPaymentProcessor.paddle:
+        return !_paddlePurchaseSyncDisabled;
+      case HeliumPaymentProcessor.appStore:
+      case null:
+        return false;
     }
   }
 
-  bool _isStripePurchase(HeliumPaywallEvent event) {
-    final txId = event.canonicalJoinTransactionId;
-    if (txId != null && txId.startsWith('si_')) {
-      return true;
-    }
-    final pid = event.productId;
-    if (pid != null && RegExp(r'^prod_\w+:price_\w+$').hasMatch(pid)) {
-      return true;
-    }
-    return false;
-  }
-
-  /// After a Stripe purchase completes, the RevenueCat SDK on-device has no way
-  /// to know that a new entitlement exists until its backend processes the Stripe
-  /// webhook. This method polls RevenueCat with progressive back-off to force a
-  /// customer info refresh, stopping early if the update listener fires
-  /// (~50s max).
-  Future<void> _syncRevenueCatAfterStripePurchase() async {
-    if (_isSyncingStripePurchase) return;
-    _isSyncingStripePurchase = true;
+  /// After a third-party payment (Stripe or Paddle) completes, the RevenueCat
+  /// SDK on-device has no way to know that a new entitlement exists until its
+  /// backend processes the provider webhook. This method polls RevenueCat with
+  /// progressive back-off to force a customer info refresh, stopping early if
+  /// the update listener fires (~50s max).
+  Future<void> _syncRevenueCatAfterThirdPartyPayment() async {
+    if (_isSyncingThirdPartyPayment) return;
+    _isSyncingThirdPartyPayment = true;
 
     try {
       bool synced = false;
@@ -297,9 +299,9 @@ class RevenueCatPurchaseDelegate extends HeliumPurchaseDelegate
         Purchases.removeCustomerInfoUpdateListener(listener);
       }
     } catch (e) {
-      log('[Helium] Error syncing RevenueCat after Stripe purchase: $e');
+      log('[Helium] Error syncing RevenueCat after third-party payment: $e');
     } finally {
-      _isSyncingStripePurchase = false;
+      _isSyncingThirdPartyPayment = false;
     }
   }
 

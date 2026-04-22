@@ -701,6 +701,7 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
           triggerName: triggerName,
           paywallName: paywallName,
           isSecondTry: isSecondTry,
+          paymentProcessor: event.paymentProcessor,
         ));
         break;
       case 'paywallOpenFailed':
