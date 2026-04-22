@@ -270,7 +270,11 @@ public class HeliumFlutterPlugin: NSObject, FlutterPlugin {
     }
 
     private func parseWebCheckoutProcessors(_ names: [String]?) -> WebCheckoutProcessors {
-        guard let names, !names.isEmpty else {
+        // nil = key absent from the Dart side = caller didn't specify → default to all.
+        // An explicit empty list (or a non-empty list where nothing parses) is returned
+        // as empty so the native SDK's own guard surfaces the error rather than
+        // silently enabling a processor the caller meant to skip.
+        guard let names else {
             return .all
         }
         var processors: WebCheckoutProcessors = []
@@ -284,7 +288,7 @@ public class HeliumFlutterPlugin: NSObject, FlutterPlugin {
                 print("[Helium] Unknown web checkout processor: \(name)")
             }
         }
-        return processors.isEmpty ? .all : processors
+        return processors
     }
 
     private struct ParsedInitArgs {

@@ -524,6 +524,11 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
       log('[Helium] enableExternalWebCheckout is only available on iOS');
       return;
     }
+    if (paymentProcessors != null && paymentProcessors.isEmpty) {
+      log('[Helium] enableExternalWebCheckout: paymentProcessors must not be empty. '
+          'Omit it to enable all, or pass {HeliumWebCheckoutProcessor.paddle} or {HeliumWebCheckoutProcessor.stripe}.');
+      return;
+    }
     methodChannel.invokeMethod<void>(
       enableExternalWebCheckoutMethodName,
       {
@@ -533,7 +538,9 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
           'paymentProcessors':
               paymentProcessors.map((p) => p.name).toList(),
       },
-    );
+    ).catchError((e) {
+      log('[Helium] Failed to enable External Web Checkout: $e');
+    });
   }
 
   @override
@@ -542,7 +549,11 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
       log('[Helium] disableExternalWebCheckout is only available on iOS');
       return;
     }
-    methodChannel.invokeMethod<void>(disableExternalWebCheckoutMethodName);
+    methodChannel
+        .invokeMethod<void>(disableExternalWebCheckoutMethodName)
+        .catchError((e) {
+      log('[Helium] Failed to disable External Web Checkout: $e');
+    });
   }
 
   @override
@@ -554,7 +565,9 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
     methodChannel.invokeMethod<void>(
       setAllowWebCheckoutWithoutUserIdMethodName,
       allow,
-    );
+    ).catchError((e) {
+      log('[Helium] Failed to set allowWebCheckoutWithoutUserId: $e');
+    });
   }
 
   @override
@@ -563,10 +576,15 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
       log('[Helium] hasActiveStripeEntitlement is only available on iOS');
       return false;
     }
-    final result = await methodChannel.invokeMethod<bool>(
-      hasActiveStripeEntitlementMethodName,
-    );
-    return result ?? false;
+    try {
+      final result = await methodChannel.invokeMethod<bool>(
+        hasActiveStripeEntitlementMethodName,
+      );
+      return result ?? false;
+    } on PlatformException catch (e) {
+      log('[Helium] Failed to check Stripe entitlement: ${e.message}');
+      return false;
+    }
   }
 
   @override
@@ -575,10 +593,15 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
       log('[Helium] hasActivePaddleEntitlement is only available on iOS');
       return false;
     }
-    final result = await methodChannel.invokeMethod<bool>(
-      hasActivePaddleEntitlementMethodName,
-    );
-    return result ?? false;
+    try {
+      final result = await methodChannel.invokeMethod<bool>(
+        hasActivePaddleEntitlementMethodName,
+      );
+      return result ?? false;
+    } on PlatformException catch (e) {
+      log('[Helium] Failed to check Paddle entitlement: ${e.message}');
+      return false;
+    }
   }
 
   @override
@@ -620,7 +643,11 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
       log('[Helium] resetStripeEntitlements is only available on iOS');
       return;
     }
-    await methodChannel.invokeMethod<void>(resetStripeEntitlementsMethodName);
+    try {
+      await methodChannel.invokeMethod<void>(resetStripeEntitlementsMethodName);
+    } on PlatformException catch (e) {
+      log('[Helium] Failed to reset Stripe entitlements: ${e.message}');
+    }
   }
 
   @override
@@ -629,7 +656,11 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
       log('[Helium] resetPaddleEntitlements is only available on iOS');
       return;
     }
-    await methodChannel.invokeMethod<void>(resetPaddleEntitlementsMethodName);
+    try {
+      await methodChannel.invokeMethod<void>(resetPaddleEntitlementsMethodName);
+    } on PlatformException catch (e) {
+      log('[Helium] Failed to reset Paddle entitlements: ${e.message}');
+    }
   }
 
   void _handlePaywallEventHandlers(HeliumPaywallEvent event) {
