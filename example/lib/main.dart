@@ -1,14 +1,10 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:helium_flutter/helium_flutter.dart';
-import 'package:helium_flutter/types/helium_environment.dart';
 import 'package:helium_flutter_example/core/payment_callbacks.dart';
+import 'package:helium_stripe/helium_stripe.dart';
 
 import 'package:helium_flutter_example/presentation/home_page.dart';
-import 'package:helium_revenuecat/helium_revenuecat.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
 
 void main() {
@@ -20,18 +16,22 @@ void main() {
 
 // Platform messages are asynchronous, so we initialize in an async method.
 Future<void> initializeHelium() async {
-  final heliumFlutterPlugin = HeliumFlutter();
   await dotenv.load(fileName: ".env");
   final apiKey = dotenv.env['API_KEY'] ?? '';
-  // final customUserId = dotenv.env['CUSTOM_USER_ID'];
-  // Platform messages may fail, so we use a try/catch PlatformException.
-  // We also handle the message potentially returning null.
+  final stripePublishableKey = dotenv.env['STRIPE_PUBLISHABLE_KEY'] ?? '';
+  final merchantIdentifier = dotenv.env['STRIPE_MERCHANT_IDENTIFIER'] ?? '';
+  final merchantName = dotenv.env['STRIPE_MERCHANT_NAME'] ?? '';
+  final managementURL = dotenv.env['STRIPE_MANAGEMENT_URL'] ?? '';
+
   try {
-    await heliumFlutterPlugin.initialize(
+    await HeliumStripe.initializeWithStripe(
       apiKey: apiKey,
-      fallbackPaywall: Text("fallback view here..."),
+      stripePublishableKey: stripePublishableKey,
+      merchantIdentifier: merchantIdentifier,
+      merchantName: merchantName,
+      managementURL: managementURL,
       callbacks: LogCallbacks(),
-      environment: HeliumEnvironment.production);
+    );
   } on PlatformException {
     rethrow;
   } catch (e) {
