@@ -427,8 +427,9 @@ class HeliumFlutterPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
         result.success(null)
       }
       "hasActiveStripeEntitlement",
-      "hasActivePaddleEntitlement" -> {
-        // Web Checkout entitlements are not yet supported on Android.
+      "hasActivePaddleEntitlement",
+      "handleURL" -> {
+        // Web Checkout entitlements / redirects are not yet supported on Android.
         result.success(false)
       }
       else -> {

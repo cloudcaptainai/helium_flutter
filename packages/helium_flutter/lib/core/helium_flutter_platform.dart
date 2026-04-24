@@ -168,4 +168,11 @@ abstract class HeliumFlutterPlatform extends PlatformInterface {
   /// Resets Paddle entitlements and clears the user ID.
   /// iOS only; no-op on Android.
   Future<void> resetPaddleEntitlements();
+
+  /// Forward an incoming URL to Helium so it can react to External Web
+  /// Checkout success/cancel redirects without waiting for the app to
+  /// foreground.
+  ///
+  /// iOS only; returns `false` on Android.
+  Future<bool> handleURL(String url);
 }

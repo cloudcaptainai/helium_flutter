@@ -44,3 +44,4 @@ const String createStripePortalSessionMethodName = 'createStripePortalSession';
 const String createPaddlePortalSessionMethodName = 'createPaddlePortalSession';
 const String resetStripeEntitlementsMethodName = 'resetStripeEntitlements';
 const String resetPaddleEntitlementsMethodName = 'resetPaddleEntitlements';
+const String handleURLMethodName = 'handleURL';

@@ -298,4 +298,20 @@ class HeliumFlutter {
   /// Currently only supported on iOS; a no-op on Android.
   Future<void> resetPaddleEntitlements() =>
       HeliumFlutterPlatform.instance.resetPaddleEntitlements();
+
+  /// Forward an incoming URL to Helium so it can react to External Web
+  /// Checkout success/cancel redirects without waiting for the app to
+  /// foreground.
+  ///
+  /// Safe to call with unrelated URLs — returns `false` if external web
+  /// checkout is disabled or the URL does not match the success/cancel URLs
+  /// configured via [enableExternalWebCheckout].
+  ///
+  /// Call this from your app's deep link handler (e.g. the callback of a
+  /// package like `app_links` or `uni_links`).
+  ///
+  /// Returns `true` if the URL was a Helium checkout redirect and is being
+  /// processed. Currently only supported on iOS; returns `false` on Android.
+  Future<bool> handleURL(String url) =>
+      HeliumFlutterPlatform.instance.handleURL(url);
 }

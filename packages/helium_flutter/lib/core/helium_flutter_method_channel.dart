@@ -663,6 +663,23 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
     }
   }
 
+  @override
+  Future<bool> handleURL(String url) async {
+    if (!Platform.isIOS) {
+      return false;
+    }
+    try {
+      final result = await methodChannel.invokeMethod<bool>(
+        handleURLMethodName,
+        url,
+      );
+      return result ?? false;
+    } on PlatformException catch (e) {
+      log('[Helium] Failed to handle URL: ${e.message}');
+      return false;
+    }
+  }
+
   void _handlePaywallEventHandlers(HeliumPaywallEvent event) {
     if (_currentEventHandlers == null) return;
 
