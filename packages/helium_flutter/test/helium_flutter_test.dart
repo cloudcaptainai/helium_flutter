@@ -191,6 +191,9 @@ class MockHeliumFlutterPlatform
 
   @override
   Future<void> resetPaddleEntitlements() async {}
+
+  @override
+  Future<bool> handleURL(String url) async => false;
 }
 
 void main() {
@@ -340,5 +343,11 @@ void main() {
   });
   test(resetPaddleEntitlementsMethodName, () async {
     await heliumFlutterPlugin.resetPaddleEntitlements();
+  });
+  test(handleURLMethodName, () async {
+    expect(
+      await heliumFlutterPlugin.handleURL('https://example.com/success'),
+      false,
+    );
   });
 }
