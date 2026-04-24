@@ -1,5 +1,5 @@
 // SDK version - keep in sync with pubspec.yaml
-const String heliumFlutterSdkVersion = '3.2.6';
+const String heliumFlutterSdkVersion = '3.3.0';
 
 //Native view type
 const String upsellViewForTrigger = 'upsellViewForTrigger';
@@ -31,6 +31,7 @@ const String resetHeliumMethodName = 'resetHelium';
 const String hasEntitlementForPaywallMethodName = 'hasEntitlementForPaywall';
 const String setLightDarkModeOverrideMethodName = 'setLightDarkModeOverride';
 const String setRevenueCatAppUserIdMethodName = 'setRevenueCatAppUserId';
+const String setThirdPartyAnalyticsAnonymousIdMethodName = 'setThirdPartyAnalyticsAnonymousId';
 const String hideAllUpsellsMethodName = 'hideAllUpsells';
 const String onHeliumLogEventMethodName = 'onHeliumLogEvent';
 const String setAndroidConsumableProductIdsMethodName = 'setAndroidConsumableProductIds';
@@ -44,3 +45,4 @@ const String createStripePortalSessionMethodName = 'createStripePortalSession';
 const String createPaddlePortalSessionMethodName = 'createPaddlePortalSession';
 const String resetStripeEntitlementsMethodName = 'resetStripeEntitlements';
 const String resetPaddleEntitlementsMethodName = 'resetPaddleEntitlements';
+const String handleURLMethodName = 'handleURL';

@@ -204,6 +204,23 @@ class HeliumFlutter {
   void setRevenueCatAppUserId(String rcAppUserId) =>
       HeliumFlutterPlatform.instance.setRevenueCatAppUserId(rcAppUserId);
 
+  /// An optional anonymous ID from your third-party analytics provider, sent
+  /// alongside every Helium analytics event so you can correlate Helium data
+  /// with your own analytics before you have set a custom user ID. Pass `null`
+  /// to clear.
+  ///
+  /// - Amplitude: pass device ID
+  /// - Mixpanel: pass anonymous ID
+  /// - PostHog: pass anonymous ID
+  /// - Statsig: pass stable ID
+  ///
+  /// Set this before calling [initialize] for best results — `await` this
+  /// call to guarantee the ID is recorded before [initialize] fires. Can also
+  /// be updated after initialization.
+  Future<void> setThirdPartyAnalyticsAnonymousId(String? anonymousId) =>
+      HeliumFlutterPlatform.instance
+          .setThirdPartyAnalyticsAnonymousId(anonymousId);
+
   /// Set consumable product IDs for Android.
   /// These IDs will be used to identify consumable products in the Play Store
   /// and this is only respected if no custom purchaseDelegate is supplied.
@@ -212,20 +229,30 @@ class HeliumFlutter {
       HeliumFlutterPlatform.instance
           .setAndroidConsumableProductIds(productIds);
 
-  /// Enable External Web Checkout Flow for Paddle/Stripe products in your
-  /// paywalls. If not enabled, paywalls with Paddle/Stripe products will not
-  /// show and your fallback paywall will show instead.
+  /// Enables External Web Checkout Flow for any Paddle or Stripe products in
+  /// your paywalls. If not enabled, paywalls with Paddle/Stripe products will
+  /// not show and your fallback paywall (if provided) will show instead.
   ///
-  /// - [successURL]: URL to redirect to after a successful payment. Include
-  ///   `{CHECKOUT_SESSION_ID}` to receive the session ID.
-  /// - [cancelURL]: URL the provider redirects to when the user cancels
+  /// You must provide redirect URLs so Helium knows where to send the user
+  /// after checkout completes or is cancelled.
+  ///
+  /// Call this before [initialize] for best results, and `await` it to
+  /// guarantee the configuration is applied before [initialize] runs on the
+  /// native side.
+  ///
+  /// - [successURL]: The URL to redirect to after a successful payment.
+  /// - [cancelURL]: The URL the provider redirects to when the user cancels
   ///   checkout.
-  /// - [paymentProcessors]: Which processors to enable. Omit to enable both
-  ///   Paddle and Stripe. Pass a single-value set to skip the unused
-  ///   processor's entitlement network calls.
+  /// - [paymentProcessors]: Which processors to enable. Omit (or pass `null`)
+  ///   to enable both Paddle and Stripe. Pass
+  ///   `{HeliumWebCheckoutProcessor.paddle}` or
+  ///   `{HeliumWebCheckoutProcessor.stripe}` if your app only uses one, to
+  ///   skip the unused processor's entitlement network calls. Must not be
+  ///   an empty set.
   ///
-  /// Currently only supported on iOS; a no-op on Android.
-  void enableExternalWebCheckout({
+  /// Currently only supported on iOS; a no-op on Android. Errors are logged
+  /// internally and never thrown to the caller.
+  Future<void> enableExternalWebCheckout({
     required String successURL,
     required String cancelURL,
     Set<HeliumWebCheckoutProcessor>? paymentProcessors,
@@ -236,21 +263,36 @@ class HeliumFlutter {
         paymentProcessors: paymentProcessors,
       );
 
-  /// Disable External Web Checkout Flow. Paywalls with Paddle/Stripe products
-  /// will not show; your fallback paywall will show instead.
+  /// Disables External Web Checkout Flow. Paywalls with Paddle or Stripe
+  /// products will not show; your fallback paywall (if provided) will show
+  /// instead.
   ///
-  /// Currently only supported on iOS; a no-op on Android.
-  void disableExternalWebCheckout() =>
+  /// Note: if you have existing Paddle/Stripe customers, Helium will attempt
+  /// to continue respecting their entitlements but is not guaranteed to do so.
+  ///
+  /// Currently only supported on iOS; a no-op on Android. Errors are logged
+  /// internally and never thrown to the caller.
+  Future<void> disableExternalWebCheckout() =>
       HeliumFlutterPlatform.instance.disableExternalWebCheckout();
 
-  /// Allow Web Checkout paywalls (Paddle/Stripe) to show even when no custom
-  /// user ID has been set via [overrideUserId]. Use for purchase-before-signup
-  /// flows — once a user ID is set later, Helium will link the
+  /// Allows Web Checkout paywalls (Paddle/Stripe) to show even when no custom
+  /// user ID has been set via [overrideUserId].
+  ///
+  /// By default, paywalls with Paddle or Stripe products will not show if no
+  /// user ID is set, and your fallback paywall (if provided) will show
+  /// instead. Set [allow] to `true` for purchase-before-signup flows — once
+  /// [overrideUserId] is called later, Helium will automatically link the
   /// Paddle/Stripe customer to that user ID.
   ///
-  /// Defaults to false on the native side. Currently only supported on iOS;
-  /// a no-op on Android.
-  void setAllowWebCheckoutWithoutUserId(bool allow) =>
+  /// **Warning:** Use with caution. If the user purchases via web checkout
+  /// and your app never sets a user ID (or they uninstall before you do), the
+  /// purchase may be unrecoverable for that user. Only enable this if your
+  /// app has a clear path for the user to set [overrideUserId] post-purchase.
+  ///
+  /// Defaults to `false` on the native side. Currently only supported on iOS;
+  /// a no-op on Android. Errors are logged internally and never thrown to the
+  /// caller.
+  Future<void> setAllowWebCheckoutWithoutUserId(bool allow) =>
       HeliumFlutterPlatform.instance.setAllowWebCheckoutWithoutUserId(allow);
 
   /// Returns `true` if the user has any active Stripe entitlement.
@@ -275,11 +317,13 @@ class HeliumFlutter {
       HeliumFlutterPlatform.instance
           .createStripePortalSession(returnUrl: returnUrl);
 
-  /// Creates a Paddle customer portal session for the current user and returns
-  /// the portal URL. The host app can open this URL in a browser or in-app
-  /// webview to let the user manage their subscriptions.
+  /// Creates a Paddle Customer Portal session for the current user and
+  /// returns the portal URL. The host app can open this URL in a browser or
+  /// in-app webview to let the user manage their subscriptions.
   ///
-  /// Currently only supported on iOS; returns `null` on Android.
+  /// Returns `null` if the session could not be created (e.g. the user has
+  /// no Paddle customer ID yet, or the request failed). Currently only
+  /// supported on iOS; returns `null` on Android.
   Future<String?> createPaddlePortalSession() =>
       HeliumFlutterPlatform.instance.createPaddlePortalSession();
 
@@ -292,10 +336,27 @@ class HeliumFlutter {
       HeliumFlutterPlatform.instance.resetStripeEntitlements();
 
   /// Resets Paddle entitlements and clears the user ID. Call this to
-  /// effectively "log out" a Paddle user if your app supports multiple Paddle
-  /// users on the same device.
+  /// effectively "log out" a Paddle user if your app can support multiple
+  /// Paddle users on the same device.
   ///
+  /// Note: this also clears the custom user ID.
   /// Currently only supported on iOS; a no-op on Android.
   Future<void> resetPaddleEntitlements() =>
       HeliumFlutterPlatform.instance.resetPaddleEntitlements();
+
+  /// Forward an incoming URL to Helium so it can react to External Web
+  /// Checkout success/cancel redirects without waiting for the app to
+  /// foreground.
+  ///
+  /// Safe to call with unrelated URLs — returns `false` if external web
+  /// checkout is disabled or the URL does not match the success/cancel URLs
+  /// configured via [enableExternalWebCheckout].
+  ///
+  /// Call this from your app's deep link handler (e.g. the callback of a
+  /// package like `app_links` or `uni_links`).
+  ///
+  /// Returns `true` if the URL was a Helium checkout redirect and is being
+  /// processed. Currently only supported on iOS; returns `false` on Android.
+  Future<bool> handleURL(String url) =>
+      HeliumFlutterPlatform.instance.handleURL(url);
 }

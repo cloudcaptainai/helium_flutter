@@ -29,6 +29,44 @@ enum HeliumPaymentProcessor {
   }
 }
 
+/// Reason a paywall was skipped (not shown) for a trigger. Present on
+/// `paywallSkipped` events.
+enum PaywallSkippedReason {
+  targetingHoldout,
+  alreadyEntitled;
+
+  static PaywallSkippedReason? fromValue(String? value) {
+    if (value == null) return null;
+    for (final r in PaywallSkippedReason.values) {
+      if (r.name == value) return r;
+    }
+    return null;
+  }
+}
+
+/// How an existing entitlement was surfaced on a `purchaseRestored` event.
+enum PurchaseRestoredOrigin {
+  /// User tapped the "Restore Purchases" button.
+  restorePurchases,
+
+  /// A purchase action resolved as a restoration (e.g. StoreKit returned
+  /// `.restored`, or a pre-checkout entitlement check found the user already
+  /// owned the product).
+  duringPurchase,
+
+  /// Entitlement was passively observed (e.g. after returning from an
+  /// external web checkout).
+  detected;
+
+  static PurchaseRestoredOrigin? fromValue(String? value) {
+    if (value == null) return null;
+    for (final o in PurchaseRestoredOrigin.values) {
+      if (o.name == value) return o;
+    }
+    return null;
+  }
+}
+
 class PaywallInfo {
   final String paywallTemplateName;
   final bool shouldShow;
@@ -102,11 +140,24 @@ class PaywallOpenEvent {
   final bool isSecondTry;
   final String? viewType;
 
+  /// Set when a fallback was shown in place of the configured paywall.
+  final String? paywallUnavailableReason;
+
+  /// Time the loading state was shown for, in milliseconds. Present when a
+  /// loading state was used for this trigger.
+  final int? loadTimeTakenMS;
+
+  /// Loading budget configured for the trigger, in milliseconds.
+  final int? loadingBudgetMS;
+
   PaywallOpenEvent({
     required this.triggerName,
     required this.paywallName,
     required this.isSecondTry,
     this.viewType,
+    this.paywallUnavailableReason,
+    this.loadTimeTakenMS,
+    this.loadingBudgetMS,
   });
 }
 
@@ -161,12 +212,20 @@ class PaywallOpenFailedEvent {
   final String? paywallUnavailableReason;
   final bool isSecondTry;
 
+  /// Time the loading state was shown for before the failure, in milliseconds.
+  final int? loadTimeTakenMS;
+
+  /// Loading budget configured for the trigger, in milliseconds.
+  final int? loadingBudgetMS;
+
   PaywallOpenFailedEvent({
     required this.triggerName,
     required this.paywallName,
     required this.error,
     required this.paywallUnavailableReason,
     required this.isSecondTry,
+    this.loadTimeTakenMS,
+    this.loadingBudgetMS,
   });
 }
 
@@ -261,6 +320,27 @@ class HeliumPaywallEvent {
   Map<String, dynamic>? get customPaywallActionParams => getSafeData(_data['params']);
   /// Unix timestamp in seconds
   int? get timestamp => _get<int>('timestamp');
+
+  /// Time the loading state was shown for, in milliseconds. Present on
+  /// `paywallOpen` / `paywallOpenFailed` when a loading state was used.
+  int? get loadTimeTakenMS => _get<int>('loadTimeTakenMS');
+
+  /// Loading budget for the trigger, in milliseconds. Present on
+  /// `paywallOpen` / `paywallOpenFailed`.
+  int? get loadingBudgetMS => _get<int>('loadingBudgetMS');
+
+  /// Total time from config fetch start to completion, in milliseconds.
+  /// Present on `paywallsDownloadSuccess` / `paywallsDownloadError`.
+  int? get totalInitializeTimeMS => _get<int>('totalInitializeTimeMS');
+
+  /// Reason the paywall was skipped. Present on `paywallSkipped` events.
+  PaywallSkippedReason? get skipReason =>
+      PaywallSkippedReason.fromValue(_get<String>('skipReason'));
+
+  /// How an existing entitlement was surfaced. Present on `purchaseRestored`
+  /// events.
+  PurchaseRestoredOrigin? get origin =>
+      PurchaseRestoredOrigin.fromValue(_get<String>('origin'));
 
   // Deprecated getters for backwards compatibility
   /// @deprecated Use `paywallName` instead.

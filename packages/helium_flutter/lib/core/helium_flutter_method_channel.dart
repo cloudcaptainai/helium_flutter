@@ -506,6 +506,18 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
   }
 
   @override
+  Future<void> setThirdPartyAnalyticsAnonymousId(String? anonymousId) async {
+    try {
+      await methodChannel.invokeMethod<void>(
+        setThirdPartyAnalyticsAnonymousIdMethodName,
+        anonymousId,
+      );
+    } catch (e) {
+      log('[Helium] Failed to set third-party analytics anonymous ID: $e');
+    }
+  }
+
+  @override
   void setAndroidConsumableProductIds(Set<String> productIds) {
     if (!Platform.isAndroid) return;
     methodChannel.invokeMethod<void>(
@@ -515,11 +527,11 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
   }
 
   @override
-  void enableExternalWebCheckout({
+  Future<void> enableExternalWebCheckout({
     required String successURL,
     required String cancelURL,
     Set<HeliumWebCheckoutProcessor>? paymentProcessors,
-  }) {
+  }) async {
     if (!Platform.isIOS) {
       log('[Helium] enableExternalWebCheckout is only available on iOS');
       return;
@@ -529,45 +541,50 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
           'Omit it to enable all, or pass {HeliumWebCheckoutProcessor.paddle} or {HeliumWebCheckoutProcessor.stripe}.');
       return;
     }
-    methodChannel.invokeMethod<void>(
-      enableExternalWebCheckoutMethodName,
-      {
-        'successURL': successURL,
-        'cancelURL': cancelURL,
-        if (paymentProcessors != null)
-          'paymentProcessors':
-              paymentProcessors.map((p) => p.name).toList(),
-      },
-    ).catchError((e) {
+    try {
+      await methodChannel.invokeMethod<void>(
+        enableExternalWebCheckoutMethodName,
+        {
+          'successURL': successURL,
+          'cancelURL': cancelURL,
+          if (paymentProcessors != null)
+            'paymentProcessors':
+                paymentProcessors.map((p) => p.name).toList(),
+        },
+      );
+    } catch (e) {
       log('[Helium] Failed to enable External Web Checkout: $e');
-    });
+    }
   }
 
   @override
-  void disableExternalWebCheckout() {
+  Future<void> disableExternalWebCheckout() async {
     if (!Platform.isIOS) {
       log('[Helium] disableExternalWebCheckout is only available on iOS');
       return;
     }
-    methodChannel
-        .invokeMethod<void>(disableExternalWebCheckoutMethodName)
-        .catchError((e) {
+    try {
+      await methodChannel
+          .invokeMethod<void>(disableExternalWebCheckoutMethodName);
+    } catch (e) {
       log('[Helium] Failed to disable External Web Checkout: $e');
-    });
+    }
   }
 
   @override
-  void setAllowWebCheckoutWithoutUserId(bool allow) {
+  Future<void> setAllowWebCheckoutWithoutUserId(bool allow) async {
     if (!Platform.isIOS) {
       log('[Helium] setAllowWebCheckoutWithoutUserId is only available on iOS');
       return;
     }
-    methodChannel.invokeMethod<void>(
-      setAllowWebCheckoutWithoutUserIdMethodName,
-      allow,
-    ).catchError((e) {
+    try {
+      await methodChannel.invokeMethod<void>(
+        setAllowWebCheckoutWithoutUserIdMethodName,
+        allow,
+      );
+    } catch (e) {
       log('[Helium] Failed to set allowWebCheckoutWithoutUserId: $e');
-    });
+    }
   }
 
   @override
@@ -663,6 +680,23 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
     }
   }
 
+  @override
+  Future<bool> handleURL(String url) async {
+    if (!Platform.isIOS) {
+      return false;
+    }
+    try {
+      final result = await methodChannel.invokeMethod<bool>(
+        handleURLMethodName,
+        url,
+      );
+      return result ?? false;
+    } on PlatformException catch (e) {
+      log('[Helium] Failed to handle URL: ${e.message}');
+      return false;
+    }
+  }
+
   void _handlePaywallEventHandlers(HeliumPaywallEvent event) {
     if (_currentEventHandlers == null) return;
 
@@ -678,6 +712,9 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
           paywallName: paywallName,
           isSecondTry: isSecondTry,
           viewType: 'presented',
+          paywallUnavailableReason: event.paywallUnavailableReason,
+          loadTimeTakenMS: event.loadTimeTakenMS,
+          loadingBudgetMS: event.loadingBudgetMS,
         ));
         break;
       case 'paywallClose':
@@ -711,6 +748,8 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
           isSecondTry: isSecondTry,
           error: event.error ?? '',
           paywallUnavailableReason: event.paywallUnavailableReason ?? '',
+          loadTimeTakenMS: event.loadTimeTakenMS,
+          loadingBudgetMS: event.loadingBudgetMS,
         ));
         break;
       case 'customPaywallAction':

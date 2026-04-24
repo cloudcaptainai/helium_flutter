@@ -128,6 +128,9 @@ public class HeliumFlutterPlugin: NSObject, FlutterPlugin {
         case "handleDeepLink":
             let urlString = call.arguments as? String ?? ""
             result(handleDeepLink(urlString))
+        case "handleURL":
+            let urlString = call.arguments as? String ?? ""
+            result(handleURL(urlString))
         case "hasAnyActiveSubscription":
             Task {
                 let hasSubscription = await hasAnyActiveSubscription()
@@ -190,6 +193,9 @@ public class HeliumFlutterPlugin: NSObject, FlutterPlugin {
             } else {
                 result(FlutterError(code: "BAD_ARGS", message: "rcAppUserId not provided", details: nil))
             }
+        case "setThirdPartyAnalyticsAnonymousId":
+            Helium.identify.thirdPartyAnalyticsAnonymousId = call.arguments as? String
+            result("Third-party analytics anonymous ID set!")
         case "hideAllUpsells":
             Helium.shared.hideAllPaywalls()
             result(true)
@@ -472,6 +478,14 @@ public class HeliumFlutterPlugin: NSObject, FlutterPlugin {
         }
 
         return Helium.shared.handleDeepLink(url)
+    }
+
+    private func handleURL(_ urlString: String) -> Bool {
+        guard let url = URL(string: urlString) else {
+            return false
+        }
+
+        return Helium.shared.handleURL(url)
     }
 
     private func hasAnyActiveSubscription() async -> Bool {
