@@ -18,3 +18,7 @@ We also maintain an Expo/React Native SDK (`helium-expo`) that wraps the same na
 - **Never crash.** This SDK is distributed to apps with millions of users. Prefer defensive error handling (try/catch, backup logic) over letting exceptions propagate. A swallowed error is always better than a crash.
 - **Follow Dart/Flutter conventions.** Do not strictly follow native iOS/Android patterns nor Expo context if provided.
 - **Avoid using "fallback" in code and comments** unless referring to the Helium fallback paywall flow. This term has a specific meaning in this SDK.
+
+## Testing
+
+When adding or changing a method on `HeliumFlutterPlatform`, also update the `MockHeliumFlutterPlatform` in `packages/helium_flutter/test/helium_flutter_test.dart` — otherwise `flutter analyze` fails with `non_abstract_class_inherits_abstract_member` or `invalid_override`.
