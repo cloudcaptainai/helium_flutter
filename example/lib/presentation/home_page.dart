@@ -20,6 +20,11 @@ class _HomePageState extends State<HomePage> {
   final _heliumFlutterPlugin = HeliumFlutter();
 
 
+  String get _trigger {
+    final value = dotenv.env['TRIGGER'];
+    return (value == null || value.isEmpty) ? 'sdk_test' : value;
+  }
+
   Widget getDownloadStatusText(BuildContext context) {
     return StreamBuilder<HeliumConfigStatus?>(
       stream: HeliumFlutter.downloadStatus,
@@ -27,6 +32,59 @@ class _HomePageState extends State<HomePage> {
         final status = snapshot.data;
           return Text("Helium Status ${status?.name}");
       },
+    );
+  }
+
+  Future<void> _openPaddlePortal() async {
+    final url = await _heliumFlutterPlugin.createPaddlePortalSession();
+    if (!mounted) return;
+    showDialog<void>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Paddle Portal'),
+        content: SelectableText(url ?? 'No URL returned'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Close'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _showEntitlements() async {
+    final hasSubscription =
+        await _heliumFlutterPlugin.hasAnyActiveSubscription();
+    final hasEntitlement = await _heliumFlutterPlugin.hasAnyEntitlement();
+    final hasTriggerEntitlement =
+        await _heliumFlutterPlugin.hasEntitlementForPaywall(_trigger);
+    final hasPaddle = await _heliumFlutterPlugin.hasActivePaddleEntitlement();
+    if (!mounted) return;
+    showDialog<void>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Entitlements'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Any active subscription: $hasSubscription'),
+            Text('Any entitlement: $hasEntitlement'),
+            Text(
+              'Entitlement for "$_trigger": '
+              '${hasTriggerEntitlement ?? "unknown"}',
+            ),
+            Text('Active Paddle entitlement: $hasPaddle'),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Close'),
+          ),
+        ],
+      ),
     );
   }
 
@@ -84,7 +142,7 @@ class _HomePageState extends State<HomePage> {
               key: ValueKey('present_upsell'),
               onPressed: () async {
                 await _heliumFlutterPlugin.presentUpsell(
-                  trigger: 'sdk_test',
+                  trigger: _trigger,
                   context: context,
                 );
               },
@@ -118,6 +176,14 @@ class _HomePageState extends State<HomePage> {
                 );
               },
               child: Text('Open RevenueCat Paywall'),
+            ),
+            ElevatedButton(
+              onPressed: _showEntitlements,
+              child: Text('Check Entitlements'),
+            ),
+            ElevatedButton(
+              onPressed: _openPaddlePortal,
+              child: Text('Open Paddle Portal'),
             ),
           ],
         ),

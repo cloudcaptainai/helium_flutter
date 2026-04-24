@@ -13,7 +13,7 @@ import 'package:purchases_flutter/purchases_flutter.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized(); // need this since initializing Helium before runApp call
-  initializeRevenueCat();
+  // initializeRevenueCat();
   initializeHelium();
   runApp(const MyApp());
 }

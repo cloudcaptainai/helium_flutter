@@ -5,8 +5,17 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/cloudcaptainai/helium-swift.git",
       "state" : {
-        "revision" : "7da734719b0ac57c56c683de8285c0d75a6494fa",
-        "version" : "3.0.15"
+        "revision" : "3f9fa01ca37e835d09084a0f0a9ceb457f467e79",
+        "version" : "4.4.0"
+      }
+    },
+    {
+      "identity" : "purchases-hybrid-common",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/RevenueCat/purchases-hybrid-common.git",
+      "state" : {
+        "revision" : "223110fdba329d83e35fb74f3b6ba21e849be765",
+        "version" : "17.23.0"
       }
     },
     {
@@ -14,8 +23,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/RevenueCat/purchases-ios-spm",
       "state" : {
-        "revision" : "1821dc954cbd3fdc27a28f3356eb1a3d77642f04",
-        "version" : "5.44.1"
+        "revision" : "22a87e08b943bd141ff1bb74bb116f0b9f78d19e",
+        "version" : "5.50.0"
       }
     }
   ],
