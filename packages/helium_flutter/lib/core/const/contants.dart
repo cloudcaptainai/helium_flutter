@@ -1,5 +1,5 @@
 // SDK version - keep in sync with pubspec.yaml
-const String heliumFlutterSdkVersion = '3.2.7';
+const String heliumFlutterSdkVersion = '3.3.0';
 
 //Native view type
 const String upsellViewForTrigger = 'upsellViewForTrigger';
