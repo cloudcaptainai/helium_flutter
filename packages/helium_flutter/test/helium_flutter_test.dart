@@ -158,20 +158,23 @@ class MockHeliumFlutterPlatform
   void setRevenueCatAppUserId(String rcAppUserId) {}
 
   @override
+  Future<void> setThirdPartyAnalyticsAnonymousId(String? anonymousId) async {}
+
+  @override
   void setAndroidConsumableProductIds(Set<String> productIds) {}
 
   @override
-  void enableExternalWebCheckout({
+  Future<void> enableExternalWebCheckout({
     required String successURL,
     required String cancelURL,
     Set<HeliumWebCheckoutProcessor>? paymentProcessors,
-  }) {}
+  }) async {}
 
   @override
-  void disableExternalWebCheckout() {}
+  Future<void> disableExternalWebCheckout() async {}
 
   @override
-  void setAllowWebCheckoutWithoutUserId(bool allow) {}
+  Future<void> setAllowWebCheckoutWithoutUserId(bool allow) async {}
 
   @override
   Future<bool> hasActiveStripeEntitlement() async => false;
@@ -294,6 +297,12 @@ void main() {
   test(setRevenueCatAppUserIdMethodName, () {
     // Test that it doesn't throw
     heliumFlutterPlugin.setRevenueCatAppUserId('rc_app_user_id_123');
+  });
+  test(setThirdPartyAnalyticsAnonymousIdMethodName, () async {
+    // Test that it doesn't throw
+    await heliumFlutterPlugin
+        .setThirdPartyAnalyticsAnonymousId('anon_id_123');
+    await heliumFlutterPlugin.setThirdPartyAnalyticsAnonymousId(null);
   });
   test(resetHeliumMethodName, () async {
     // Test that resetHelium completes without throwing
