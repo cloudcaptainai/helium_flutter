@@ -134,18 +134,18 @@ abstract class HeliumFlutterPlatform extends PlatformInterface {
   void setAndroidConsumableProductIds(Set<String> productIds);
 
   /// Enable External Web Checkout (Paddle/Stripe). iOS only; no-op on Android.
-  void enableExternalWebCheckout({
+  Future<void> enableExternalWebCheckout({
     required String successURL,
     required String cancelURL,
     Set<HeliumWebCheckoutProcessor>? paymentProcessors,
   });
 
   /// Disable External Web Checkout. iOS only; no-op on Android.
-  void disableExternalWebCheckout();
+  Future<void> disableExternalWebCheckout();
 
   /// Allow Web Checkout paywalls to show even when no custom user ID has been
   /// set via `overrideUserId`. iOS only; no-op on Android.
-  void setAllowWebCheckoutWithoutUserId(bool allow);
+  Future<void> setAllowWebCheckoutWithoutUserId(bool allow);
 
   /// Returns `true` if the user has any active Stripe entitlement.
   /// iOS only; returns `false` on Android.
