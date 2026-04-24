@@ -506,6 +506,18 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
   }
 
   @override
+  Future<void> setThirdPartyAnalyticsAnonymousId(String? anonymousId) async {
+    try {
+      await methodChannel.invokeMethod<void>(
+        setThirdPartyAnalyticsAnonymousIdMethodName,
+        anonymousId,
+      );
+    } catch (e) {
+      log('[Helium] Failed to set third-party analytics anonymous ID: $e');
+    }
+  }
+
+  @override
   void setAndroidConsumableProductIds(Set<String> productIds) {
     if (!Platform.isAndroid) return;
     methodChannel.invokeMethod<void>(

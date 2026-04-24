@@ -193,6 +193,9 @@ public class HeliumFlutterPlugin: NSObject, FlutterPlugin {
             } else {
                 result(FlutterError(code: "BAD_ARGS", message: "rcAppUserId not provided", details: nil))
             }
+        case "setThirdPartyAnalyticsAnonymousId":
+            Helium.identify.thirdPartyAnalyticsAnonymousId = call.arguments as? String
+            result("Third-party analytics anonymous ID set!")
         case "hideAllUpsells":
             Helium.shared.hideAllPaywalls()
             result(true)

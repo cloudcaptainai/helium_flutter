@@ -204,6 +204,23 @@ class HeliumFlutter {
   void setRevenueCatAppUserId(String rcAppUserId) =>
       HeliumFlutterPlatform.instance.setRevenueCatAppUserId(rcAppUserId);
 
+  /// An optional anonymous ID from your third-party analytics provider, sent
+  /// alongside every Helium analytics event so you can correlate Helium data
+  /// with your own analytics before you have set a custom user ID. Pass `null`
+  /// to clear.
+  ///
+  /// - Amplitude: pass device ID
+  /// - Mixpanel: pass anonymous ID
+  /// - PostHog: pass anonymous ID
+  /// - Statsig: pass stable ID
+  ///
+  /// Set this before calling [initialize] for best results — `await` this
+  /// call to guarantee the ID is recorded before [initialize] fires. Can also
+  /// be updated after initialization.
+  Future<void> setThirdPartyAnalyticsAnonymousId(String? anonymousId) =>
+      HeliumFlutterPlatform.instance
+          .setThirdPartyAnalyticsAnonymousId(anonymousId);
+
   /// Set consumable product IDs for Android.
   /// These IDs will be used to identify consumable products in the Play Store
   /// and this is only respected if no custom purchaseDelegate is supplied.

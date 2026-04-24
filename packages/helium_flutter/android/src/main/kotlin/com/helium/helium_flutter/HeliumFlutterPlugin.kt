@@ -410,6 +410,10 @@ class HeliumFlutterPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
         Helium.identity.revenueCatAppUserId = rcAppUserId
         result.success("RevenueCat App User ID set!")
       }
+      "setThirdPartyAnalyticsAnonymousId" -> {
+        Helium.identity.thirdPartyAnalyticsAnonymousId = call.arguments as? String
+        result.success("Third-party analytics anonymous ID set!")
+      }
       "setAndroidConsumableProductIds" -> {
         @Suppress("UNCHECKED_CAST")
         val productIds = call.arguments as? List<String> ?: emptyList()
