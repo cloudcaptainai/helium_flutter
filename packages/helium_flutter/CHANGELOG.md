@@ -1,3 +1,6 @@
+## 3.3.1
+- Updated helium-swift dependency to 4.4.1
+
 ## 3.3.0
 - Added `handleURL(String url)` for forwarding External Web Checkout redirect URLs to Helium (iOS only).
 - Exposed new event fields on `HeliumPaywallEvent`: `loadTimeTakenMS`, `loadingBudgetMS`, `totalInitializeTimeMS`, `skipReason`, `origin`.
