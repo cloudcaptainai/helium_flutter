@@ -66,7 +66,7 @@ class _MyAppState extends State<MyApp> {
     super.initState();
 
     _linkSubscription = AppLinks().uriLinkStream.listen((uri) {
-      HeliumFlutter().handleDeepLink(uri.toString());
+      HeliumFlutter().handleURL(uri.toString());
     });
   }
 

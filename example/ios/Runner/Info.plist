@@ -59,7 +59,7 @@
                 <string>heliumflutter</string>
             </array>
             <key>CFBundleURLName</key>
-            <string>com.com.helium.example.ios</string>
+            <string>com.helium.example.ios</string>
         </dict>
     </array>
 </dict>
