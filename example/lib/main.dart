@@ -1,11 +1,11 @@
-import 'dart:io';
+import 'dart:async';
+import 'package:app_links/app_links.dart';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:helium_flutter/helium_flutter.dart';
 import 'package:helium_flutter/types/helium_environment.dart';
-import 'package:helium_flutter_example/core/payment_callbacks.dart';
 
 import 'package:helium_flutter_example/presentation/home_page.dart';
 import 'package:helium_revenuecat/helium_revenuecat.dart';
@@ -27,10 +27,14 @@ Future<void> initializeHelium() async {
   // Platform messages may fail, so we use a try/catch PlatformException.
   // We also handle the message potentially returning null.
   try {
+    await HeliumFlutter().enableExternalWebCheckout(
+      successURL: "heliumflutter://openapp",
+      cancelURL: "heliumflutter://openapp",
+      paymentProcessors: {HeliumWebCheckoutProcessor.paddle},
+    );
     await heliumFlutterPlugin.initialize(
       apiKey: apiKey,
-      fallbackPaywall: Text("fallback view here..."),
-      callbacks: LogCallbacks(),
+      customAPIEndpoint: dotenv.env['CUSTOM_API_END_POINT'],
       environment: HeliumEnvironment.production);
   } on PlatformException {
     rethrow;
@@ -55,6 +59,23 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
+  StreamSubscription<Uri>? _linkSubscription;
+
+  @override
+  void initState() {
+    super.initState();
+
+    _linkSubscription = AppLinks().uriLinkStream.listen((uri) {
+      HeliumFlutter().handleDeepLink(uri.toString());
+    });
+  }
+
+  @override
+  void dispose() {
+    _linkSubscription?.cancel();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(home: HomePage());
