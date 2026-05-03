@@ -829,10 +829,12 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
   Widget getUpsellWidget({
     required String trigger,
     PaywallEventHandlers? eventHandlers,
+    Map<String, dynamic>? customPaywallTraits,
   }) {
     _currentEventHandlers = eventHandlers;
     return UpsellWrapperWidget(
       trigger: trigger,
+      customPaywallTraits: _convertBooleansToMarkers(customPaywallTraits),
       fallbackPaywallWidget:
           _fallbackPaywallWidget ?? Text("No fallback view provided"),
       availabilityChecker: () => canPresentUpsell(trigger),
@@ -899,6 +901,7 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
 /// nearly synchronous.
 class UpsellWrapperWidget extends StatefulWidget {
   final String trigger;
+  final Map<String, dynamic>? customPaywallTraits;
   final Widget fallbackPaywallWidget;
   final Future<CanPresentUpsellResult?> Function() availabilityChecker;
   final void Function(String? paywallUnavailableReason)? onFallbackOpened;
@@ -909,6 +912,7 @@ class UpsellWrapperWidget extends StatefulWidget {
     required this.trigger,
     required this.fallbackPaywallWidget,
     required this.availabilityChecker,
+    this.customPaywallTraits,
     this.onFallbackOpened,
     this.onFallbackClosed,
   });
@@ -951,7 +955,10 @@ class _UpsellWrapperWidgetState extends State<UpsellWrapperWidget> {
           return const SizedBox.shrink();
         }
         if (snapshot.data?.canShow == true) {
-          return UpsellViewForTrigger(trigger: widget.trigger);
+          return UpsellViewForTrigger(
+            trigger: widget.trigger,
+            customPaywallTraits: widget.customPaywallTraits,
+          );
         } else {
           _onShowFallback(snapshot.data?.paywallUnavailableReason);
           return widget.fallbackPaywallWidget;
@@ -963,24 +970,38 @@ class _UpsellWrapperWidgetState extends State<UpsellWrapperWidget> {
 
 ///This widget used to present view based on [trigger]
 class UpsellViewForTrigger extends StatelessWidget {
-  const UpsellViewForTrigger({super.key, required this.trigger});
+  const UpsellViewForTrigger({
+    super.key,
+    required this.trigger,
+    this.customPaywallTraits,
+  });
   final String viewType = upsellViewForTrigger;
   final String trigger;
 
+  /// Optional custom paywall traits forwarded to the native paywall on load.
+  /// Booleans should already be marker-encoded via `_convertBooleansToMarkers`
+  /// before being supplied here so they survive the platform channel codec.
+  final Map<String, dynamic>? customPaywallTraits;
+
   @override
   Widget build(BuildContext context) {
+    final creationParams = <String, dynamic>{
+      'trigger': trigger,
+      if (customPaywallTraits != null)
+        'customPaywallTraits': customPaywallTraits,
+    };
     if (Platform.isAndroid) {
       return AndroidView(
         viewType: viewType,
         layoutDirection: TextDirection.ltr,
-        creationParams: {'trigger': trigger},
+        creationParams: creationParams,
         creationParamsCodec: const StandardMessageCodec(),
       );
     } else if (Platform.isIOS) {
       return UiKitView(
         viewType: viewType,
         layoutDirection: TextDirection.ltr,
-        creationParams: {'trigger': trigger},
+        creationParams: creationParams,
         creationParamsCodec: const StandardMessageCodec(),
       );
     } else {
