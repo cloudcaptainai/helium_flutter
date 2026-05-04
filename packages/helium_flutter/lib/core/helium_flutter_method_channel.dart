@@ -682,10 +682,11 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
 
   @override
   void setLogLevel(HeliumLogLevel level) {
-    methodChannel.invokeMethod<void>(
-      setLogLevelMethodName,
-      level.rawValue,
-    );
+    methodChannel
+        .invokeMethod<void>(setLogLevelMethodName, level.rawValue)
+        .catchError((Object e) {
+      log('[Helium] Failed to set log level: $e');
+    });
   }
 
   @override

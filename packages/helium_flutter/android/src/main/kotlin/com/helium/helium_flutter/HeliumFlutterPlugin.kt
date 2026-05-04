@@ -440,7 +440,7 @@ class HeliumFlutterPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
       "setLogLevel" -> {
         val rawValue = (call.arguments as? Number)?.toInt()
         val level = rawValue?.let { value ->
-          HeliumLogLevel.values().firstOrNull { it.rawValue == value }
+          HeliumLogLevel.entries.firstOrNull { it.rawValue == value }
         }
         if (level == null) {
           result.error("BAD_ARGS", "Invalid log level", null)
