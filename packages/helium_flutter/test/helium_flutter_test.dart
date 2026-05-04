@@ -111,6 +111,7 @@ class MockHeliumFlutterPlatform
   Widget getUpsellWidget({
     required String trigger,
     PaywallEventHandlers? eventHandlers,
+    Map<String, dynamic>? customPaywallTraits,
   }) {
     return Text("upsell widget");
   }

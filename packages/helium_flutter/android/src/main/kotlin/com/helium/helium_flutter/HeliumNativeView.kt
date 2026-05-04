@@ -7,6 +7,7 @@ import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.setViewTreeLifecycleOwner
 import io.flutter.plugin.platform.PlatformView
 import com.tryhelium.paywall.core.Helium
+import com.tryhelium.paywall.core.HeliumUserTraits
 import com.tryhelium.paywall.core.event.HeliumEventDictionaryMapper
 import com.tryhelium.paywall.core.event.PaywallEventHandlers
 import com.tryhelium.paywall.ui.HeliumPaywallView
@@ -25,7 +26,10 @@ class HeliumNativeView(
 
     init {
         val trigger = creationParams?.get("trigger") as? String ?: ""
-        view = upsellViewForTrigger(context, trigger)
+        @Suppress("UNCHECKED_CAST")
+        val customPaywallTraitsMap = creationParams?.get("customPaywallTraits") as? Map<String, Any>
+        val customPaywallTraits = convertToHeliumUserTraits(customPaywallTraitsMap)
+        view = upsellViewForTrigger(context, trigger, customPaywallTraits)
     }
 
     override fun getView(): View {
@@ -36,7 +40,11 @@ class HeliumNativeView(
         view.setViewTreeLifecycleOwner(null)
     }
 
-    private fun upsellViewForTrigger(context: Context, trigger: String): View {
+    private fun upsellViewForTrigger(
+        context: Context,
+        trigger: String,
+        customPaywallTraits: HeliumUserTraits?,
+    ): View {
         val eventListener = PaywallEventHandlers(onAnyEvent = { event ->
             val eventData = HeliumEventDictionaryMapper.toDictionary(event)
             Handler(Looper.getMainLooper()).post {
@@ -47,7 +55,7 @@ class HeliumNativeView(
                 }
             }
         })
-        
+
         return try {
             val paywallView = HeliumPaywallView(context = context)
             paywallView.layoutParams = android.view.ViewGroup.LayoutParams(
@@ -68,9 +76,13 @@ class HeliumNativeView(
                     // Remove listener so loadPaywall is only called once
                     v.removeOnAttachStateChangeListener(this)
                     try {
-                        paywallView.loadPaywall(trigger = trigger, navigationDispatcher = { command ->
-                            // Do nothing. Callers need to listen to the paywall events
-                        })
+                        paywallView.loadPaywall(
+                            trigger = trigger,
+                            navigationDispatcher = { command ->
+                                // Do nothing. Callers need to listen to the paywall events
+                            },
+                            customPaywallTraits = customPaywallTraits,
+                        )
                     } catch (e: Exception) {
                         Log.e("HeliumNativeView", "Failed to load paywall for trigger '$trigger'", e)
                     }
