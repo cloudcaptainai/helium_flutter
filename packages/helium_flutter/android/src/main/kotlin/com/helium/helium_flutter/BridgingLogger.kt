@@ -24,23 +24,33 @@ class BridgingLogger(private val channel: MethodChannel) : HeliumLogger {
     private val mainHandler = Handler(Looper.getMainLooper())
 
     override fun e(message: String) {
-        sendLogEvent(level = 1, message = message)
+        if (logLevel.rawValue >= HeliumLogLevel.ERROR.rawValue) {
+            sendLogEvent(level = 1, message = message)
+        }
     }
 
     override fun w(message: String) {
-        sendLogEvent(level = 2, message = message)
+        if (logLevel.rawValue >= HeliumLogLevel.WARN.rawValue) {
+            sendLogEvent(level = 2, message = message)
+        }
     }
 
     override fun i(message: String) {
-        sendLogEvent(level = 3, message = message)
+        if (logLevel.rawValue >= HeliumLogLevel.INFO.rawValue) {
+            sendLogEvent(level = 3, message = message)
+        }
     }
 
     override fun d(message: String) {
-        sendLogEvent(level = 4, message = message)
+        if (logLevel.rawValue >= HeliumLogLevel.DEBUG.rawValue) {
+            sendLogEvent(level = 4, message = message)
+        }
     }
 
     override fun v(message: String) {
-        sendLogEvent(level = 5, message = message)
+        if (logLevel.rawValue >= HeliumLogLevel.VERBOSE.rawValue) {
+            sendLogEvent(level = 5, message = message)
+        }
     }
 
     private fun sendLogEvent(level: Int, message: String) {

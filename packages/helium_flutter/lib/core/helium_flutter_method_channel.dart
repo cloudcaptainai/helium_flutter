@@ -681,6 +681,14 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
   }
 
   @override
+  void setLogLevel(HeliumLogLevel level) {
+    methodChannel.invokeMethod<void>(
+      setLogLevelMethodName,
+      level.rawValue,
+    );
+  }
+
+  @override
   Future<bool> handleURL(String url) async {
     if (!Platform.isIOS) {
       return false;

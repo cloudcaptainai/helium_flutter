@@ -41,6 +41,7 @@ import com.tryhelium.paywall.core.PaywallPresentationConfig
 import com.tryhelium.paywall.delegate.HeliumPaywallDelegate
 import com.tryhelium.paywall.delegate.PlayStorePaywallDelegate
 import com.tryhelium.paywall.core.IActivityProvider
+import com.tryhelium.paywall.core.logger.HeliumLogLevel
 import com.tryhelium.paywall.core.logger.HeliumLogger
 import com.tryhelium.paywall.core.HeliumWrapperSdkConfig
 import com.android.billingclient.api.ProductDetails
@@ -436,6 +437,18 @@ class HeliumFlutterPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
         // Web Checkout entitlements / redirects are not yet supported on Android.
         result.success(false)
       }
+      "setLogLevel" -> {
+        val rawValue = (call.arguments as? Number)?.toInt()
+        val level = rawValue?.let { value ->
+          HeliumLogLevel.values().firstOrNull { it.rawValue == value }
+        }
+        if (level == null) {
+          result.error("BAD_ARGS", "Invalid log level", null)
+        } else {
+          Helium.config.logLevel = level
+          result.success(null)
+        }
+      }
       else -> {
         result.notImplemented()
       }
@@ -565,8 +578,14 @@ class HeliumFlutterPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
     // Always write consumable product IDs (empty set clears previous values)
     Helium.config.consumableIds = parsed.consumableProductIds?.toSet() ?: emptySet()
 
-    // Set up bridging logger to forward native SDK logs to Flutter
-    Helium.config.logger = BridgingLogger(channel)
+    // Set up bridging logger to forward native SDK logs to Flutter.
+    // Carry over the currently effective log level so a pre-init setLogLevel
+    // call (or any prior override) survives the logger swap. The native
+    // initialize() will still apply the debug-build default afterwards if the
+    // host app never set a level explicitly.
+    val bridgingLogger = BridgingLogger(channel)
+    bridgingLogger.logLevel = Helium.config.logLevel
+    Helium.config.logger = bridgingLogger
 
     // Create and set delegate.
     // When useDefaultDelegate is true, we still explicitly create a PlayStorePaywallDelegate

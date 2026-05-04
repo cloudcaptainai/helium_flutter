@@ -3,6 +3,7 @@ import 'package:helium_flutter/core/helium_callbacks.dart';
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 
 import '../types/experiment_info.dart';
+import '../types/helium_log_level.dart';
 import '../types/helium_types.dart';
 import '../types/helium_environment.dart';
 import 'helium_flutter_method_channel.dart';
@@ -178,4 +179,7 @@ abstract class HeliumFlutterPlatform extends PlatformInterface {
   ///
   /// iOS only; returns `false` on Android.
   Future<bool> handleURL(String url);
+
+  /// Set the log level on the underlying native Helium SDKs.
+  void setLogLevel(HeliumLogLevel level);
 }

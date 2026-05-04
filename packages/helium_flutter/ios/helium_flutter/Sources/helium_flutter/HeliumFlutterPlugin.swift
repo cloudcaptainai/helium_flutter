@@ -270,6 +270,14 @@ public class HeliumFlutterPlugin: NSObject, FlutterPlugin {
         case "resetPaddleEntitlements":
             Helium.shared.resetPaddleEntitlements()
             result(nil)
+        case "setLogLevel":
+            guard let rawValue = call.arguments as? Int,
+                  let level = HeliumLogLevel(rawValue: rawValue) else {
+                result(FlutterError(code: "BAD_ARGS", message: "Invalid log level", details: nil))
+                return
+            }
+            Helium.config.logLevel = level
+            result(nil)
         default:
             result(FlutterMethodNotImplemented)
         }

@@ -198,6 +198,9 @@ class MockHeliumFlutterPlatform
 
   @override
   Future<bool> handleURL(String url) async => false;
+
+  @override
+  void setLogLevel(HeliumLogLevel level) {}
 }
 
 void main() {
@@ -359,5 +362,10 @@ void main() {
       await heliumFlutterPlugin.handleURL('https://example.com/success'),
       false,
     );
+  });
+  test(setLogLevelMethodName, () {
+    for (final level in HeliumLogLevel.values) {
+      heliumFlutterPlugin.setLogLevel(level);
+    }
   });
 }
