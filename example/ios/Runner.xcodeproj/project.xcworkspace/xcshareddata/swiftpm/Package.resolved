@@ -5,8 +5,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/cloudcaptainai/helium-swift.git",
       "state" : {
-        "revision" : "437d36c20070df0771e5ac5f3d542c3ba8815496",
-        "version" : "4.4.1"
+        "revision" : "1e034f4776c4e549b57d2aafd9b29e06af35c262",
+        "version" : "4.4.4"
       }
     },
     {

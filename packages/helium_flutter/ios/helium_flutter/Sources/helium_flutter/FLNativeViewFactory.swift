@@ -32,6 +32,7 @@ class FLNativeViewFactory: NSObject, FlutterPlatformViewFactory {
 
 class FLNativeView: NSObject, FlutterPlatformView {
     let arguments: Any?
+    private var hostingControllerRef: UIViewController?
     private lazy var _view: UIView = {
         let args = arguments as? [String: Any] ?? [:]
         let trigger = args["trigger"] as? String ?? ""
@@ -66,6 +67,7 @@ class FLNativeView: NSObject, FlutterPlatformView {
         }
         let hostingController = UIHostingController(rootView: paywallView)
         hostingController.view.backgroundColor = .clear
+        hostingControllerRef = hostingController
         return hostingController.view
     }
 }
