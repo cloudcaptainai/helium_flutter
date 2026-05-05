@@ -359,17 +359,14 @@ class HeliumFlutter {
   Future<void> resetPaddleEntitlements() =>
       HeliumFlutterPlatform.instance.resetPaddleEntitlements();
 
-  /// Sets the log level for the underlying native Helium SDKs.
+  /// Sets the log level for Helium logs.
   ///
-  /// Affects both iOS and Android. Safe to call before or after
-  /// [initialize]; the level is preserved across re-initializations.
+  /// Safe to call before or after [initialize]; the level is
+  /// preserved across re-initializations.
   ///
-  /// If never called, the native SDKs use their built-in defaults:
+  /// If never called, default level is:
   /// - Debug builds: [HeliumLogLevel.info]
   /// - Release builds: [HeliumLogLevel.error]
-  ///
-  /// Note: the iOS native SDK distinguishes `DEBUG` vs release at compile
-  /// time, while Android distinguishes via the host app's debuggable flag.
   void setLogLevel(HeliumLogLevel level) =>
       HeliumFlutterPlatform.instance.setLogLevel(level);
 
