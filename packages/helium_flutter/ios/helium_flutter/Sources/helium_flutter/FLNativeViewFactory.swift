@@ -33,8 +33,11 @@ class FLNativeViewFactory: NSObject, FlutterPlatformViewFactory {
 class FLNativeView: NSObject, FlutterPlatformView {
     let arguments: Any?
     private lazy var _view: UIView = {
-        let trigger: String = (arguments as? [String: Any])?["trigger"] as? String ?? ""
-        return upsellViewForTrigger(trigger: trigger)
+        let args = arguments as? [String: Any] ?? [:]
+        let trigger = args["trigger"] as? String ?? ""
+        let traitsMap = convertMarkersToBooleans(args["customPaywallTraits"] as? [String: Any])
+        let customPaywallTraits = traitsMap.map { HeliumUserTraits($0) }
+        return makePaywallView(trigger: trigger, customPaywallTraits: customPaywallTraits)
     }()
 
     init(
@@ -50,18 +53,18 @@ class FLNativeView: NSObject, FlutterPlatformView {
         return _view
     }
 
-    func upsellViewForTrigger(trigger : String) -> UIView {
-        let swiftUIView = Helium.shared.upsellViewForTrigger(
+    func makePaywallView(trigger: String, customPaywallTraits: HeliumUserTraits?) -> UIView {
+        let config = PaywallPresentationConfig(customPaywallTraits: customPaywallTraits)
+        let paywallView = HeliumPaywall(
             trigger: trigger,
+            config: config,
             eventHandlers: PaywallEventHandlers.withHandlers(
                 onAnyEvent: postPaywallEvent
             )
-        )
-        guard let swiftUIView else {
-            // this should never happen because we check canPresentUpsell before creating this view
-            return UITextField()
+        ) { _ in
+            EmptyView()
         }
-        let hostingController = UIHostingController(rootView: swiftUIView)
+        let hostingController = UIHostingController(rootView: paywallView)
         hostingController.view.backgroundColor = .clear
         return hostingController.view
     }

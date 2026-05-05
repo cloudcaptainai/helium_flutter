@@ -11,6 +11,13 @@ class ViewForTriggerPage extends StatelessWidget {
     final trigger = (envTrigger == null || envTrigger.isEmpty)
         ? 'sdk_test'
         : envTrigger;
-    return Scaffold(body: HeliumFlutter().getUpsellWidget(trigger: trigger));
+    return Scaffold(
+      body: HeliumFlutter().getUpsellWidget(
+        trigger: trigger,
+        paywallNotShownReplacement: const Center(
+          child: Text('Paywall not available'),
+        ),
+      ),
+    );
   }
 }

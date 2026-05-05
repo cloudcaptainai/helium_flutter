@@ -112,6 +112,7 @@ class MockHeliumFlutterPlatform
     required String trigger,
     PaywallEventHandlers? eventHandlers,
     Map<String, dynamic>? customPaywallTraits,
+    required Widget paywallNotShownReplacement,
   }) {
     return Text("upsell widget");
   }
