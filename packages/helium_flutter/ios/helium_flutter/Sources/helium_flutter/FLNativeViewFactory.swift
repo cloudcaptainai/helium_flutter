@@ -34,7 +34,7 @@ class FLNativeView: NSObject, FlutterPlatformView {
     let arguments: Any?
     private lazy var _view: UIView = {
         let trigger: String = (arguments as? [String: Any])?["trigger"] as? String ?? ""
-        return upsellViewForTrigger(trigger: trigger)
+        return makePaywallView(trigger: trigger)
     }()
 
     init(
@@ -50,18 +50,16 @@ class FLNativeView: NSObject, FlutterPlatformView {
         return _view
     }
 
-    func upsellViewForTrigger(trigger : String) -> UIView {
-        let swiftUIView = Helium.shared.upsellViewForTrigger(
+    func makePaywallView(trigger: String) -> UIView {
+        let paywallView = HeliumPaywall(
             trigger: trigger,
             eventHandlers: PaywallEventHandlers.withHandlers(
                 onAnyEvent: postPaywallEvent
             )
-        )
-        guard let swiftUIView else {
-            // this should never happen because we check canPresentUpsell before creating this view
-            return UITextField()
+        ) { _ in
+            EmptyView()
         }
-        let hostingController = UIHostingController(rootView: swiftUIView)
+        let hostingController = UIHostingController(rootView: paywallView)
         hostingController.view.backgroundColor = .clear
         return hostingController.view
     }
