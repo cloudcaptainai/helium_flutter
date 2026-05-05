@@ -839,13 +839,13 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
     required String trigger,
     PaywallEventHandlers? eventHandlers,
     Map<String, dynamic>? customPaywallTraits,
-    required Widget paywallNotShownView,
+    required Widget paywallNotShownReplacement,
   }) {
     _currentEventHandlers = eventHandlers;
     return UpsellWrapperWidget(
       trigger: trigger,
       customPaywallTraits: _convertBooleansToMarkers(customPaywallTraits),
-      paywallNotShownView: paywallNotShownView,
+      paywallNotShownReplacement: paywallNotShownReplacement,
       availabilityChecker: () => _checkEmbeddedAvailability(trigger),
       onFallbackOpened: (String? paywallUnavailableReason) async {
         await methodChannel.invokeMethod<String?>(
@@ -930,7 +930,7 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
 class UpsellWrapperWidget extends StatefulWidget {
   final String trigger;
   final Map<String, dynamic>? customPaywallTraits;
-  final Widget paywallNotShownView;
+  final Widget paywallNotShownReplacement;
   final Future<CanPresentUpsellResult?> Function() availabilityChecker;
   final void Function(String? paywallUnavailableReason)? onFallbackOpened;
   final VoidCallback? onFallbackClosed;
@@ -938,7 +938,7 @@ class UpsellWrapperWidget extends StatefulWidget {
   const UpsellWrapperWidget({
     super.key,
     required this.trigger,
-    required this.paywallNotShownView,
+    required this.paywallNotShownReplacement,
     required this.availabilityChecker,
     this.customPaywallTraits,
     this.onFallbackOpened,
@@ -989,7 +989,7 @@ class _UpsellWrapperWidgetState extends State<UpsellWrapperWidget> {
           );
         } else {
           _onShowFallback(snapshot.data?.paywallUnavailableReason);
-          return widget.paywallNotShownView;
+          return widget.paywallNotShownReplacement;
         }
       },
     );

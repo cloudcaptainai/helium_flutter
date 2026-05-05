@@ -14,7 +14,7 @@ class ViewForTriggerPage extends StatelessWidget {
     return Scaffold(
       body: HeliumFlutter().getUpsellWidget(
         trigger: trigger,
-        paywallNotShownView: const Center(
+        paywallNotShownReplacement: const Center(
           child: Text('Paywall not available'),
         ),
       ),

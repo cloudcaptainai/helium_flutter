@@ -145,19 +145,19 @@ class HeliumFlutter {
   /// widget is first built. Later updates to the map are ignored — recreate
   /// the widget with a different `key` if you need fresh traits.
   ///
-  /// [paywallNotShownView] is rendered in place of the paywall when it cannot
+  /// [paywallNotShownReplacement] is rendered in place of the paywall when it cannot
   /// be shown (e.g. paywall not downloaded, skipped due to targeting).
   Widget getUpsellWidget({
     required String trigger,
     PaywallEventHandlers? eventHandlers,
     Map<String, dynamic>? customPaywallTraits,
-    required Widget paywallNotShownView,
+    required Widget paywallNotShownReplacement,
   }) =>
       HeliumFlutterPlatform.instance.getUpsellWidget(
         trigger: trigger,
         eventHandlers: eventHandlers,
         customPaywallTraits: customPaywallTraits,
-        paywallNotShownView: paywallNotShownView,
+        paywallNotShownReplacement: paywallNotShownReplacement,
       );
 
   /// Checks if the user has any active subscription (including non-renewable)

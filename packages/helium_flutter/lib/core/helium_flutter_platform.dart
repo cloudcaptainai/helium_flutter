@@ -100,7 +100,7 @@ abstract class HeliumFlutterPlatform extends PlatformInterface {
     required String trigger,
     PaywallEventHandlers? eventHandlers,
     Map<String, dynamic>? customPaywallTraits,
-    required Widget paywallNotShownView,
+    required Widget paywallNotShownReplacement,
   });
 
   Future<bool> hasAnyActiveSubscription();
