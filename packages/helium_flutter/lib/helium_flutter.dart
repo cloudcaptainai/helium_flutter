@@ -5,9 +5,11 @@ import 'package:helium_flutter/core/helium_flutter_platform.dart';
 import 'package:helium_flutter/types/experiment_info.dart';
 import 'package:helium_flutter/types/helium_config_status.dart';
 import 'package:helium_flutter/types/helium_environment.dart';
+import 'package:helium_flutter/types/helium_log_level.dart';
 import 'package:helium_flutter/types/helium_types.dart';
 export './core/helium_callbacks.dart';
 export './types/experiment_info.dart';
+export './types/helium_log_level.dart';
 export './types/helium_transaction_status.dart';
 export './types/helium_types.dart';
 
@@ -356,6 +358,17 @@ class HeliumFlutter {
   /// Currently only supported on iOS; a no-op on Android.
   Future<void> resetPaddleEntitlements() =>
       HeliumFlutterPlatform.instance.resetPaddleEntitlements();
+
+  /// Sets the log level for Helium logs.
+  ///
+  /// Safe to call before or after [initialize]; the level is
+  /// preserved across re-initializations.
+  ///
+  /// If never called, default level is:
+  /// - Debug builds: [HeliumLogLevel.info]
+  /// - Release builds: [HeliumLogLevel.error]
+  void setLogLevel(HeliumLogLevel level) =>
+      HeliumFlutterPlatform.instance.setLogLevel(level);
 
   /// Forward an incoming URL to Helium so it can react to External Web
   /// Checkout success/cancel redirects without waiting for the app to

@@ -166,6 +166,8 @@ class MockHeliumFlutterPlatform
   Future<void> resetStripeEntitlements() async {}
   @override
   Future<void> resetPaddleEntitlements() async {}
+  @override
+  void setLogLevel(HeliumLogLevel level) {}
 }
 
 void main() {

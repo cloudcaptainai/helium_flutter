@@ -46,3 +46,4 @@ const String createPaddlePortalSessionMethodName = 'createPaddlePortalSession';
 const String resetStripeEntitlementsMethodName = 'resetStripeEntitlements';
 const String resetPaddleEntitlementsMethodName = 'resetPaddleEntitlements';
 const String handleURLMethodName = 'handleURL';
+const String setLogLevelMethodName = 'setLogLevel';
