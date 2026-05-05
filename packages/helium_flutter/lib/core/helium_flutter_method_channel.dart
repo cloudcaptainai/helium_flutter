@@ -889,7 +889,13 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
     if (result?.canShow != true) return result;
 
     final info = await getPaywallInfo(trigger);
-    if (info != null && !info.shouldShow) {
+    if (info == null) {
+      return CanPresentUpsellResult.fromMap({
+        'canShow': false,
+        'paywallUnavailableReason': 'bridgingError',
+      });
+    }
+    if (!info.shouldShow) {
       return CanPresentUpsellResult.fromMap({
         'canShow': false,
         'paywallUnavailableReason': 'targetingHoldout',
