@@ -846,7 +846,7 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
       trigger: trigger,
       customPaywallTraits: _convertBooleansToMarkers(customPaywallTraits),
       paywallNotShownView: paywallNotShownView,
-      availabilityChecker: () => canPresentUpsell(trigger),
+      availabilityChecker: () => _checkEmbeddedAvailability(trigger),
       onFallbackOpened: (String? paywallUnavailableReason) async {
         await methodChannel.invokeMethod<String?>(
           fallbackOpenEventMethodName,
@@ -867,6 +867,25 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
         );
       },
     );
+  }
+
+  /// Combined availability check for the embedded paywall path (can show + not
+  /// a targeting holdout). This is a step toward v4 ios/android SDK interface.
+  /// On next major Flutter version, we will utilize the native paywall not
+  /// shown handlers to handle this.
+  Future<CanPresentUpsellResult?> _checkEmbeddedAvailability(
+      String trigger) async {
+    final result = await canPresentUpsell(trigger);
+    if (result?.canShow != true) return result;
+
+    final info = await getPaywallInfo(trigger);
+    if (info != null && !info.shouldShow) {
+      return CanPresentUpsellResult.fromMap({
+        'canShow': false,
+        'paywallUnavailableReason': 'targetingHoldout',
+      });
+    }
+    return result;
   }
 
   /// Recursively converts boolean values to special marker strings to preserve
