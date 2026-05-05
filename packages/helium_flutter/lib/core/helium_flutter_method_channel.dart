@@ -357,33 +357,43 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
 
   @override
   Future<PaywallInfo?> getPaywallInfo(String trigger) async {
-    final result = await methodChannel.invokeMethod<Map<dynamic, dynamic>>(
-        'getPaywallInfo', trigger);
+    try {
+      final result = await methodChannel.invokeMethod<Map<dynamic, dynamic>>(
+          'getPaywallInfo', trigger);
 
-    if (result == null) {
-      log('[Helium] getPaywallInfo unexpected error.');
+      if (result == null) {
+        log('[Helium] getPaywallInfo unexpected error.');
+        return null;
+      }
+      if (result['errorMsg'] != null) {
+        log('[Helium] ${result['errorMsg']}');
+        return null;
+      }
+
+      return PaywallInfo(
+        paywallTemplateName: result['templateName'] ?? 'unknown template',
+        shouldShow: result['shouldShow'] ?? true,
+      );
+    } catch (e) {
+      log('[Helium] getPaywallInfo failed: $e');
       return null;
     }
-    if (result['errorMsg'] != null) {
-      log('[Helium] ${result['errorMsg']}');
-      return null;
-    }
-
-    return PaywallInfo(
-      paywallTemplateName: result['templateName'] ?? 'unknown template',
-      shouldShow: result['shouldShow'] ?? true,
-    );
   }
 
   Future<CanPresentUpsellResult?> canPresentUpsell(String trigger) async {
-    final result = await methodChannel.invokeMethod<Map<dynamic, dynamic>>(
-      canPresentUpsellMethodName,
-      trigger,
-    );
-    if (result == null) {
+    try {
+      final result = await methodChannel.invokeMethod<Map<dynamic, dynamic>>(
+        canPresentUpsellMethodName,
+        trigger,
+      );
+      if (result == null) {
+        return null;
+      }
+      return CanPresentUpsellResult.fromMap(Map<String, dynamic>.from(result));
+    } catch (e) {
+      log('[Helium] canPresentUpsell failed: $e');
       return null;
     }
-    return CanPresentUpsellResult.fromMap(Map<String, dynamic>.from(result));
   }
 
   @override
