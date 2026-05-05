@@ -141,20 +141,21 @@ class HeliumFlutter {
 
   /// Returns an embedded paywall widget for [trigger].
   ///
-  /// [customPaywallTraits] are forwarded to the native paywall when it is
-  /// loaded. They are read once at platform-view creation time, so changing
-  /// the map on a later rebuild will not reload the paywall — recreate the
-  /// widget (e.g. via a different `key`) if you need fresh traits.
+  /// [paywallNotShownView] is rendered in place of the paywall when it cannot
+  /// be shown (e.g. paywall not downloaded, skipped due to targeting).
   ///
-  /// Currently wired up on Android only; iOS ignores [customPaywallTraits]
-  /// for the embedded paywall path until the iOS SDK adds support.
+  /// [customPaywallTraits] are forwarded to the native paywall when the
+  /// widget is first built. Later updates to the map are ignored — recreate
+  /// the widget with a different `key` if you need fresh traits.
   Widget getUpsellWidget({
     required String trigger,
+    required Widget paywallNotShownView,
     PaywallEventHandlers? eventHandlers,
     Map<String, dynamic>? customPaywallTraits,
   }) =>
       HeliumFlutterPlatform.instance.getUpsellWidget(
         trigger: trigger,
+        paywallNotShownView: paywallNotShownView,
         eventHandlers: eventHandlers,
         customPaywallTraits: customPaywallTraits,
       );

@@ -110,6 +110,7 @@ class MockHeliumFlutterPlatform
   @override
   Widget getUpsellWidget({
     required String trigger,
+    required Widget paywallNotShownView,
     PaywallEventHandlers? eventHandlers,
     Map<String, dynamic>? customPaywallTraits,
   }) {
