@@ -851,6 +851,12 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
     Map<String, dynamic>? customPaywallTraits,
     required Widget paywallNotShownReplacement,
   }) {
+    // No native view exists on platforms other than iOS/Android; bypass the
+    // availability check so UpsellViewForTrigger's unsupported-platform
+    // message surfaces instead of silently rendering paywallNotShownReplacement.
+    if (!Platform.isIOS && !Platform.isAndroid) {
+      return UpsellViewForTrigger(trigger: trigger);
+    }
     _currentEventHandlers = eventHandlers;
     return UpsellWrapperWidget(
       trigger: trigger,
