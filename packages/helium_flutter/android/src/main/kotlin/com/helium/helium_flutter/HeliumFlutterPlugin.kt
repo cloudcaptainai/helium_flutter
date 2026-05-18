@@ -432,10 +432,13 @@ class HeliumFlutterPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
         result.success(null)
       }
       "hasActiveStripeEntitlement",
-      "hasActivePaddleEntitlement",
-      "handleURL" -> {
-        // Web Checkout entitlements / redirects are not yet supported on Android.
+      "hasActivePaddleEntitlement" -> {
+        // Web Checkout entitlements are not yet supported on Android.
         result.success(false)
+      }
+      "handleURL" -> {
+        // Web Checkout redirects are not yet supported on Android.
+        result.success(null)
       }
       "setLogLevel" -> {
         val rawValue = (call.arguments as? Number)?.toInt()

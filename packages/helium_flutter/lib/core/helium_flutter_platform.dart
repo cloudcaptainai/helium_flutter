@@ -174,12 +174,7 @@ abstract class HeliumFlutterPlatform extends PlatformInterface {
   /// iOS only; no-op on Android.
   Future<void> resetPaddleEntitlements();
 
-  /// Forward an incoming URL to Helium so it can react to External Web
-  /// Checkout success/cancel redirects without waiting for the app to
-  /// foreground.
-  ///
-  /// iOS only; returns `false` on Android.
-  Future<bool> handleURL(String url);
+  Future<HeliumCheckoutRedirectType?> handleURL(String url);
 
   /// Set the log level on the underlying native Helium SDKs.
   void setLogLevel(HeliumLogLevel level);

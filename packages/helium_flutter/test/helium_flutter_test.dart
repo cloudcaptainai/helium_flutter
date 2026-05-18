@@ -198,7 +198,7 @@ class MockHeliumFlutterPlatform
   Future<void> resetPaddleEntitlements() async {}
 
   @override
-  Future<bool> handleURL(String url) async => false;
+  Future<HeliumCheckoutRedirectType?> handleURL(String url) async => null;
 
   @override
   void setLogLevel(HeliumLogLevel level) {}
@@ -361,7 +361,7 @@ void main() {
   test(handleURLMethodName, () async {
     expect(
       await heliumFlutterPlugin.handleURL('https://example.com/success'),
-      false,
+      null,
     );
   });
   test(setLogLevelMethodName, () {

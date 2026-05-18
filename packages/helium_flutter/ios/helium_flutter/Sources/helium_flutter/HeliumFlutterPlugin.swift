@@ -488,12 +488,12 @@ public class HeliumFlutterPlugin: NSObject, FlutterPlugin {
         return Helium.shared.handleDeepLink(url)
     }
 
-    private func handleURL(_ urlString: String) -> Bool {
+    private func handleURL(_ urlString: String) -> String? {
         guard let url = URL(string: urlString) else {
-            return false
+            return nil
         }
 
-        return Helium.shared.handleURL(url)
+        return Helium.shared.handleURL(url)?.rawValue
     }
 
     private func hasAnyActiveSubscription() async -> Bool {
