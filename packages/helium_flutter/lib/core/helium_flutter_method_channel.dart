@@ -700,19 +700,19 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
   }
 
   @override
-  Future<bool> handleURL(String url) async {
+  Future<HeliumCheckoutRedirectType?> handleURL(String url) async {
     if (!Platform.isIOS) {
-      return false;
+      return null;
     }
     try {
-      final result = await methodChannel.invokeMethod<bool>(
+      final result = await methodChannel.invokeMethod<String>(
         handleURLMethodName,
         url,
       );
-      return result ?? false;
+      return HeliumCheckoutRedirectType.fromValue(result);
     } on PlatformException catch (e) {
       log('[Helium] Failed to handle URL: ${e.message}');
-      return false;
+      return null;
     }
   }
 

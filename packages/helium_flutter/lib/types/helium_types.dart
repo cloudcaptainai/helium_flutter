@@ -14,6 +14,21 @@ enum HeliumWebCheckoutProcessor {
   stripe,
 }
 
+/// Which External Web Checkout redirect URL the user returned through.
+enum HeliumCheckoutRedirectType {
+  success,
+  cancel,
+  paymentFailure;
+
+  static HeliumCheckoutRedirectType? fromValue(String? value) {
+    if (value == null) return null;
+    for (final t in HeliumCheckoutRedirectType.values) {
+      if (t.name == value) return t;
+    }
+    return null;
+  }
+}
+
 /// Identifies which payment processor completed a purchase.
 enum HeliumPaymentProcessor {
   appStore,

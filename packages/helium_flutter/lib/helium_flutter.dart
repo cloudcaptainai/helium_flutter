@@ -375,15 +375,16 @@ class HeliumFlutter {
   /// Checkout success/cancel redirects without waiting for the app to
   /// foreground.
   ///
-  /// Safe to call with unrelated URLs — returns `false` if external web
+  /// Safe to call with unrelated URLs — returns `null` if external web
   /// checkout is disabled or the URL does not match the success/cancel URLs
   /// configured via [enableExternalWebCheckout].
   ///
   /// Call this from your app's deep link handler (e.g. the callback of a
   /// package like `app_links` or `uni_links`).
   ///
-  /// Returns `true` if the URL was a Helium checkout redirect and is being
-  /// processed. Currently only supported on iOS; returns `false` on Android.
-  Future<bool> handleURL(String url) =>
+  /// Returns the matched [HeliumCheckoutRedirectType] when the URL is a
+  /// Helium checkout redirect and is being processed; otherwise `null`.
+  /// Currently only supported on iOS; always returns `null` on Android.
+  Future<HeliumCheckoutRedirectType?> handleURL(String url) =>
       HeliumFlutterPlatform.instance.handleURL(url);
 }
