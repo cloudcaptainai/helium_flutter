@@ -74,6 +74,7 @@ abstract class HeliumFlutterPlatform extends PlatformInterface {
     PaywallEventHandlers? eventHandlers,
     Map<String, dynamic>? customPaywallTraits,
     bool? dontShowIfAlreadyEntitled,
+    VoidCallback? onEntitled,
   });
 
   Future<bool> hideUpsell();

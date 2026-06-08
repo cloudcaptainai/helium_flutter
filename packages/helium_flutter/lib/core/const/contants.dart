@@ -34,6 +34,7 @@ const String setRevenueCatAppUserIdMethodName = 'setRevenueCatAppUserId';
 const String setThirdPartyAnalyticsAnonymousIdMethodName = 'setThirdPartyAnalyticsAnonymousId';
 const String hideAllUpsellsMethodName = 'hideAllUpsells';
 const String onHeliumLogEventMethodName = 'onHeliumLogEvent';
+const String onEntitledMethodName = 'onEntitled';
 const String setAndroidConsumableProductIdsMethodName = 'setAndroidConsumableProductIds';
 const String setupCoreMethodName = 'setupCore';
 const String enableExternalWebCheckoutMethodName = 'enableExternalWebCheckout';

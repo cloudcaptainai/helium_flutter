@@ -90,6 +90,7 @@ class MockHeliumFlutterPlatform
     PaywallEventHandlers? eventHandlers,
     Map<String, dynamic>? customPaywallTraits,
     bool? dontShowIfAlreadyEntitled,
+    VoidCallback? onEntitled,
   }) {
     return Future.value('Upsell presented!');
   }

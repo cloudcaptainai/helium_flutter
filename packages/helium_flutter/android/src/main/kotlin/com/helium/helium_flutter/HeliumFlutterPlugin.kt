@@ -203,6 +203,15 @@ class HeliumFlutterPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
             customPaywallTraits = customPaywallTraits,
             dontShowIfAlreadyEntitled = dontShowIfAlreadyEntitled
           ),
+          onEntitled = {
+            Handler(Looper.getMainLooper()).post {
+              try {
+                channel.invokeMethod("onEntitled", null)
+              } catch (e: Exception) {
+                // Channel may be detached, ignore
+              }
+            }
+          },
           eventListener = eventListener,
           onPaywallNotShown = { _ ->
             // nothing for now
