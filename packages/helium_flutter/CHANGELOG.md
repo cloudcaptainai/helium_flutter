@@ -1,3 +1,6 @@
+## 3.3.5
+- Updated helium-swift dependency to 4.5.3
+
 ## 3.3.4
 - Updated helium-swift dependency to 4.4.8
 - **Breaking:** `handleURL(String url)` now returns `Future<HeliumCheckoutRedirectType?>` instead of `Future<bool>`. Returns the matched redirect type (`success` / `cancel`) when the URL is a Helium checkout redirect, otherwise `null`.
