@@ -6,6 +6,7 @@ import 'package:helium_flutter/types/experiment_info.dart';
 import 'package:helium_flutter/types/helium_config_status.dart';
 import 'package:helium_flutter/types/helium_environment.dart';
 import 'package:helium_flutter/types/helium_log_level.dart';
+import 'package:helium_flutter/types/helium_transaction_status.dart';
 import 'package:helium_flutter/types/helium_types.dart';
 export './core/helium_callbacks.dart';
 export './types/experiment_info.dart';
@@ -340,8 +341,21 @@ class HeliumFlutter {
   /// Returns `null` if the session could not be created (e.g. the user has
   /// no Paddle customer ID yet, or the request failed). Currently only
   /// supported on iOS; returns `null` on Android.
+  @Deprecated('Use getPaddleCustomerId() and pass the ID to your server to '
+      'generate a Paddle customer portal session instead.')
   Future<String?> createPaddlePortalSession() =>
+      // ignore: deprecated_member_use_from_same_package
       HeliumFlutterPlatform.instance.createPaddlePortalSession();
+
+  /// Returns the Paddle customer ID for the current user, if one exists.
+  ///
+  /// Pass this ID to your server to generate a Paddle customer portal session,
+  /// allowing the user to manage their subscriptions.
+  ///
+  /// Returns `null` if none has been assigned. Currently only supported on
+  /// iOS; returns `null` on Android.
+  Future<String?> getPaddleCustomerId() =>
+      HeliumFlutterPlatform.instance.getPaddleCustomerId();
 
   /// Resets Stripe entitlements and clears the user ID. Call this to
   /// effectively "log out" a Stripe user if your app supports multiple Stripe
@@ -387,4 +401,49 @@ class HeliumFlutter {
   /// Currently only supported on iOS; always returns `null` on Android.
   Future<HeliumCheckoutRedirectType?> handleURL(String url) =>
       HeliumFlutterPlatform.instance.handleURL(url);
+
+  /// Controls whether the triple-tap paywall previews gesture is enabled in
+  /// dev builds (DEBUG / TestFlight on iOS, debug builds on Android).
+  ///
+  /// Defaults to `true`.
+  void setPaywallPreviewsEnabledInDevBuilds(bool enabled) =>
+      HeliumFlutterPlatform.instance
+          .setPaywallPreviewsEnabledInDevBuilds(enabled);
+
+  /// Overrides for automated testing (UI tests, CI) where StoreKit / Play
+  /// Billing configuration is awkward.
+  ///
+  /// Gate these calls behind a build-env flag so they never run in production
+  /// builds. The native SDK also ignores test handlers when it detects a
+  /// production environment, but do not rely on that safety net.
+  HeliumTesting get testing => const HeliumTesting();
+}
+
+/// Test-only overrides for stubbing purchase, restore, and intro-offer
+/// eligibility flows. Access via [HeliumFlutter.testing].
+class HeliumTesting {
+  const HeliumTesting();
+
+  /// Stubs purchase attempts to return [result] instead of running the real
+  /// StoreKit / Play Billing flow. Applies to every product ID.
+  void setPurchaseResult(HeliumTransactionStatus result) =>
+      HeliumFlutterPlatform.instance.setTestPurchaseResult(result);
+
+  /// Stubs restore attempts to return [success] instead of running the real
+  /// restore flow.
+  void setRestoreResult(bool success) =>
+      HeliumFlutterPlatform.instance.setTestRestoreResult(success);
+
+  /// Overrides the intro-offer eligibility check for every product. Useful
+  /// for testing the "no trial offer" UI branch.
+  ///
+  /// Eligibility is read during config fetch and cached, so call this before
+  /// [HeliumFlutter.initialize] for the initial paywall render to reflect the
+  /// override.
+  void setIntroOfferEligibility(bool eligible) =>
+      HeliumFlutterPlatform.instance.setTestIntroOfferEligibility(eligible);
+
+  /// Clears all configured test handlers. The native SDK falls back to the
+  /// real purchase/restore flows.
+  void reset() => HeliumFlutterPlatform.instance.resetTesting();
 }

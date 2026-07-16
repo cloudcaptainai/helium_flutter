@@ -649,6 +649,7 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
   }
 
   @override
+  @Deprecated('Use getPaddleCustomerId instead.')
   Future<String?> createPaddlePortalSession() async {
     if (!Platform.isIOS) {
       log('[Helium] createPaddlePortalSession is only available on iOS');
@@ -660,6 +661,22 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
       );
     } on PlatformException catch (e) {
       log('[Helium] Failed to create Paddle portal session: ${e.message}');
+      return null;
+    }
+  }
+
+  @override
+  Future<String?> getPaddleCustomerId() async {
+    if (!Platform.isIOS) {
+      log('[Helium] getPaddleCustomerId is only available on iOS');
+      return null;
+    }
+    try {
+      return await methodChannel.invokeMethod<String>(
+        getPaddleCustomerIdMethodName,
+      );
+    } on PlatformException catch (e) {
+      log('[Helium] Failed to get Paddle customer ID: ${e.message}');
       return null;
     }
   }
@@ -714,6 +731,52 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
       log('[Helium] Failed to handle URL: ${e.message}');
       return null;
     }
+  }
+
+  @override
+  void setPaywallPreviewsEnabledInDevBuilds(bool enabled) {
+    methodChannel
+        .invokeMethod<void>(
+            setPaywallPreviewsEnabledInDevBuildsMethodName, enabled)
+        .catchError((Object e) {
+      log('[Helium] Failed to set paywall previews enabled: $e');
+    });
+  }
+
+  @override
+  void setTestPurchaseResult(HeliumTransactionStatus result) {
+    methodChannel
+        .invokeMethod<void>(setTestPurchaseResultMethodName, result.name)
+        .catchError((Object e) {
+      log('[Helium] Failed to set test purchase result: $e');
+    });
+  }
+
+  @override
+  void setTestRestoreResult(bool success) {
+    methodChannel
+        .invokeMethod<void>(setTestRestoreResultMethodName, success)
+        .catchError((Object e) {
+      log('[Helium] Failed to set test restore result: $e');
+    });
+  }
+
+  @override
+  void setTestIntroOfferEligibility(bool eligible) {
+    methodChannel
+        .invokeMethod<void>(setTestIntroOfferEligibilityMethodName, eligible)
+        .catchError((Object e) {
+      log('[Helium] Failed to set test intro offer eligibility: $e');
+    });
+  }
+
+  @override
+  void resetTesting() {
+    methodChannel
+        .invokeMethod<void>(resetTestingMethodName)
+        .catchError((Object e) {
+      log('[Helium] Failed to reset testing overrides: $e');
+    });
   }
 
   void _handlePaywallEventHandlers(HeliumPaywallEvent event) {

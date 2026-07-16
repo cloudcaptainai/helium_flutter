@@ -1,5 +1,5 @@
 // SDK version - keep in sync with pubspec.yaml
-const String heliumFlutterSdkVersion = '3.3.4';
+const String heliumFlutterSdkVersion = '3.3.5';
 
 //Native view type
 const String upsellViewForTrigger = 'upsellViewForTrigger';
@@ -43,7 +43,15 @@ const String hasActiveStripeEntitlementMethodName = 'hasActiveStripeEntitlement'
 const String hasActivePaddleEntitlementMethodName = 'hasActivePaddleEntitlement';
 const String createStripePortalSessionMethodName = 'createStripePortalSession';
 const String createPaddlePortalSessionMethodName = 'createPaddlePortalSession';
+const String getPaddleCustomerIdMethodName = 'getPaddleCustomerId';
 const String resetStripeEntitlementsMethodName = 'resetStripeEntitlements';
 const String resetPaddleEntitlementsMethodName = 'resetPaddleEntitlements';
 const String handleURLMethodName = 'handleURL';
 const String setLogLevelMethodName = 'setLogLevel';
+const String setPaywallPreviewsEnabledInDevBuildsMethodName = 'setPaywallPreviewsEnabledInDevBuilds';
+
+//Testing override method names
+const String setTestPurchaseResultMethodName = 'setTestPurchaseResult';
+const String setTestRestoreResultMethodName = 'setTestRestoreResult';
+const String setTestIntroOfferEligibilityMethodName = 'setTestIntroOfferEligibility';
+const String resetTestingMethodName = 'resetTesting';
