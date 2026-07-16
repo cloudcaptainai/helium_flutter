@@ -264,6 +264,11 @@ public class HeliumFlutterPlugin: NSObject, FlutterPlugin {
                     }
                 }
             }
+        case "getPaddleCustomerId":
+            Task {
+                let customerId = await Helium.shared.getPaddleCustomerId()
+                DispatchQueue.main.async { result(customerId) }
+            }
         case "resetStripeEntitlements":
             Helium.shared.resetStripeEntitlements()
             result(nil)
@@ -278,9 +283,46 @@ public class HeliumFlutterPlugin: NSObject, FlutterPlugin {
             }
             Helium.config.logLevel = level
             result(nil)
+        case "setPaywallPreviewsEnabledInDevBuilds":
+            let enabled = call.arguments as? Bool ?? true
+            Helium.config.paywallPreviewsAutoEnabledInDevBuilds = enabled
+            result(nil)
+        case "setTestPurchaseResult":
+            guard let resultString = call.arguments as? String else {
+                result(FlutterError(code: "BAD_ARGS", message: "result not provided", details: nil))
+                return
+            }
+            setTestPurchaseResult(resultString)
+            result(nil)
+        case "setTestRestoreResult":
+            let success = call.arguments as? Bool ?? false
+            Helium.testing.restoreHandler = { success }
+            result(nil)
+        case "setTestIntroOfferEligibility":
+            let eligible = call.arguments as? Bool ?? false
+            Helium.testing.introOfferEligibility = { _ in eligible }
+            result(nil)
+        case "resetTesting":
+            Helium.testing.reset()
+            result(nil)
         default:
             result(FlutterMethodNotImplemented)
         }
+    }
+
+    private func setTestPurchaseResult(_ resultString: String) {
+        let status: HeliumPaywallTransactionStatus
+        switch resultString.lowercased() {
+        case "purchased": status = .purchased
+        case "cancelled": status = .cancelled
+        case "restored": status = .restored
+        case "pending": status = .pending
+        case "failed": status = .failed(PurchaseError.purchaseFailed(errorMsg: "Stubbed test failure."))
+        default:
+            print("[Helium] setTestPurchaseResult: unknown result '\(resultString)', ignoring")
+            return
+        }
+        Helium.testing.purchaseHandler = { _ in status }
     }
 
     private func parseWebCheckoutProcessors(_ names: [String]?) -> WebCheckoutProcessors {

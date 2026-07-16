@@ -192,6 +192,9 @@ class MockHeliumFlutterPlatform
   Future<String?> createPaddlePortalSession() async => null;
 
   @override
+  Future<String?> getPaddleCustomerId() async => null;
+
+  @override
   Future<void> resetStripeEntitlements() async {}
 
   @override
@@ -202,6 +205,21 @@ class MockHeliumFlutterPlatform
 
   @override
   void setLogLevel(HeliumLogLevel level) {}
+
+  @override
+  void setPaywallPreviewsEnabledInDevBuilds(bool enabled) {}
+
+  @override
+  void setTestPurchaseResult(HeliumTransactionStatus result) {}
+
+  @override
+  void setTestRestoreResult(bool success) {}
+
+  @override
+  void setTestIntroOfferEligibility(bool eligible) {}
+
+  @override
+  void resetTesting() {}
 }
 
 void main() {
@@ -350,7 +368,11 @@ void main() {
     );
   });
   test(createPaddlePortalSessionMethodName, () async {
+    // ignore: deprecated_member_use_from_same_package
     expect(await heliumFlutterPlugin.createPaddlePortalSession(), isNull);
+  });
+  test(getPaddleCustomerIdMethodName, () async {
+    expect(await heliumFlutterPlugin.getPaddleCustomerId(), isNull);
   });
   test(resetStripeEntitlementsMethodName, () async {
     await heliumFlutterPlugin.resetStripeEntitlements();
@@ -368,5 +390,17 @@ void main() {
     for (final level in HeliumLogLevel.values) {
       heliumFlutterPlugin.setLogLevel(level);
     }
+  });
+  test(setPaywallPreviewsEnabledInDevBuildsMethodName, () {
+    heliumFlutterPlugin.setPaywallPreviewsEnabledInDevBuilds(true);
+    heliumFlutterPlugin.setPaywallPreviewsEnabledInDevBuilds(false);
+  });
+  test('testing overrides', () {
+    for (final status in HeliumTransactionStatus.values) {
+      heliumFlutterPlugin.testing.setPurchaseResult(status);
+    }
+    heliumFlutterPlugin.testing.setRestoreResult(true);
+    heliumFlutterPlugin.testing.setIntroOfferEligibility(false);
+    heliumFlutterPlugin.testing.reset();
   });
 }

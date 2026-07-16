@@ -426,6 +426,7 @@ class HeliumFlutterPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
       "setAllowWebCheckoutWithoutUserId",
       "createStripePortalSession",
       "createPaddlePortalSession",
+      "getPaddleCustomerId",
       "resetStripeEntitlements",
       "resetPaddleEntitlements" -> {
         // Web Checkout (Stripe/Paddle) is not yet supported on Android.
@@ -451,6 +452,43 @@ class HeliumFlutterPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
           Helium.config.logLevel = level
           result.success(null)
         }
+      }
+      "setPaywallPreviewsEnabledInDevBuilds" -> {
+        val enabled = call.arguments as? Boolean ?: true
+        Helium.config.enablePaywallPreviewsInDevBuilds = enabled
+        result.success(null)
+      }
+      "setTestPurchaseResult" -> {
+        val resultString = call.arguments as? String ?: ""
+        val status: HeliumPaywallTransactionStatus = when (resultString.lowercase()) {
+          "purchased" -> HeliumPaywallTransactionStatus.Purchased
+          "cancelled" -> HeliumPaywallTransactionStatus.Cancelled
+          // Android SDK has no Restored status; treat it as Purchased.
+          "restored" -> HeliumPaywallTransactionStatus.Purchased
+          "pending" -> HeliumPaywallTransactionStatus.Pending
+          "failed" -> HeliumPaywallTransactionStatus.Failed(Exception("Stubbed test failure."))
+          else -> {
+            android.util.Log.w("HeliumPaywallSdk", "setTestPurchaseResult: unknown result '$resultString', ignoring")
+            result.success(null)
+            return
+          }
+        }
+        Helium.testing.purchaseHandler = { _ -> status }
+        result.success(null)
+      }
+      "setTestRestoreResult" -> {
+        val success = call.arguments as? Boolean ?: false
+        Helium.testing.restoreHandler = { success }
+        result.success(null)
+      }
+      "setTestIntroOfferEligibility" -> {
+        val eligible = call.arguments as? Boolean ?: false
+        Helium.testing.introOfferEligibility = { _ -> eligible }
+        result.success(null)
+      }
+      "resetTesting" -> {
+        Helium.testing.reset()
+        result.success(null)
       }
       else -> {
         result.notImplemented()

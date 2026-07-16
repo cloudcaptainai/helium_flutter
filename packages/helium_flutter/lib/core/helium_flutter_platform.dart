@@ -4,6 +4,7 @@ import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 
 import '../types/experiment_info.dart';
 import '../types/helium_log_level.dart';
+import '../types/helium_transaction_status.dart';
 import '../types/helium_types.dart';
 import '../types/helium_environment.dart';
 import 'helium_flutter_method_channel.dart';
@@ -164,7 +165,12 @@ abstract class HeliumFlutterPlatform extends PlatformInterface {
 
   /// Creates a Paddle customer portal session and returns the portal URL.
   /// iOS only; returns `null` on Android.
+  @Deprecated('Use getPaddleCustomerId instead.')
   Future<String?> createPaddlePortalSession();
+
+  /// Returns the Paddle customer ID for the current user.
+  /// iOS only; returns `null` on Android.
+  Future<String?> getPaddleCustomerId();
 
   /// Resets Stripe entitlements and clears the user ID.
   /// iOS only; no-op on Android.
@@ -178,4 +184,19 @@ abstract class HeliumFlutterPlatform extends PlatformInterface {
 
   /// Set the log level on the underlying native Helium SDKs.
   void setLogLevel(HeliumLogLevel level);
+
+  /// Enable/disable the triple-tap paywall previews gesture in dev builds.
+  void setPaywallPreviewsEnabledInDevBuilds(bool enabled);
+
+  /// Stub purchase attempts with the given result for automated testing.
+  void setTestPurchaseResult(HeliumTransactionStatus result);
+
+  /// Stub restore attempts with the given result for automated testing.
+  void setTestRestoreResult(bool success);
+
+  /// Override intro-offer eligibility for every product for automated testing.
+  void setTestIntroOfferEligibility(bool eligible);
+
+  /// Clear all configured test override handlers.
+  void resetTesting();
 }

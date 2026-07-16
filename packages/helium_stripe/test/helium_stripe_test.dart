@@ -143,17 +143,19 @@ class MockHeliumFlutterPlatform
   @override
   void setRevenueCatAppUserId(String rcAppUserId) {}
   @override
+  Future<void> setThirdPartyAnalyticsAnonymousId(String? anonymousId) async {}
+  @override
   void setAndroidConsumableProductIds(Set<String> productIds) {}
   @override
-  void enableExternalWebCheckout({
+  Future<void> enableExternalWebCheckout({
     required String successURL,
     required String cancelURL,
     Set<HeliumWebCheckoutProcessor>? paymentProcessors,
-  }) {}
+  }) async {}
   @override
-  void disableExternalWebCheckout() {}
+  Future<void> disableExternalWebCheckout() async {}
   @override
-  void setAllowWebCheckoutWithoutUserId(bool allow) {}
+  Future<void> setAllowWebCheckoutWithoutUserId(bool allow) async {}
   @override
   Future<bool> hasActiveStripeEntitlement() async => false;
   @override
@@ -164,11 +166,25 @@ class MockHeliumFlutterPlatform
   @override
   Future<String?> createPaddlePortalSession() async => null;
   @override
+  Future<String?> getPaddleCustomerId() async => null;
+  @override
   Future<void> resetStripeEntitlements() async {}
   @override
   Future<void> resetPaddleEntitlements() async {}
   @override
   void setLogLevel(HeliumLogLevel level) {}
+  @override
+  Future<HeliumCheckoutRedirectType?> handleURL(String url) async => null;
+  @override
+  void setPaywallPreviewsEnabledInDevBuilds(bool enabled) {}
+  @override
+  void setTestPurchaseResult(HeliumTransactionStatus result) {}
+  @override
+  void setTestRestoreResult(bool success) {}
+  @override
+  void setTestIntroOfferEligibility(bool eligible) {}
+  @override
+  void resetTesting() {}
 }
 
 void main() {
