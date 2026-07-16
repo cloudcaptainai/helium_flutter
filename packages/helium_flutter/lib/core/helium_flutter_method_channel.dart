@@ -20,6 +20,12 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
   bool _isInitialized = false;
   PaywallEventHandlers? _currentEventHandlers;
 
+  /// Callbacks for the current [presentUpsell] presentation. [_currentOnEntitled]
+  /// is invoked from the native `onEntitled` closure (via the [onPaywallEntitledMethodName]
+  /// method call); [_currentOnPaywallUnavailable] is derived from `paywallOpenFailed`.
+  void Function()? _currentOnEntitled;
+  void Function()? _currentOnPaywallUnavailable;
+
   @override
   bool get isInitialized => _isInitialized;
 
@@ -214,6 +220,13 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
         final Map<String, dynamic> eventDict =
             (args is Map) ? Map<String, dynamic>.from(args) : {};
         _handlePaywallEventHandlers(HeliumPaywallEvent.fromMap(eventDict));
+      } else if (handler.method == onPaywallEntitledMethodName) {
+        try {
+          _currentOnEntitled?.call();
+        } catch (e) {
+          log('[Helium] Error in onEntitled callback: $e');
+        }
+        _currentOnEntitled = null;
       } else if (handler.method == onHeliumLogEventMethodName) {
         final dynamic args = handler.arguments;
         final Map<String, dynamic> eventMap =
@@ -323,11 +336,15 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
     PaywallEventHandlers? eventHandlers,
     Map<String, dynamic>? customPaywallTraits,
     bool? dontShowIfAlreadyEntitled,
+    void Function()? onEntitled,
+    void Function()? onPaywallUnavailable,
   }) async {
     _fallbackContext = context;
 
-    // Store current event handlers
+    // Store current event handlers and presentation callbacks
     _currentEventHandlers = eventHandlers;
+    _currentOnEntitled = onEntitled;
+    _currentOnPaywallUnavailable = onPaywallUnavailable;
 
     try {
       final result = await methodChannel.invokeMethod<String?>(
@@ -342,6 +359,8 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
     } on PlatformException catch (e) {
       log('[Helium] Unexpected present upsell error: ${e.message}');
       _currentEventHandlers = null;
+      _currentOnEntitled = null;
+      _currentOnPaywallUnavailable = null;
       await methodChannel.invokeMethod<String?>(
         fallbackOpenEventMethodName,
         {
@@ -351,6 +370,11 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
         },
       );
       _showFallbackSheet(trigger);
+      try {
+        onPaywallUnavailable?.call();
+      } catch (err) {
+        log('[Helium] Error in onPaywallUnavailable callback: $err');
+      }
       return "Failed to present upsell: '${e.message}'.";
     }
   }
@@ -823,11 +847,17 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
         if (heliumPaywallEvent.isSecondTry != true) {
           _currentEventHandlers = null;
           _fallbackContext = null;
+          // onEntitled is intentionally NOT cleared here: the native onEntitled
+          // closure fires when the paywall closes after a purchase, i.e. right
+          // after this event. It is cleared once it fires (or on the next
+          // presentUpsell).
+          _currentOnPaywallUnavailable = null;
         }
         break;
       case 'paywallSkipped':
         _currentEventHandlers = null;
         _fallbackContext = null;
+        _currentOnPaywallUnavailable = null;
         break;
       case 'paywallOpenFailed':
         _currentEventHandlers = null;
@@ -835,11 +865,17 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
         if (trigger != null &&
             unavailableReason != "alreadyPresented" &&
             unavailableReason != "secondTryNoMatch") {
+          try {
+            _currentOnPaywallUnavailable?.call();
+          } catch (e) {
+            log('[Helium] Error in onPaywallUnavailable callback: $e');
+          }
           // Dispatch on next frame to let event handling finish processing
           WidgetsBinding.instance.addPostFrameCallback((_) {
             _showFallbackSheet(trigger);
           });
         }
+        _currentOnPaywallUnavailable = null;
         break;
     }
   }

@@ -102,6 +102,8 @@ class MockHeliumFlutterPlatform
     PaywallEventHandlers? eventHandlers,
     Map<String, dynamic>? customPaywallTraits,
     bool? dontShowIfAlreadyEntitled,
+    void Function()? onEntitled,
+    void Function()? onPaywallUnavailable,
   }) async =>
       'Upsell presented!';
   @override

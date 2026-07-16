@@ -166,6 +166,12 @@ class _HomePageState extends State<HomePage> {
                   await _heliumFlutterPlugin.presentUpsell(
                     trigger: _trigger,
                     context: context,
+                    onEntitled: () {
+                      debugPrint('[Helium] onEntitled');
+                    },
+                    onPaywallUnavailable: () {
+                      debugPrint('[Helium] onPaywallUnavailable');
+                    },
                   );
                 },
               ),
