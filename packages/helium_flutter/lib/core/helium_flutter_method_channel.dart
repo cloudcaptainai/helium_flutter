@@ -675,8 +675,8 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
       return await methodChannel.invokeMethod<String>(
         getPaddleCustomerIdMethodName,
       );
-    } on PlatformException catch (e) {
-      log('[Helium] Failed to get Paddle customer ID: ${e.message}');
+    } catch (e) {
+      log('[Helium] Failed to get Paddle customer ID: $e');
       return null;
     }
   }
