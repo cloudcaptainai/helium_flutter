@@ -59,14 +59,14 @@ class _HomePageState extends State<HomePage> {
     setState(() => _anonymousId = null);
   }
 
-  Future<void> _openPaddlePortal() async {
-    final url = await _heliumFlutterPlugin.createPaddlePortalSession();
+  Future<void> _getPaddleCustomerId() async {
+    final customerId = await _heliumFlutterPlugin.getPaddleCustomerId();
     if (!mounted) return;
     showDialog<void>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Paddle Portal'),
-        content: SelectableText(url ?? 'No URL returned'),
+        title: const Text('Paddle Customer ID'),
+        content: SelectableText(customerId ?? 'No customer ID assigned'),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
@@ -203,8 +203,8 @@ class _HomePageState extends State<HomePage> {
                 },
               ),
               _ActionButton(
-                label: 'Open Paddle Portal',
-                onPressed: _openPaddlePortal,
+                label: 'Get Paddle Customer ID',
+                onPressed: _getPaddleCustomerId,
               ),
             ],
           ),
