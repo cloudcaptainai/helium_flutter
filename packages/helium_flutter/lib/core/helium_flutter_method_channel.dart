@@ -944,6 +944,7 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
         _currentOnPaywallUnavailable = null;
         if (unavailableReason != "alreadyPresented" &&
             unavailableReason != "secondTryNoMatch") {
+          _currentOnEntitled = null;
           _safeInvokeCallback(onPaywallUnavailable, 'onPaywallUnavailable');
           if (trigger != null) {
             // Dispatch on next frame to let event handling finish processing
