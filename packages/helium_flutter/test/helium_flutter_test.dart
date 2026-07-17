@@ -90,6 +90,8 @@ class MockHeliumFlutterPlatform
     PaywallEventHandlers? eventHandlers,
     Map<String, dynamic>? customPaywallTraits,
     bool? dontShowIfAlreadyEntitled,
+    void Function()? onEntitled,
+    void Function()? onPaywallUnavailable,
   }) {
     return Future.value('Upsell presented!');
   }
@@ -297,7 +299,11 @@ void main() {
 
     expect(
       await heliumFlutterPlugin.presentUpsell(
-          context: context, trigger: 'onboarding'),
+        context: context,
+        trigger: 'onboarding',
+        onEntitled: () {},
+        onPaywallUnavailable: () {},
+      ),
       'Upsell presented!',
     );
   });

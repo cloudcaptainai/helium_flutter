@@ -203,9 +203,19 @@ class HeliumFlutterPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
             customPaywallTraits = customPaywallTraits,
             dontShowIfAlreadyEntitled = dontShowIfAlreadyEntitled
           ),
+          onEntitled = {
+            Handler(Looper.getMainLooper()).post {
+              try {
+                channel.invokeMethod("onPaywallEntitled", null)
+              } catch (e: Exception) {
+                // Channel may be detached, ignore
+              }
+            }
+          },
           eventListener = eventListener,
           onPaywallNotShown = { _ ->
-            // nothing for now
+            // paywallNotShown handled Dart-side via the paywallOpenFailed event
+            // (see onPaywallUnavailable).
           }
         )
 

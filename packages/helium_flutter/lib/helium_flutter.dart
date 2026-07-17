@@ -53,6 +53,11 @@ class HeliumFlutter {
   }
 
   ///Initialize helium sdk at the start-up of your flutter application.
+  ///
+  /// [fallbackPaywall] is a Flutter widget shown as a last-resort view when a
+  /// Helium paywall cannot be displayed. Prefer handling the
+  /// `onPaywallUnavailable` callback on [presentUpsell] instead — the
+  /// [fallbackPaywall] widget is planned for removal in the next major release.
   Future<String?> initialize({
     required String apiKey,
     HeliumCallbacks? callbacks,
@@ -119,12 +124,28 @@ class HeliumFlutter {
   }
 
   ///Presents view based on [trigger]
+  ///
+  /// [onEntitled] is called when the user becomes entitled to a product on the
+  /// paywall — on purchase success or restore. If [dontShowIfAlreadyEntitled]
+  /// is true, it is also called instead of showing the paywall when the user
+  /// already owns a product on it.
+  ///
+  /// [onPaywallUnavailable] is called when the Helium paywall for [trigger]
+  /// cannot be shown — neither the configured paywall nor a Helium fallback
+  /// paywall displayed. Uncommon, but best practice to handle.
+  ///
+  /// This is independent of the Flutter [fallbackPaywall] view: if you supplied
+  /// one to [initialize] it is still shown as a last resort, but this callback
+  /// is still called so you can react to the Helium paywall being unavailable.
+  /// See https://docs.tryhelium.com/guides/fallback-bundle
   Future<String?> presentUpsell({
     required BuildContext context,
     required String trigger,
     PaywallEventHandlers? eventHandlers,
     Map<String, dynamic>? customPaywallTraits,
     bool? dontShowIfAlreadyEntitled,
+    void Function()? onEntitled,
+    void Function()? onPaywallUnavailable,
   }) =>
       HeliumFlutterPlatform.instance.presentUpsell(
         context: context,
@@ -132,6 +153,8 @@ class HeliumFlutter {
         eventHandlers: eventHandlers,
         customPaywallTraits: customPaywallTraits,
         dontShowIfAlreadyEntitled: dontShowIfAlreadyEntitled,
+        onEntitled: onEntitled,
+        onPaywallUnavailable: onPaywallUnavailable,
       );
 
   Future<PaywallInfo?> getPaywallInfo(String trigger) =>

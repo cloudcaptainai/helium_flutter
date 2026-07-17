@@ -20,6 +20,15 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
   bool _isInitialized = false;
   PaywallEventHandlers? _currentEventHandlers;
 
+  /// Callbacks for the current [presentUpsell] presentation. [_currentOnEntitled]
+  /// is invoked from the native `onEntitled` closure (via the [onPaywallEntitledMethodName]
+  /// method call); [_currentOnPaywallUnavailable] is derived from `paywallOpenFailed`.
+  ///
+  /// Both are one-shot: capture into a local and null the field before invoking,
+  /// so a callback that re-enters [presentUpsell] keeps its freshly stored handler.
+  void Function()? _currentOnEntitled;
+  void Function()? _currentOnPaywallUnavailable;
+
   @override
   bool get isInitialized => _isInitialized;
 
@@ -214,6 +223,10 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
         final Map<String, dynamic> eventDict =
             (args is Map) ? Map<String, dynamic>.from(args) : {};
         _handlePaywallEventHandlers(HeliumPaywallEvent.fromMap(eventDict));
+      } else if (handler.method == onPaywallEntitledMethodName) {
+        final onEntitled = _currentOnEntitled;
+        _currentOnEntitled = null;
+        _safeInvokeCallback(onEntitled, 'onEntitled');
       } else if (handler.method == onHeliumLogEventMethodName) {
         final dynamic args = handler.arguments;
         final Map<String, dynamic> eventMap =
@@ -323,11 +336,15 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
     PaywallEventHandlers? eventHandlers,
     Map<String, dynamic>? customPaywallTraits,
     bool? dontShowIfAlreadyEntitled,
+    void Function()? onEntitled,
+    void Function()? onPaywallUnavailable,
   }) async {
     _fallbackContext = context;
 
-    // Store current event handlers
+    // Store current event handlers and presentation callbacks
     _currentEventHandlers = eventHandlers;
+    _currentOnEntitled = onEntitled;
+    _currentOnPaywallUnavailable = onPaywallUnavailable;
 
     try {
       final result = await methodChannel.invokeMethod<String?>(
@@ -342,15 +359,24 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
     } on PlatformException catch (e) {
       log('[Helium] Unexpected present upsell error: ${e.message}');
       _currentEventHandlers = null;
-      await methodChannel.invokeMethod<String?>(
-        fallbackOpenEventMethodName,
-        {
-          'trigger': trigger,
-          'viewType': 'presented',
-          'paywallUnavailableReason': 'bridgingError',
-        },
-      );
+      _currentOnEntitled = null;
+      _currentOnPaywallUnavailable = null;
+      try {
+        await methodChannel.invokeMethod<String?>(
+          fallbackOpenEventMethodName,
+          {
+            'trigger': trigger,
+            'viewType': 'presented',
+            'paywallUnavailableReason': 'bridgingError',
+          },
+        );
+      } catch (err) {
+        log('[Helium] Failed to send fallback open event: $err');
+      }
       _showFallbackSheet(trigger);
+      // Helium paywall could not be shown; signal the caller regardless of
+      // whether the Flutter fallback view is displayed.
+      _safeInvokeCallback(onPaywallUnavailable, 'onPaywallUnavailable');
       return "Failed to present upsell: '${e.message}'.";
     }
   }
@@ -480,6 +506,8 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
     _isFallbackSheetShowing = false;
     _fallbackContext = null;
     _currentEventHandlers = null;
+    _currentOnEntitled = null;
+    _currentOnPaywallUnavailable = null;
     // Reset native SDK state
     try {
       await methodChannel.invokeMethod<void>(
@@ -879,6 +907,17 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
     }
   }
 
+  /// Invokes a user-supplied callback, containing any exception so a throwing
+  /// callback can never crash the SDK.
+  void _safeInvokeCallback(void Function()? callback, String name) {
+    if (callback == null) return;
+    try {
+      callback();
+    } catch (e) {
+      log('[Helium] Error in $name callback: $e');
+    }
+  }
+
   void _handlePaywallEvent(HeliumPaywallEvent heliumPaywallEvent) {
     final trigger = heliumPaywallEvent.triggerName;
     switch (heliumPaywallEvent.type) {
@@ -886,22 +925,33 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
         if (heliumPaywallEvent.isSecondTry != true) {
           _currentEventHandlers = null;
           _fallbackContext = null;
+          // onEntitled is intentionally NOT cleared here: the native onEntitled
+          // closure fires when the paywall closes after a purchase, i.e. right
+          // after this event. It is cleared once it fires (or on the next
+          // presentUpsell).
+          _currentOnPaywallUnavailable = null;
         }
         break;
       case 'paywallSkipped':
         _currentEventHandlers = null;
         _fallbackContext = null;
+        _currentOnPaywallUnavailable = null;
         break;
       case 'paywallOpenFailed':
         _currentEventHandlers = null;
         final unavailableReason = heliumPaywallEvent.paywallUnavailableReason;
-        if (trigger != null &&
-            unavailableReason != "alreadyPresented" &&
+        final onPaywallUnavailable = _currentOnPaywallUnavailable;
+        _currentOnPaywallUnavailable = null;
+        if (unavailableReason != "alreadyPresented" &&
             unavailableReason != "secondTryNoMatch") {
-          // Dispatch on next frame to let event handling finish processing
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            _showFallbackSheet(trigger);
-          });
+          _currentOnEntitled = null;
+          _safeInvokeCallback(onPaywallUnavailable, 'onPaywallUnavailable');
+          if (trigger != null) {
+            // Dispatch on next frame to let event handling finish processing
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              _showFallbackSheet(trigger);
+            });
+          }
         }
         break;
     }
