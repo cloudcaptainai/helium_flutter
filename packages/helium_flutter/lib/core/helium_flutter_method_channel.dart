@@ -506,6 +506,8 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
     _isFallbackSheetShowing = false;
     _fallbackContext = null;
     _currentEventHandlers = null;
+    _currentOnEntitled = null;
+    _currentOnPaywallUnavailable = null;
     // Reset native SDK state
     try {
       await methodChannel.invokeMethod<void>(
