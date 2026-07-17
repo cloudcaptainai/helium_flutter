@@ -214,4 +214,25 @@ void main() {
     await tester.pump();
     expect(unavailableCalls, 0);
   });
+
+  testWidgets('onPaywallUnavailable fires even when triggerName is absent',
+      (WidgetTester tester) async {
+    await pumpContext(tester);
+    await platform.initialize(apiKey: initializeValue.apiKey);
+
+    var unavailableCalls = 0;
+    await platform.presentUpsell(
+      context: context,
+      trigger: 'onboarding',
+      onPaywallUnavailable: () => unavailableCalls++,
+    );
+
+    // Missing triggerName gates only the Flutter fallback view, not the callback.
+    await sendFromNative(const MethodCall(onPaywallEventMethodName, {
+      'type': 'paywallOpenFailed',
+      'paywallUnavailableReason': 'someError',
+    }));
+    await tester.pump();
+    expect(unavailableCalls, 1);
+  });
 }

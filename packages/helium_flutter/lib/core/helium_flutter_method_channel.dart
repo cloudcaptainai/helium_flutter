@@ -942,14 +942,15 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
         final unavailableReason = heliumPaywallEvent.paywallUnavailableReason;
         final onPaywallUnavailable = _currentOnPaywallUnavailable;
         _currentOnPaywallUnavailable = null;
-        if (trigger != null &&
-            unavailableReason != "alreadyPresented" &&
+        if (unavailableReason != "alreadyPresented" &&
             unavailableReason != "secondTryNoMatch") {
           _safeInvokeCallback(onPaywallUnavailable, 'onPaywallUnavailable');
-          // Dispatch on next frame to let event handling finish processing
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            _showFallbackSheet(trigger);
-          });
+          if (trigger != null) {
+            // Dispatch on next frame to let event handling finish processing
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              _showFallbackSheet(trigger);
+            });
+          }
         }
         break;
     }
