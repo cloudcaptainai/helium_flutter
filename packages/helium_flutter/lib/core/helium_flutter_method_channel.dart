@@ -23,6 +23,9 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
   /// Callbacks for the current [presentUpsell] presentation. [_currentOnEntitled]
   /// is invoked from the native `onEntitled` closure (via the [onPaywallEntitledMethodName]
   /// method call); [_currentOnPaywallUnavailable] is derived from `paywallOpenFailed`.
+  ///
+  /// Both are one-shot: capture into a local and null the field before invoking,
+  /// so a callback that re-enters [presentUpsell] keeps its freshly stored handler.
   void Function()? _currentOnEntitled;
   void Function()? _currentOnPaywallUnavailable;
 
@@ -221,8 +224,9 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
             (args is Map) ? Map<String, dynamic>.from(args) : {};
         _handlePaywallEventHandlers(HeliumPaywallEvent.fromMap(eventDict));
       } else if (handler.method == onPaywallEntitledMethodName) {
-        _safeInvokeCallback(_currentOnEntitled, 'onEntitled');
+        final onEntitled = _currentOnEntitled;
         _currentOnEntitled = null;
+        _safeInvokeCallback(onEntitled, 'onEntitled');
       } else if (handler.method == onHeliumLogEventMethodName) {
         final dynamic args = handler.arguments;
         final Map<String, dynamic> eventMap =
@@ -934,17 +938,17 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
       case 'paywallOpenFailed':
         _currentEventHandlers = null;
         final unavailableReason = heliumPaywallEvent.paywallUnavailableReason;
+        final onPaywallUnavailable = _currentOnPaywallUnavailable;
+        _currentOnPaywallUnavailable = null;
         if (trigger != null &&
             unavailableReason != "alreadyPresented" &&
             unavailableReason != "secondTryNoMatch") {
-          _safeInvokeCallback(
-              _currentOnPaywallUnavailable, 'onPaywallUnavailable');
+          _safeInvokeCallback(onPaywallUnavailable, 'onPaywallUnavailable');
           // Dispatch on next frame to let event handling finish processing
           WidgetsBinding.instance.addPostFrameCallback((_) {
             _showFallbackSheet(trigger);
           });
         }
-        _currentOnPaywallUnavailable = null;
         break;
     }
   }
