@@ -1,3 +1,6 @@
+## 3.3.6
+- Added `onEntitled` and `onPaywallUnavailable` callbacks to `presentUpsell`. `onEntitled` fires when the user becomes entitled (purchase, restore, or already-entitled skip when `dontShowIfAlreadyEntitled` is set); `onPaywallUnavailable` fires when neither the paywall nor fallback could be shown.
+
 ## 3.3.5
 - Updated helium-swift dependency to 4.5.5 and Helium Android dependency to 4.4.7
 - Added `getPaddleCustomerId()` and deprecated `createPaddlePortalSession()`. Fetch the Paddle customer ID and pass it to your server to generate a portal session. iOS only.

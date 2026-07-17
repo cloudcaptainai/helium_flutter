@@ -1,3 +1,6 @@
+## 3.3.6
+- Bumped to stay in sync with helium_flutter 3.3.6 (adds `onEntitled` / `onPaywallUnavailable` callbacks to `presentUpsell`).
+
 ## 3.3.5
 - Updated helium-swift dependency to 4.5.5 and Helium Android dependency to 4.4.7
 
