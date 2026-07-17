@@ -467,7 +467,9 @@ public class HeliumFlutterPlugin: NSObject, FlutterPlugin {
                 }
             ),
             onEntitled: { [weak self] in
-                self?.channel.invokeMethod("onPaywallEntitled", arguments: nil)
+                DispatchQueue.main.async {
+                    self?.channel.invokeMethod("onPaywallEntitled", arguments: nil)
+                }
             }
         ) { _ in
             // paywallNotShownReason callback - handled Dart-side via the

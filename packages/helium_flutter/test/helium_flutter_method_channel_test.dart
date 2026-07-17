@@ -111,4 +111,107 @@ void main() {
       'Upsell presented!',
     );
   });
+
+  // Simulates a native -> Dart method call to the handler registered via
+  // setMethodCallHandler (i.e. how the native side reports events back).
+  Future<void> sendFromNative(MethodCall call) {
+    return TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .handlePlatformMessage(
+      heliumFlutter,
+      const StandardMethodCodec().encodeMethodCall(call),
+      (ByteData? _) {},
+    );
+  }
+
+  Future<void> pumpContext(WidgetTester tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Builder(
+          builder: (BuildContext ctx) {
+            context = ctx;
+            return const Scaffold(body: Text('Test'));
+          },
+        ),
+      ),
+    );
+  }
+
+  testWidgets('onEntitled fires on onPaywallEntitled and then clears',
+      (WidgetTester tester) async {
+    await pumpContext(tester);
+    await platform.initialize(apiKey: initializeValue.apiKey);
+
+    var entitledCalls = 0;
+    await platform.presentUpsell(
+      context: context,
+      trigger: 'onboarding',
+      onEntitled: () => entitledCalls++,
+    );
+
+    await sendFromNative(const MethodCall(onPaywallEntitledMethodName));
+    expect(entitledCalls, 1);
+
+    // Fires once, then clears — a second native call is a no-op.
+    await sendFromNative(const MethodCall(onPaywallEntitledMethodName));
+    expect(entitledCalls, 1);
+  });
+
+  testWidgets('a throwing onEntitled callback is contained',
+      (WidgetTester tester) async {
+    await pumpContext(tester);
+    await platform.initialize(apiKey: initializeValue.apiKey);
+
+    await platform.presentUpsell(
+      context: context,
+      trigger: 'onboarding',
+      onEntitled: () => throw Exception('boom'),
+    );
+
+    // Reaching the assertion means the exception did not propagate out of the
+    // method-channel handler.
+    await sendFromNative(const MethodCall(onPaywallEntitledMethodName));
+    expect(true, isTrue);
+  });
+
+  testWidgets('onPaywallUnavailable fires on paywallOpenFailed',
+      (WidgetTester tester) async {
+    await pumpContext(tester);
+    await platform.initialize(apiKey: initializeValue.apiKey);
+
+    var unavailableCalls = 0;
+    await platform.presentUpsell(
+      context: context,
+      trigger: 'onboarding',
+      onPaywallUnavailable: () => unavailableCalls++,
+    );
+
+    await sendFromNative(const MethodCall(onPaywallEventMethodName, {
+      'type': 'paywallOpenFailed',
+      'triggerName': 'onboarding',
+      'paywallUnavailableReason': 'someError',
+    }));
+    await tester.pump(); // flush the post-frame fallback-sheet dispatch (no-op)
+    expect(unavailableCalls, 1);
+  });
+
+  testWidgets('onPaywallUnavailable is skipped for alreadyPresented',
+      (WidgetTester tester) async {
+    await pumpContext(tester);
+    await platform.initialize(apiKey: initializeValue.apiKey);
+
+    var unavailableCalls = 0;
+    await platform.presentUpsell(
+      context: context,
+      trigger: 'onboarding',
+      onPaywallUnavailable: () => unavailableCalls++,
+    );
+
+    await sendFromNative(const MethodCall(onPaywallEventMethodName, {
+      'type': 'paywallOpenFailed',
+      'triggerName': 'onboarding',
+      'paywallUnavailableReason': 'alreadyPresented',
+    }));
+    await tester.pump();
+    expect(unavailableCalls, 0);
+  });
 }
