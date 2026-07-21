@@ -42,7 +42,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<void> _clearUserId() async {
-    await _heliumFlutterPlugin.overrideUserId(newUserId: '');
+    await _heliumFlutterPlugin.clearCustomUserId();
     await _refreshHeliumUserId();
   }
 
@@ -133,6 +133,11 @@ class _HomePageState extends State<HomePage> {
                 buttonKey: const ValueKey('set_user_id'),
                 label: 'Set random user ID',
                 onPressed: _setRandomUserId,
+              ),
+              _ActionButton(
+                buttonKey: const ValueKey('clear_user_id'),
+                label: 'Clear user ID',
+                onPressed: _clearUserId,
               ),
               const SizedBox(height: 8),
               _IdLabel(
