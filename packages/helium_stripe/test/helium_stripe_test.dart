@@ -88,6 +88,11 @@ class MockHeliumFlutterPlatform
   }
 
   @override
+  Future<void> clearCustomUserId() async {
+    calls.add('clearCustomUserId');
+  }
+
+  @override
   Future<String?> getHeliumUserId() async => 'user_id';
   @override
   Future<bool> hideUpsell() async => true;
