@@ -109,6 +109,13 @@ class HeliumFlutter {
         traits: traits,
       );
 
+  /// Clears the custom user ID previously set via [overrideUserId], reverting
+  /// to Helium's anonymous user ID. Use when a user signs out.
+  ///
+  /// Note: [resetHelium] does not clear the custom user ID.
+  Future<void> clearCustomUserId() =>
+      HeliumFlutterPlatform.instance.clearCustomUserId();
+
   ///Returns true if Helium paywalls are loaded.
   Future<bool> paywallsLoaded() =>
       HeliumFlutterPlatform.instance.paywallsLoaded();

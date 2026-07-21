@@ -79,6 +79,11 @@ class MockHeliumFlutterPlatform
   }
 
   @override
+  Future<void> clearCustomUserId() {
+    return Future.value();
+  }
+
+  @override
   Future<bool> paywallsLoaded() {
     return Future.value(true);
   }
@@ -279,6 +284,10 @@ void main() {
       ),
       'new_user_id',
     );
+  });
+  test(clearCustomUserIdMethodName, () async {
+    // Completes without throwing.
+    await heliumFlutterPlugin.clearCustomUserId();
   });
   test(paywallsLoadedMethodName, () async {
     expect(await heliumFlutterPlugin.paywallsLoaded(), true);

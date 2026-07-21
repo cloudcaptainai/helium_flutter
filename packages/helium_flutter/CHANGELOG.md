@@ -1,3 +1,6 @@
+## 3.3.7
+- Added `clearCustomUserId()` to clear the custom user ID set via `overrideUserId`, reverting to Helium's anonymous user ID (e.g. on sign-out). Note that `resetHelium` does not clear the custom user ID.
+
 ## 3.3.6
 - Added `onEntitled` and `onPaywallUnavailable` callbacks to `presentUpsell`. `onEntitled` fires when the user becomes entitled (purchase, restore, or already-entitled skip when `dontShowIfAlreadyEntitled` is set); `onPaywallUnavailable` fires when neither the paywall nor fallback could be shown.
 
