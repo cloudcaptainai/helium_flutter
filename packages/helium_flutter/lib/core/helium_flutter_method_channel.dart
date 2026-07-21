@@ -287,6 +287,15 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
   }
 
   @override
+  Future<void> clearCustomUserId() async {
+    try {
+      await methodChannel.invokeMethod<void>(clearCustomUserIdMethodName);
+    } catch (e) {
+      log('[Helium] Failed to clear custom user ID: $e');
+    }
+  }
+
+  @override
   Future<bool> paywallsLoaded() async {
     final result = await methodChannel.invokeMethod<bool?>(
       paywallsLoadedMethodName,

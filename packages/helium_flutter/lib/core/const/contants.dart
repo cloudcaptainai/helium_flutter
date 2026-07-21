@@ -1,5 +1,5 @@
 // SDK version - keep in sync with pubspec.yaml
-const String heliumFlutterSdkVersion = '3.3.6';
+const String heliumFlutterSdkVersion = '3.3.7';
 
 //Native view type
 const String upsellViewForTrigger = 'upsellViewForTrigger';
@@ -18,6 +18,7 @@ const String onPaywallEntitledMethodName = 'onPaywallEntitled';
 const String getHeliumUserIdMethodName = 'getHeliumUserId';
 const String hideUpsellMethodName = 'hideUpsell';
 const String overrideUserIdMethodName = 'overrideUserId';
+const String clearCustomUserIdMethodName = 'clearCustomUserId';
 const String paywallsLoadedMethodName = 'paywallsLoaded';
 const String presentUpsellMethodName = 'presentUpsell';
 const String fallbackOpenEventMethodName = 'fallbackOpenEvent';

@@ -256,6 +256,10 @@ class HeliumFlutterPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
 
         result.success("User id is updated!")
       }
+      "clearCustomUserId" -> {
+        Helium.identity.userId = null
+        result.success("Custom user id cleared!")
+      }
       "fallbackOpenEvent" -> {
         result.notImplemented()
       }

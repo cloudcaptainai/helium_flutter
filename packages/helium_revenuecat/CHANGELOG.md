@@ -1,3 +1,6 @@
+## 3.3.7
+- Bumped to stay in sync with helium_flutter 3.3.7 (adds `clearCustomUserId()`).
+
 ## 3.3.6
 - Bumped to stay in sync with helium_flutter 3.3.6 (adds `onEntitled` / `onPaywallUnavailable` callbacks to `presentUpsell`).
 

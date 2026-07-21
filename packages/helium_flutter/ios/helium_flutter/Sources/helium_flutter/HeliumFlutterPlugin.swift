@@ -98,6 +98,9 @@ public class HeliumFlutterPlugin: NSObject, FlutterPlugin {
             } else {
                 result(FlutterError(code: "BAD_ARGS", message: "Arguments not passed correctly", details: nil))
             }
+        case "clearCustomUserId":
+            Helium.identify.userId = nil
+            result("Custom user id cleared!")
         case "fallbackOpenEvent":
             if let args = call.arguments as? [String: Any] {
                 let trigger = args["trigger"] as? String
