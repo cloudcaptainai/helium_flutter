@@ -21,4 +21,6 @@ We also maintain an Expo/React Native SDK (`helium-expo`) that wraps the same na
 
 ## Testing
 
-When adding or changing a method on `HeliumFlutterPlatform`, also update the `MockHeliumFlutterPlatform` in `packages/helium_flutter/test/helium_flutter_test.dart` — otherwise `flutter analyze` fails with `non_abstract_class_inherits_abstract_member` or `invalid_override`.
+When adding or changing a method on `HeliumFlutterPlatform`, update every mock that implements it — search the packages for `implements HeliumFlutterPlatform` (there's currently one in each of `helium_flutter` and `helium_stripe`'s test folders) — otherwise `flutter analyze` fails with `non_abstract_class_inherits_abstract_member` or `invalid_override`.
+
+Such a change can break a mock in any package, so run `flutter analyze` and `flutter test` across all packages, not just `helium_flutter`.
