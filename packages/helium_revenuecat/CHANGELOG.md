@@ -1,3 +1,6 @@
+## 3.3.8
+- Updated helium-swift dependency to 4.6.0
+
 ## 3.3.7
 - Bumped to stay in sync with helium_flutter 3.3.7 (adds `clearCustomUserId()`).
 
