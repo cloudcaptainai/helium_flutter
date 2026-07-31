@@ -1,0 +1,101 @@
+name: Update Android Dependency
+
+on:
+  repository_dispatch:
+    types: [update-android-dependency]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Android SDK version to update to (with or without leading v)'
+        required: true
+        type: string
+
+jobs:
+  update-android-dependency:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Normalize and validate version
+        env:
+          RAW_VERSION: ${{ github.event.client_payload.version || github.event.inputs.version }}
+        run: |
+          # The version comes from an external event payload; only accept a plain
+          # release tag so it can't inject into the shell steps below.
+          if [[ ! "$RAW_VERSION" =~ ^v?[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Invalid Android SDK version: '$RAW_VERSION' (expected e.g. 4.4.8 or v4.4.8)"
+            exit 1
+          fi
+          # Android release tags are v-prefixed (e.g. v4.4.8) but build.gradle wants 4.4.8
+          echo "ANDROID_SDK_VERSION=${RAW_VERSION#v}" >> $GITHUB_ENV
+
+      - name: Update build.gradle
+        run: |
+          sed -i "s/com\.tryhelium\.paywall:core:[^\"]*/com.tryhelium.paywall:core:$ANDROID_SDK_VERSION/g" packages/helium_flutter/android/build.gradle
+
+      - name: Bump pubspec.yaml versions
+        run: |
+          # Get current version and increment patch version
+          CURRENT_VERSION=$(grep '^version:' packages/helium_flutter/pubspec.yaml | sed 's/version: //')
+          NEW_VERSION=$(node -e "
+            const current = '$CURRENT_VERSION'.split('+')[0]; // Remove build number if present
+            const parts = current.split('.');
+            const major = parseInt(parts[0]);
+            const minor = parseInt(parts[1]);
+            const patch = parseInt(parts[2]) + 1;
+            console.log(\`\${major}.\${minor}.\${patch}\`);
+          ")
+
+          # Update both pubspec.yaml files with new version
+          sed -i "s/^version: .*/version: $NEW_VERSION/g" packages/helium_flutter/pubspec.yaml
+          sed -i "s/^version: .*/version: $NEW_VERSION/g" packages/helium_revenuecat/pubspec.yaml
+
+          echo "Bumped helium_flutter from $CURRENT_VERSION to $NEW_VERSION"
+          echo "Bumped helium_revenuecat to $NEW_VERSION"
+          echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_ENV
+
+      - name: Update SDK version constant
+        run: |
+          # Update heliumFlutterSdkVersion constant to match pubspec.yaml
+          sed -i "s/const String heliumFlutterSdkVersion = '[^']*'/const String heliumFlutterSdkVersion = '$NEW_VERSION'/g" packages/helium_flutter/lib/core/const/contants.dart
+          echo "Updated heliumFlutterSdkVersion to $NEW_VERSION"
+
+      - name: Update CHANGELOGs
+        run: |
+          # Update helium_flutter CHANGELOG.md
+          TEMP_FILE=$(mktemp)
+          echo "## $NEW_VERSION" > $TEMP_FILE
+          echo "- Updated Helium Android dependency to $ANDROID_SDK_VERSION" >> $TEMP_FILE
+          echo "" >> $TEMP_FILE
+          cat packages/helium_flutter/CHANGELOG.md >> $TEMP_FILE
+          mv $TEMP_FILE packages/helium_flutter/CHANGELOG.md
+
+          # Update helium_revenuecat CHANGELOG.md
+          TEMP_FILE=$(mktemp)
+          echo "## $NEW_VERSION" > $TEMP_FILE
+          echo "- Updated Helium Android dependency to $ANDROID_SDK_VERSION" >> $TEMP_FILE
+          echo "" >> $TEMP_FILE
+          cat packages/helium_revenuecat/CHANGELOG.md >> $TEMP_FILE
+          mv $TEMP_FILE packages/helium_revenuecat/CHANGELOG.md
+
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v7
+        with:
+          commit-message: "Update Helium Android SDK dependency to ${{ env.ANDROID_SDK_VERSION }}"
+          branch: update-android-sdk-${{ env.ANDROID_SDK_VERSION }}
+          title: "Update Helium Android SDK to ${{ env.ANDROID_SDK_VERSION }}"
+          body: |
+            Automated update of Helium Android SDK dependency to version ${{ env.ANDROID_SDK_VERSION }}.
+
+            Changes:
+            - Updated build.gradle dependency version
+            - Bumped helium_flutter pubspec.yaml version (patch increment)
+            - Bumped helium_revenuecat pubspec.yaml version (patch increment)
+            - Updated heliumFlutterSdkVersion constant
+            - Added changelog entries to both packages
+
+            This PR was automatically created by the Android SDK release workflow.
