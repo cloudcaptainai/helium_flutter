@@ -20,10 +20,17 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Normalize version
+      - name: Normalize and validate version
+        env:
+          RAW_VERSION: ${{ github.event.client_payload.version || github.event.inputs.version }}
         run: |
+          # The version comes from an external event payload; only accept a plain
+          # release tag so it can't inject into the shell steps below.
+          if [[ ! "$RAW_VERSION" =~ ^v?[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Invalid Android SDK version: '$RAW_VERSION' (expected e.g. 4.4.8 or v4.4.8)"
+            exit 1
+          fi
           # Android release tags are v-prefixed (e.g. v4.4.8) but build.gradle wants 4.4.8
-          RAW_VERSION="${{ github.event.client_payload.version || github.event.inputs.version }}"
           echo "ANDROID_SDK_VERSION=${RAW_VERSION#v}" >> $GITHUB_ENV
 
       - name: Update build.gradle
