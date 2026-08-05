@@ -1,3 +1,6 @@
+## 3.3.9
+- Updated Helium Android dependency to 4.4.9
+
 ## 3.3.8
 - Updated helium-swift dependency to 4.6.0
 - Updated Helium Android dependency to 4.4.8
