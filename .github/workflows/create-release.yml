@@ -95,12 +95,21 @@ jobs:
     needs: [check-version, get-current-version, test]
     if: always() && (needs.check-version.outputs.version-changed == 'true' || github.event_name == 'workflow_dispatch')
     steps:
+      # Tag must be pushed with an app token (not the default GITHUB_TOKEN,
+      # which suppresses downstream workflow triggers) so publish.yml runs.
+      - name: Generate app token
+        id: app-token
+        uses: actions/create-github-app-token@v2
+        with:
+          app-id: ${{ secrets.HELIUM_RELEASE_APP_ID }}
+          private-key: ${{ secrets.HELIUM_RELEASE_APP_PRIVATE_KEY }}
+
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          token: ${{ steps.app-token.outputs.token }}
 
       - name: Create tag
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           VERSION="${{ needs.check-version.outputs.new-version || needs.get-current-version.outputs.current-version }}"
           git tag "$VERSION"
