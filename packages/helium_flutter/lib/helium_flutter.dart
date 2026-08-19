@@ -317,32 +317,19 @@ class HeliumFlutter {
     )
     String? cancelURL,
     Set<HeliumWebCheckoutProcessor>? paymentProcessors,
-  }) =>
-      HeliumFlutterPlatform.instance.enableExternalWebCheckout(
+  }) {
+    if (redirectURL != null) {
+      return HeliumFlutterPlatform.instance.enableExternalWebCheckout(
         redirectURL: redirectURL,
-        successURL: successURL,
-        cancelURL: cancelURL,
         paymentProcessors: paymentProcessors,
       );
-
-  /// Enables External Web Checkout Flow with separate success and cancel URLs.
-  ///
-  /// Prefer [enableExternalWebCheckout] with a single redirect URL - it covers
-  /// all checkout outcomes.
-  @Deprecated(
-    'Use enableExternalWebCheckout instead. A single redirect URL covers '
-    'success, cancel, and payment failure.',
-  )
-  Future<void> enableExternalWebCheckoutSuccessAndCancel({
-    required String successURL,
-    required String cancelURL,
-    Set<HeliumWebCheckoutProcessor>? paymentProcessors,
-  }) =>
-      HeliumFlutterPlatform.instance.enableExternalWebCheckoutSuccessAndCancel(
-        successURL: successURL,
-        cancelURL: cancelURL,
-        paymentProcessors: paymentProcessors,
-      );
+    }
+    return HeliumFlutterPlatform.instance.enableExternalWebCheckoutSuccessAndCancel(
+      successURL: successURL ?? '',
+      cancelURL: cancelURL ?? '',
+      paymentProcessors: paymentProcessors,
+    );
+  }
 
   /// Disables External Web Checkout Flow. Paywalls with Paddle or Stripe
   /// products will not show; your fallback paywall (if provided) will show
