@@ -280,16 +280,17 @@ class HeliumFlutter {
   /// your paywalls. If not enabled, paywalls with Paddle/Stripe products will
   /// not show and your fallback paywall (if provided) will show instead.
   ///
-  /// You must provide redirect URLs so Helium knows where to send the user
-  /// after checkout completes or is cancelled.
+  /// You must provide a redirect URL so Helium knows where to send the user
+  /// when checkout finishes. Checkout redirects back to it whether the
+  /// purchase succeeds, is cancelled, or fails - the SDK determines the
+  /// outcome itself.
   ///
   /// Call this before [initialize] for best results, and `await` it to
   /// guarantee the configuration is applied before [initialize] runs on the
   /// native side.
   ///
-  /// - [successURL]: The URL to redirect to after a successful payment.
-  /// - [cancelURL]: The URL the provider redirects to when the user cancels
-  ///   checkout.
+  /// - [redirectURL]: The URL checkout redirects back to when the user is
+  ///   done.
   /// - [paymentProcessors]: Which processors to enable. Omit (or pass `null`)
   ///   to enable both Paddle and Stripe. Pass
   ///   `{HeliumWebCheckoutProcessor.paddle}` or
@@ -300,11 +301,13 @@ class HeliumFlutter {
   /// Currently only supported on iOS; a no-op on Android. Errors are logged
   /// internally and never thrown to the caller.
   Future<void> enableExternalWebCheckout({
-    required String successURL,
-    required String cancelURL,
+    String? redirectURL,
+    @Deprecated('Pass redirectURL instead.') String? successURL,
+    @Deprecated('Pass redirectURL instead.') String? cancelURL,
     Set<HeliumWebCheckoutProcessor>? paymentProcessors,
   }) =>
       HeliumFlutterPlatform.instance.enableExternalWebCheckout(
+        redirectURL: redirectURL,
         successURL: successURL,
         cancelURL: cancelURL,
         paymentProcessors: paymentProcessors,

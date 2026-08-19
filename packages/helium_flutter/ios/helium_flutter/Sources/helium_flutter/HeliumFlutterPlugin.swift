@@ -204,17 +204,23 @@ public class HeliumFlutterPlugin: NSObject, FlutterPlugin {
             result(true)
         case "enableExternalWebCheckout":
             if let args = call.arguments as? [String: Any],
-               let successURL = args["successURL"] as? String,
-               let cancelURL = args["cancelURL"] as? String {
+               let redirectURL = args["redirectURL"] as? String {
                 let processors = parseWebCheckoutProcessors(args["paymentProcessors"] as? [String])
-                Helium.config.enableExternalWebCheckout(
-                    successURL: successURL,
-                    cancelURL: cancelURL,
-                    paymentProcessors: processors
-                )
+                if let cancelURL = args["cancelURL"] as? String {
+                    Helium.config.enableExternalWebCheckout(
+                        successURL: redirectURL,
+                        cancelURL: cancelURL,
+                        paymentProcessors: processors
+                    )
+                } else {
+                    Helium.config.enableExternalWebCheckout(
+                        redirectURL: redirectURL,
+                        paymentProcessors: processors
+                    )
+                }
                 result("External Web Checkout enabled!")
             } else {
-                result(FlutterError(code: "BAD_ARGS", message: "successURL and cancelURL required", details: nil))
+                result(FlutterError(code: "BAD_ARGS", message: "redirectURL required", details: nil))
             }
         case "disableExternalWebCheckout":
             Helium.config.disableExternalWebCheckout()

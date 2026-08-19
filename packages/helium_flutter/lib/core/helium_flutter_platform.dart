@@ -143,8 +143,9 @@ abstract class HeliumFlutterPlatform extends PlatformInterface {
 
   /// Enable External Web Checkout (Paddle/Stripe). iOS only; no-op on Android.
   Future<void> enableExternalWebCheckout({
-    required String successURL,
-    required String cancelURL,
+    String? redirectURL,
+    @Deprecated('Pass redirectURL instead.') String? successURL,
+    @Deprecated('Pass redirectURL instead.') String? cancelURL,
     Set<HeliumWebCheckoutProcessor>? paymentProcessors,
   });
 
