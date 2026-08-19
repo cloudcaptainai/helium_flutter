@@ -33,11 +33,30 @@ jobs:
           # Android release tags are v-prefixed (e.g. v4.4.8) but build.gradle wants 4.4.8
           echo "ANDROID_SDK_VERSION=${RAW_VERSION#v}" >> $GITHUB_ENV
 
+      - name: Check whether an update is needed
+        env:
+          GRADLE_FILE: packages/helium_flutter/android/build.gradle
+        run: |
+          CURRENT=$(grep -oE 'com\.tryhelium\.paywall:core:[0-9][^"]*' "$GRADLE_FILE" | head -1 | cut -d: -f3)
+          if [ -z "$CURRENT" ]; then
+            echo "Could not read the pinned com.tryhelium.paywall:core version from $GRADLE_FILE"
+            exit 1
+          fi
+          if [ "$CURRENT" = "$ANDROID_SDK_VERSION" ]; then
+            echo "Already pinned to $ANDROID_SDK_VERSION; nothing to do."
+            echo "SHOULD_UPDATE=false" >> $GITHUB_ENV
+          else
+            echo "Pinned version $CURRENT differs from $ANDROID_SDK_VERSION; opening a bump."
+            echo "SHOULD_UPDATE=true" >> $GITHUB_ENV
+          fi
+
       - name: Update build.gradle
+        if: env.SHOULD_UPDATE == 'true'
         run: |
           sed -i "s/com\.tryhelium\.paywall:core:[^\"]*/com.tryhelium.paywall:core:$ANDROID_SDK_VERSION/g" packages/helium_flutter/android/build.gradle
 
       - name: Bump pubspec.yaml versions
+        if: env.SHOULD_UPDATE == 'true'
         run: |
           # Get current version and increment patch version
           CURRENT_VERSION=$(grep '^version:' packages/helium_flutter/pubspec.yaml | sed 's/version: //')
@@ -59,12 +78,14 @@ jobs:
           echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_ENV
 
       - name: Update SDK version constant
+        if: env.SHOULD_UPDATE == 'true'
         run: |
           # Update heliumFlutterSdkVersion constant to match pubspec.yaml
           sed -i "s/const String heliumFlutterSdkVersion = '[^']*'/const String heliumFlutterSdkVersion = '$NEW_VERSION'/g" packages/helium_flutter/lib/core/const/contants.dart
           echo "Updated heliumFlutterSdkVersion to $NEW_VERSION"
 
       - name: Update CHANGELOGs
+        if: env.SHOULD_UPDATE == 'true'
         run: |
           # Update helium_flutter CHANGELOG.md
           TEMP_FILE=$(mktemp)
@@ -83,6 +104,7 @@ jobs:
           mv $TEMP_FILE packages/helium_revenuecat/CHANGELOG.md
 
       - name: Create Pull Request
+        if: env.SHOULD_UPDATE == 'true'
         uses: peter-evans/create-pull-request@v7
         with:
           commit-message: "Update Helium Android SDK dependency to ${{ env.ANDROID_SDK_VERSION }}"
