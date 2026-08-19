@@ -281,9 +281,13 @@ class HeliumFlutter {
   /// not show and your fallback paywall (if provided) will show instead.
   ///
   /// You must provide a redirect URL so Helium knows where to send the user
-  /// when checkout finishes. Checkout redirects back to it whether the
-  /// purchase succeeds, is cancelled, or fails - the SDK determines the
-  /// outcome itself.
+  /// back after checkout, whether it succeeded, was cancelled, or failed. If a
+  /// user returns to the app manually without the redirect URL, then the SDK
+  /// will look at the latest entitlement state to determine if a purchase was
+  /// made.
+  ///
+  /// Register the URL as a deep link (custom scheme or universal link) and
+  /// forward it to [handleURL] from your URL handler.
   ///
   /// Call this before [initialize] for best results, and `await` it to
   /// guarantee the configuration is applied before [initialize] runs on the
@@ -291,8 +295,8 @@ class HeliumFlutter {
   ///
   /// - [redirectURL]: The URL checkout redirects back to when the user is
   ///   done.
-  /// - [paymentProcessors]: Which processors to enable. Omit (or pass `null`)
-  ///   to enable both Paddle and Stripe. Pass
+  /// - [paymentProcessors]: Which processors to enable. Paddle, Stripe, or
+  ///   both. Omit (or pass `null`) to enable both. Pass
   ///   `{HeliumWebCheckoutProcessor.paddle}` or
   ///   `{HeliumWebCheckoutProcessor.stripe}` if your app only uses one, to
   ///   skip the unused processor's entitlement network calls. Must not be
@@ -301,13 +305,28 @@ class HeliumFlutter {
   /// Currently only supported on iOS; a no-op on Android. Errors are logged
   /// internally and never thrown to the caller.
   Future<void> enableExternalWebCheckout({
-    String? redirectURL,
-    @Deprecated('Pass redirectURL instead.') String? successURL,
-    @Deprecated('Pass redirectURL instead.') String? cancelURL,
+    required String redirectURL,
     Set<HeliumWebCheckoutProcessor>? paymentProcessors,
   }) =>
       HeliumFlutterPlatform.instance.enableExternalWebCheckout(
         redirectURL: redirectURL,
+        paymentProcessors: paymentProcessors,
+      );
+
+  /// Enables External Web Checkout Flow with separate success and cancel URLs.
+  ///
+  /// Prefer [enableExternalWebCheckout] with a single redirect URL - it covers
+  /// all checkout outcomes.
+  @Deprecated(
+    'Use enableExternalWebCheckout instead. A single redirect URL covers '
+    'success, cancel, and payment failure.',
+  )
+  Future<void> enableExternalWebCheckoutSuccessAndCancel({
+    required String successURL,
+    required String cancelURL,
+    Set<HeliumWebCheckoutProcessor>? paymentProcessors,
+  }) =>
+      HeliumFlutterPlatform.instance.enableExternalWebCheckoutSuccessAndCancel(
         successURL: successURL,
         cancelURL: cancelURL,
         paymentProcessors: paymentProcessors,
@@ -418,12 +437,11 @@ class HeliumFlutter {
   void setLogLevel(HeliumLogLevel level) =>
       HeliumFlutterPlatform.instance.setLogLevel(level);
 
-  /// Forward an incoming URL to Helium so it can react to External Web
-  /// Checkout success/cancel redirects without waiting for the app to
-  /// foreground.
+  /// Forward an incoming URL to Helium so it can react to the External Web
+  /// Checkout redirect without waiting for the app to foreground.
   ///
   /// Safe to call with unrelated URLs — returns `null` if external web
-  /// checkout is disabled or the URL does not match the success/cancel URLs
+  /// checkout is disabled or the URL does not match the redirect URL
   /// configured via [enableExternalWebCheckout].
   ///
   /// Call this from your app's deep link handler (e.g. the callback of a
