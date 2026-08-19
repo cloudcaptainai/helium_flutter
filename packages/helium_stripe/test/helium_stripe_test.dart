@@ -155,7 +155,17 @@ class MockHeliumFlutterPlatform
   void setAndroidConsumableProductIds(Set<String> productIds) {}
   @override
   Future<void> enableExternalWebCheckout({
-    required String redirectURL,
+    String? redirectURL,
+    @Deprecated(
+      'Use enableExternalWebCheckout with redirectURL instead. A single redirect '
+      'URL covers success, cancel, and payment failure.',
+    )
+    String? successURL,
+    @Deprecated(
+      'Use enableExternalWebCheckout with redirectURL instead. A single redirect '
+      'URL covers success, cancel, and payment failure.',
+    )
+    String? cancelURL,
     Set<HeliumWebCheckoutProcessor>? paymentProcessors,
   }) async {}
 

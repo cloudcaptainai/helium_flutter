@@ -305,11 +305,23 @@ class HeliumFlutter {
   /// Currently only supported on iOS; a no-op on Android. Errors are logged
   /// internally and never thrown to the caller.
   Future<void> enableExternalWebCheckout({
-    required String redirectURL,
+    String? redirectURL,
+    @Deprecated(
+      'Use enableExternalWebCheckout with redirectURL instead. A single redirect '
+      'URL covers success, cancel, and payment failure.',
+    )
+    String? successURL,
+    @Deprecated(
+      'Use enableExternalWebCheckout with redirectURL instead. A single redirect '
+      'URL covers success, cancel, and payment failure.',
+    )
+    String? cancelURL,
     Set<HeliumWebCheckoutProcessor>? paymentProcessors,
   }) =>
       HeliumFlutterPlatform.instance.enableExternalWebCheckout(
         redirectURL: redirectURL,
+        successURL: successURL,
+        cancelURL: cancelURL,
         paymentProcessors: paymentProcessors,
       );
 

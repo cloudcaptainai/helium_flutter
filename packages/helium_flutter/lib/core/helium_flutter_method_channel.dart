@@ -575,10 +575,24 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
 
   @override
   Future<void> enableExternalWebCheckout({
-    required String redirectURL,
+    String? redirectURL,
+    @Deprecated(
+      'Use enableExternalWebCheckout with redirectURL instead. A single redirect '
+      'URL covers success, cancel, and payment failure.',
+    )
+    String? successURL,
+    @Deprecated(
+      'Use enableExternalWebCheckout with redirectURL instead. A single redirect '
+      'URL covers success, cancel, and payment failure.',
+    )
+    String? cancelURL,
     Set<HeliumWebCheckoutProcessor>? paymentProcessors,
   }) =>
-      _setExternalWebCheckout(redirectURL, null, paymentProcessors);
+      _setExternalWebCheckout(
+        redirectURL ?? successURL,
+        redirectURL == null ? cancelURL : null,
+        paymentProcessors,
+      );
 
   @override
   Future<void> enableExternalWebCheckoutSuccessAndCancel({
@@ -589,7 +603,7 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
       _setExternalWebCheckout(successURL, cancelURL, paymentProcessors);
 
   Future<void> _setExternalWebCheckout(
-    String redirectURL,
+    String? redirectURL,
     String? cancelURL,
     Set<HeliumWebCheckoutProcessor>? paymentProcessors,
   ) async {
@@ -597,8 +611,12 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
       log('[Helium] enableExternalWebCheckout is only available on iOS');
       return;
     }
-    if (redirectURL.isEmpty) {
+    if (redirectURL == null || redirectURL.isEmpty) {
       log('[Helium] enableExternalWebCheckout: redirectURL must not be empty.');
+      return;
+    }
+    if (cancelURL != null && cancelURL.isEmpty) {
+      log('[Helium] enableExternalWebCheckout: cancelURL must not be empty.');
       return;
     }
     if (paymentProcessors != null && paymentProcessors.isEmpty) {
