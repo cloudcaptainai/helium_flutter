@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:helium_flutter/core/helium_callbacks.dart';
@@ -280,19 +282,23 @@ class HeliumFlutter {
   /// your paywalls. If not enabled, paywalls with Paddle/Stripe products will
   /// not show and your fallback paywall (if provided) will show instead.
   ///
-  /// You must provide redirect URLs so Helium knows where to send the user
-  /// after checkout completes or is cancelled.
+  /// You must provide a redirect URL so Helium knows where to send the user
+  /// back after checkout, whether it succeeded, was cancelled, or failed. If a
+  /// user returns to the app manually without the redirect URL, then the SDK
+  /// will look at the latest entitlement state to determine if a purchase was
+  /// made.
+  ///
+  /// Register the URL as a deep link (custom scheme or universal link) and
+  /// forward it to [handleURL] from your URL handler.
   ///
   /// Call this before [initialize] for best results, and `await` it to
   /// guarantee the configuration is applied before [initialize] runs on the
   /// native side.
   ///
-  /// - [successURL]: The URL to redirect to after a successful payment.
-  /// - [cancelURL]: The URL the provider redirects to when the user cancels
-  ///   checkout.
-  /// - [paymentProcessors]: Which processors to enable. Omit (or pass `null`)
-  ///   to enable both Paddle and Stripe. Pass
-  ///   `{HeliumWebCheckoutProcessor.paddle}` or
+  /// - [redirectURL]: The URL checkout redirects back to when the user is
+  ///   done.
+  /// - [paymentProcessors]: Which processors to enable. Paddle, Stripe, or
+  ///   both. Pass `{HeliumWebCheckoutProcessor.paddle}` or
   ///   `{HeliumWebCheckoutProcessor.stripe}` if your app only uses one, to
   ///   skip the unused processor's entitlement network calls. Must not be
   ///   an empty set.
@@ -300,15 +306,44 @@ class HeliumFlutter {
   /// Currently only supported on iOS; a no-op on Android. Errors are logged
   /// internally and never thrown to the caller.
   Future<void> enableExternalWebCheckout({
-    required String successURL,
-    required String cancelURL,
-    Set<HeliumWebCheckoutProcessor>? paymentProcessors,
-  }) =>
-      HeliumFlutterPlatform.instance.enableExternalWebCheckout(
-        successURL: successURL,
-        cancelURL: cancelURL,
-        paymentProcessors: paymentProcessors,
+    String? redirectURL,
+    @Deprecated(
+      'Use enableExternalWebCheckout with redirectURL instead. A single redirect '
+      'URL covers success, cancel, and payment failure.',
+    )
+    String? successURL,
+    @Deprecated(
+      'Use enableExternalWebCheckout with redirectURL instead. A single redirect '
+      'URL covers success, cancel, and payment failure.',
+    )
+    String? cancelURL,
+    required Set<HeliumWebCheckoutProcessor> paymentProcessors,
+  }) async {
+    try {
+      if (redirectURL != null) {
+        await HeliumFlutterPlatform.instance.enableExternalWebCheckout(
+          redirectURL: redirectURL,
+          paymentProcessors: paymentProcessors,
+        );
+        return;
+      }
+      if (successURL != null && cancelURL != null) {
+        await HeliumFlutterPlatform.instance
+            .enableExternalWebCheckoutSuccessAndCancel(
+              successURL: successURL,
+              cancelURL: cancelURL,
+              paymentProcessors: paymentProcessors,
+            );
+        return;
+      }
+      log(
+        '[Helium] enableExternalWebCheckout: provide redirectURL '
+        '(or successURL + cancelURL).',
       );
+    } catch (e) {
+      log('[Helium] Failed to enable External Web Checkout: $e');
+    }
+  }
 
   /// Disables External Web Checkout Flow. Paywalls with Paddle or Stripe
   /// products will not show; your fallback paywall (if provided) will show
@@ -415,12 +450,11 @@ class HeliumFlutter {
   void setLogLevel(HeliumLogLevel level) =>
       HeliumFlutterPlatform.instance.setLogLevel(level);
 
-  /// Forward an incoming URL to Helium so it can react to External Web
-  /// Checkout success/cancel redirects without waiting for the app to
-  /// foreground.
+  /// Forward an incoming URL to Helium so it can react to the External Web
+  /// Checkout redirect without waiting for the app to foreground.
   ///
   /// Safe to call with unrelated URLs — returns `null` if external web
-  /// checkout is disabled or the URL does not match the success/cancel URLs
+  /// checkout is disabled or the URL does not match the redirect URL
   /// configured via [enableExternalWebCheckout].
   ///
   /// Call this from your app's deep link handler (e.g. the callback of a

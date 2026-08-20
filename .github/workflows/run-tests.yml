@@ -45,5 +45,7 @@ jobs:
 #        todo consider running flutter test integration_test from example/ directory
 
       - name: Check pub publish dry run
-        run: flutter pub publish --dry-run
+        run: |
+          git restore .
+          flutter pub publish --dry-run
         working-directory: ${{ matrix.package }}

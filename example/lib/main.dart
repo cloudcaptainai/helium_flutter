@@ -28,8 +28,7 @@ Future<void> initializeHelium() async {
   // We also handle the message potentially returning null.
   try {
     await HeliumFlutter().enableExternalWebCheckout(
-      successURL: "heliumflutter://openapp",
-      cancelURL: "heliumflutter://openapp",
+      redirectURL: "heliumflutter://openapp",
       paymentProcessors: {HeliumWebCheckoutProcessor.paddle},
     );
     await heliumFlutterPlugin.initialize(

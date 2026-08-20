@@ -174,6 +174,16 @@ class MockHeliumFlutterPlatform
 
   @override
   Future<void> enableExternalWebCheckout({
+    required String redirectURL,
+    Set<HeliumWebCheckoutProcessor>? paymentProcessors,
+  }) async {}
+
+  @override
+  @Deprecated(
+    'Use enableExternalWebCheckout with redirectURL instead. A single redirect '
+    'URL covers success, cancel, and payment failure.',
+  )
+  Future<void> enableExternalWebCheckoutSuccessAndCancel({
     required String successURL,
     required String cancelURL,
     Set<HeliumWebCheckoutProcessor>? paymentProcessors,
@@ -352,12 +362,14 @@ void main() {
   });
   test(enableExternalWebCheckoutMethodName, () {
     heliumFlutterPlugin.enableExternalWebCheckout(
-      successURL: 'https://example.com/success',
-      cancelURL: 'https://example.com/cancel',
+      redirectURL: 'https://example.com/openapp',
+      paymentProcessors: {
+        HeliumWebCheckoutProcessor.paddle,
+        HeliumWebCheckoutProcessor.stripe,
+      },
     );
     heliumFlutterPlugin.enableExternalWebCheckout(
-      successURL: 'https://example.com/success',
-      cancelURL: 'https://example.com/cancel',
+      redirectURL: 'https://example.com/openapp',
       paymentProcessors: {HeliumWebCheckoutProcessor.stripe},
     );
   });
