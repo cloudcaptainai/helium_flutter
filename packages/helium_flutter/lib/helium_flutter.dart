@@ -318,26 +318,31 @@ class HeliumFlutter {
     )
     String? cancelURL,
     required Set<HeliumWebCheckoutProcessor> paymentProcessors,
-  }) {
-    if (redirectURL != null) {
-      return HeliumFlutterPlatform.instance.enableExternalWebCheckout(
-        redirectURL: redirectURL,
-        paymentProcessors: paymentProcessors,
+  }) async {
+    try {
+      if (redirectURL != null) {
+        await HeliumFlutterPlatform.instance.enableExternalWebCheckout(
+          redirectURL: redirectURL,
+          paymentProcessors: paymentProcessors,
+        );
+        return;
+      }
+      if (successURL != null && cancelURL != null) {
+        await HeliumFlutterPlatform.instance
+            .enableExternalWebCheckoutSuccessAndCancel(
+              successURL: successURL,
+              cancelURL: cancelURL,
+              paymentProcessors: paymentProcessors,
+            );
+        return;
+      }
+      log(
+        '[Helium] enableExternalWebCheckout: provide redirectURL '
+        '(or successURL + cancelURL).',
       );
+    } catch (e) {
+      log('[Helium] Failed to enable External Web Checkout: $e');
     }
-    if (successURL != null && cancelURL != null) {
-      return HeliumFlutterPlatform.instance
-          .enableExternalWebCheckoutSuccessAndCancel(
-            successURL: successURL,
-            cancelURL: cancelURL,
-            paymentProcessors: paymentProcessors,
-          );
-    }
-    log(
-      '[Helium] enableExternalWebCheckout: provide redirectURL '
-      '(or successURL + cancelURL).',
-    );
-    return Future.value();
   }
 
   /// Disables External Web Checkout Flow. Paywalls with Paddle or Stripe
