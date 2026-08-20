@@ -578,7 +578,11 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
     required String redirectURL,
     Set<HeliumWebCheckoutProcessor>? paymentProcessors,
   }) async {
-    if (!_validateWebCheckout(redirectURL, null, paymentProcessors)) return;
+    if (!_validateWebCheckoutCommon(paymentProcessors)) return;
+    if (redirectURL.isEmpty) {
+      log('[Helium] enableExternalWebCheckout: redirectURL must not be empty.');
+      return;
+    }
     await _invokeWebCheckout(
       enableExternalWebCheckoutMethodName,
       {'redirectURL': redirectURL},
@@ -592,7 +596,11 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
     required String cancelURL,
     Set<HeliumWebCheckoutProcessor>? paymentProcessors,
   }) async {
-    if (!_validateWebCheckout(successURL, cancelURL, paymentProcessors)) return;
+    if (!_validateWebCheckoutCommon(paymentProcessors)) return;
+    if (successURL.isEmpty || cancelURL.isEmpty) {
+      log('[Helium] enableExternalWebCheckout: successURL and cancelURL must not be empty.');
+      return;
+    }
     await _invokeWebCheckout(
       enableExternalWebCheckoutSuccessAndCancelMethodName,
       {'successURL': successURL, 'cancelURL': cancelURL},
@@ -600,21 +608,11 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
     );
   }
 
-  bool _validateWebCheckout(
-    String redirectURL,
-    String? cancelURL,
+  bool _validateWebCheckoutCommon(
     Set<HeliumWebCheckoutProcessor>? paymentProcessors,
   ) {
     if (!Platform.isIOS) {
       log('[Helium] enableExternalWebCheckout is only available on iOS');
-      return false;
-    }
-    if (redirectURL.isEmpty) {
-      log('[Helium] enableExternalWebCheckout: redirectURL must not be empty.');
-      return false;
-    }
-    if (cancelURL != null && cancelURL.isEmpty) {
-      log('[Helium] enableExternalWebCheckout: cancelURL must not be empty.');
       return false;
     }
     if (paymentProcessors != null && paymentProcessors.isEmpty) {
