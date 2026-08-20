@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:helium_flutter/core/helium_callbacks.dart';
@@ -296,8 +298,7 @@ class HeliumFlutter {
   /// - [redirectURL]: The URL checkout redirects back to when the user is
   ///   done.
   /// - [paymentProcessors]: Which processors to enable. Paddle, Stripe, or
-  ///   both. Omit (or pass `null`) to enable both. Pass
-  ///   `{HeliumWebCheckoutProcessor.paddle}` or
+  ///   both. Pass `{HeliumWebCheckoutProcessor.paddle}` or
   ///   `{HeliumWebCheckoutProcessor.stripe}` if your app only uses one, to
   ///   skip the unused processor's entitlement network calls. Must not be
   ///   an empty set.
@@ -316,7 +317,7 @@ class HeliumFlutter {
       'URL covers success, cancel, and payment failure.',
     )
     String? cancelURL,
-    Set<HeliumWebCheckoutProcessor>? paymentProcessors,
+    required Set<HeliumWebCheckoutProcessor> paymentProcessors,
   }) {
     if (redirectURL != null) {
       return HeliumFlutterPlatform.instance.enableExternalWebCheckout(
@@ -324,11 +325,19 @@ class HeliumFlutter {
         paymentProcessors: paymentProcessors,
       );
     }
-    return HeliumFlutterPlatform.instance.enableExternalWebCheckoutSuccessAndCancel(
-      successURL: successURL ?? '',
-      cancelURL: cancelURL ?? '',
-      paymentProcessors: paymentProcessors,
+    if (successURL != null && cancelURL != null) {
+      return HeliumFlutterPlatform.instance
+          .enableExternalWebCheckoutSuccessAndCancel(
+            successURL: successURL,
+            cancelURL: cancelURL,
+            paymentProcessors: paymentProcessors,
+          );
+    }
+    log(
+      '[Helium] enableExternalWebCheckout: provide redirectURL '
+      '(or successURL + cancelURL).',
     );
+    return Future.value();
   }
 
   /// Disables External Web Checkout Flow. Paywalls with Paddle or Stripe

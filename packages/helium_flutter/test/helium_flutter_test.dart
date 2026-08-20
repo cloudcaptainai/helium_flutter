@@ -363,6 +363,10 @@ void main() {
   test(enableExternalWebCheckoutMethodName, () {
     heliumFlutterPlugin.enableExternalWebCheckout(
       redirectURL: 'https://example.com/openapp',
+      paymentProcessors: {
+        HeliumWebCheckoutProcessor.paddle,
+        HeliumWebCheckoutProcessor.stripe,
+      },
     );
     heliumFlutterPlugin.enableExternalWebCheckout(
       redirectURL: 'https://example.com/openapp',
