@@ -1,3 +1,6 @@
+## 3.3.10
+- Updated Helium Android dependency to 4.5.2
+
 ## 3.3.9
 - Updated Helium Android dependency to 4.4.9
 
