@@ -39,6 +39,8 @@ const String onHeliumLogEventMethodName = 'onHeliumLogEvent';
 const String setAndroidConsumableProductIdsMethodName = 'setAndroidConsumableProductIds';
 const String setupCoreMethodName = 'setupCore';
 const String enableExternalWebCheckoutMethodName = 'enableExternalWebCheckout';
+const String enableExternalWebCheckoutSuccessAndCancelMethodName =
+    'enableExternalWebCheckoutSuccessAndCancel';
 const String disableExternalWebCheckoutMethodName = 'disableExternalWebCheckout';
 const String setAllowWebCheckoutWithoutUserIdMethodName = 'setAllowWebCheckoutWithoutUserId';
 const String hasActiveStripeEntitlementMethodName = 'hasActiveStripeEntitlement';

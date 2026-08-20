@@ -575,30 +575,65 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
 
   @override
   Future<void> enableExternalWebCheckout({
+    required String redirectURL,
+    Set<HeliumWebCheckoutProcessor>? paymentProcessors,
+  }) async {
+    if (!_validateWebCheckoutCommon(paymentProcessors)) return;
+    if (redirectURL.isEmpty) {
+      log('[Helium] enableExternalWebCheckout: redirectURL must not be empty.');
+      return;
+    }
+    await _invokeWebCheckout(
+      enableExternalWebCheckoutMethodName,
+      {'redirectURL': redirectURL},
+      paymentProcessors,
+    );
+  }
+
+  @override
+  Future<void> enableExternalWebCheckoutSuccessAndCancel({
     required String successURL,
     required String cancelURL,
     Set<HeliumWebCheckoutProcessor>? paymentProcessors,
   }) async {
+    if (!_validateWebCheckoutCommon(paymentProcessors)) return;
+    if (successURL.isEmpty || cancelURL.isEmpty) {
+      log('[Helium] enableExternalWebCheckout: successURL and cancelURL must not be empty.');
+      return;
+    }
+    await _invokeWebCheckout(
+      enableExternalWebCheckoutSuccessAndCancelMethodName,
+      {'successURL': successURL, 'cancelURL': cancelURL},
+      paymentProcessors,
+    );
+  }
+
+  bool _validateWebCheckoutCommon(
+    Set<HeliumWebCheckoutProcessor>? paymentProcessors,
+  ) {
     if (!Platform.isIOS) {
       log('[Helium] enableExternalWebCheckout is only available on iOS');
-      return;
+      return false;
     }
     if (paymentProcessors != null && paymentProcessors.isEmpty) {
       log('[Helium] enableExternalWebCheckout: paymentProcessors must not be empty. '
-          'Omit it to enable all, or pass {HeliumWebCheckoutProcessor.paddle} or {HeliumWebCheckoutProcessor.stripe}.');
-      return;
+          'Pass {HeliumWebCheckoutProcessor.paddle}, {HeliumWebCheckoutProcessor.stripe}, or both.');
+      return false;
     }
+    return true;
+  }
+
+  Future<void> _invokeWebCheckout(
+    String method,
+    Map<String, Object> urls,
+    Set<HeliumWebCheckoutProcessor>? paymentProcessors,
+  ) async {
     try {
-      await methodChannel.invokeMethod<void>(
-        enableExternalWebCheckoutMethodName,
-        {
-          'successURL': successURL,
-          'cancelURL': cancelURL,
-          if (paymentProcessors != null)
-            'paymentProcessors':
-                paymentProcessors.map((p) => p.name).toList(),
-        },
-      );
+      await methodChannel.invokeMethod<void>(method, {
+        ...urls,
+        if (paymentProcessors != null)
+          'paymentProcessors': paymentProcessors.map((p) => p.name).toList(),
+      });
     } catch (e) {
       log('[Helium] Failed to enable External Web Checkout: $e');
     }
