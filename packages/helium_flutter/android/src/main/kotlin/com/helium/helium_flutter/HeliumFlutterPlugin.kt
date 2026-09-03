@@ -31,6 +31,8 @@ import com.tryhelium.paywall.core.event.HeliumEvent
 import com.tryhelium.paywall.core.event.HeliumEventListener
 import com.tryhelium.paywall.core.event.HeliumEventDictionaryMapper
 import com.tryhelium.paywall.core.event.PaywallEventHandlers
+import com.tryhelium.paywall.core.event.PaywallSkippedReason
+import com.tryhelium.paywall.ui.PaywallNotShownReason
 import com.tryhelium.paywall.core.HeliumConfigStatus
 import com.tryhelium.paywall.core.HeliumConfigStatus.*
 import com.tryhelium.paywall.core.HeliumEnvironment
@@ -184,16 +186,7 @@ class HeliumFlutterPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
         val dontShowIfAlreadyEntitled = args["dontShowIfAlreadyEntitled"] as? Boolean ?: false
 
         val eventListener = PaywallEventHandlers(onAnyEvent = { event ->
-            // Convert the sealed class object to a Map
-            val eventData = HeliumEventDictionaryMapper.toDictionary(event)
-            // Send to Flutter on the Main Thread
-            Handler(Looper.getMainLooper()).post {
-                try {
-                    channel.invokeMethod("onPaywallEventHandler", eventData)
-                } catch (e: Exception) {
-                    // Channel may be detached, ignore
-                }
-            }
+          invokeOnMainThread("onPaywallEventHandler", HeliumEventDictionaryMapper.toDictionary(event))
         })
 
         Helium.presentPaywall(
@@ -203,19 +196,26 @@ class HeliumFlutterPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
             customPaywallTraits = customPaywallTraits,
             dontShowIfAlreadyEntitled = dontShowIfAlreadyEntitled
           ),
-          onEntitled = {
-            Handler(Looper.getMainLooper()).post {
-              try {
-                channel.invokeMethod("onPaywallEntitled", null)
-              } catch (e: Exception) {
-                // Channel may be detached, ignore
-              }
-            }
+          onEntitled = { entitledEvent ->
+            invokeOnMainThread("onPaywallEntitled", HeliumEventDictionaryMapper.toDictionary(entitledEvent.event))
           },
           eventListener = eventListener,
-          onPaywallNotShown = { _ ->
-            // paywallNotShown handled Dart-side via the paywallOpenFailed event
-            // (see onPaywallUnavailable).
+          onPaywallNotShown = { reason ->
+            val skipReason = when (reason) {
+              PaywallNotShownReason.TargetingHoldout -> PaywallSkippedReason.TargetingHoldout
+              PaywallNotShownReason.AlreadyEntitled -> PaywallSkippedReason.AlreadyEntitled
+              is PaywallNotShownReason.Error -> null
+            }
+            if (skipReason != null) {
+              invokeOnMainThread(
+                "onPaywallSkip",
+                mapOf(
+                  "type" to "paywallSkipped",
+                  "triggerName" to trigger,
+                  "skipReason" to skipReason.rawValue
+                )
+              )
+            }
           }
         )
 
@@ -671,17 +671,19 @@ class HeliumFlutterPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
   private fun setupGlobalEventListener() {
     globalEventListener?.let { Helium.shared.removeHeliumEventListener(it) }
     val listener = HeliumEventListener { event ->
-      val eventData = HeliumEventDictionaryMapper.toDictionary(event)
-      Handler(Looper.getMainLooper()).post {
-        try {
-          channel.invokeMethod("onPaywallEvent", eventData)
-        } catch (e: Exception) {
-          // Channel may be detached, ignore
-        }
-      }
+      invokeOnMainThread("onPaywallEvent", HeliumEventDictionaryMapper.toDictionary(event))
     }
     globalEventListener = listener
     Helium.shared.addHeliumEventListener(listener)
+  }
+
+  private fun invokeOnMainThread(method: String, arguments: Any?) {
+    Handler(Looper.getMainLooper()).post {
+      try {
+        channel.invokeMethod(method, arguments)
+      } catch (e: Exception) {
+      }
+    }
   }
 
   companion object {
