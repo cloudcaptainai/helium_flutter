@@ -244,6 +244,20 @@ class PaywallOpenFailedEvent {
   });
 }
 
+/// Passed to `onPaywallSkip` when the paywall for a trigger is intentionally
+/// not shown: a targeting holdout, or an already-entitled user when
+/// `dontShowIfAlreadyEntitled` is true.
+class PaywallSkippedEvent {
+  final String type = 'paywallSkipped';
+  final String triggerName;
+  final PaywallSkippedReason skipReason;
+
+  PaywallSkippedEvent({
+    required this.triggerName,
+    required this.skipReason,
+  });
+}
+
 class CustomPaywallActionEvent {
   final String type = 'customPaywallAction';
   final String triggerName;

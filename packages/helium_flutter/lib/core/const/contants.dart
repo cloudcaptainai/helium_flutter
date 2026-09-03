@@ -15,6 +15,7 @@ const String restorePurchasesMethodName = 'restorePurchases';
 const String onPaywallEventMethodName = 'onPaywallEvent';
 const String onPaywallEventHandlerMethodName = 'onPaywallEventHandler';
 const String onPaywallEntitledMethodName = 'onPaywallEntitled';
+const String onPaywallSkipMethodName = 'onPaywallSkip';
 const String getHeliumUserIdMethodName = 'getHeliumUserId';
 const String hideUpsellMethodName = 'hideUpsell';
 const String overrideUserIdMethodName = 'overrideUserId';

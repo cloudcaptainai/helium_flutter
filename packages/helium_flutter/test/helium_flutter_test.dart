@@ -96,6 +96,7 @@ class MockHeliumFlutterPlatform
     Map<String, dynamic>? customPaywallTraits,
     bool? dontShowIfAlreadyEntitled,
     void Function()? onEntitled,
+    void Function(PaywallSkippedEvent event)? onPaywallSkip,
     void Function()? onPaywallUnavailable,
   }) {
     return Future.value('Upsell presented!');
@@ -321,6 +322,7 @@ void main() {
         context: context,
         trigger: 'onboarding',
         onEntitled: () {},
+        onPaywallSkip: (_) {},
         onPaywallUnavailable: () {},
       ),
       'Upsell presented!',

@@ -76,6 +76,7 @@ abstract class HeliumFlutterPlatform extends PlatformInterface {
     Map<String, dynamic>? customPaywallTraits,
     bool? dontShowIfAlreadyEntitled,
     void Function()? onEntitled,
+    void Function(PaywallSkippedEvent event)? onPaywallSkip,
     void Function()? onPaywallUnavailable,
   });
 
