@@ -983,10 +983,12 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
       log('[Helium] Unrecognized paywallSkipped skipReason: $rawSkipReason');
       return null;
     }
-    return PaywallSkippedEvent(
-      triggerName: args['triggerName']?.toString() ?? 'unknown',
-      skipReason: skipReason,
-    );
+    final triggerName = args['triggerName']?.toString();
+    if (triggerName == null) {
+      log('[Helium] paywallSkipped event is missing triggerName');
+      return null;
+    }
+    return PaywallSkippedEvent(triggerName: triggerName, skipReason: skipReason);
   }
 
   void _dispatchEntitled(PaywallSkippedEvent? skipEvent) {

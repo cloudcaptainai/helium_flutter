@@ -150,16 +150,14 @@ class HeliumFlutter {
   /// onboarding paywalls should always show, and entitled users can still use
   /// "Restore Purchases". Enable it only where a paying user must never see a
   /// paywall, such as one presented automatically on app open. If your app
-  /// already tracks entitlement, keep it false and check
-  /// [hasEntitlementForPaywall] or [hasAnyActiveSubscription] before
-  /// presenting instead. See
+  /// already tracks entitlement, keep it false and use your existing
+  /// entitlement logic instead. See
   /// https://docs.tryhelium.com/sdk/quickstart-flutter#checking-subscription-status-%26-entitlements
   ///
   /// [onEntitled] is called when the user becomes entitled to a product on the
   /// paywall — on purchase success or restore. If [dontShowIfAlreadyEntitled]
   /// is true, it is also called instead of showing the paywall when the user
-  /// already owns a product on it; when [onEntitled] is not provided, that
-  /// already-entitled skip is routed to [onPaywallSkip] instead.
+  /// already owns a product on it.
   ///
   /// [onPaywallSkip] is called when the paywall is intentionally not shown for
   /// [trigger] — a targeting holdout configured in your workflow
