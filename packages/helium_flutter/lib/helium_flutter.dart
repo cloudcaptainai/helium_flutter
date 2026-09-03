@@ -132,7 +132,28 @@ class HeliumFlutter {
     });
   }
 
-  ///Presents view based on [trigger]
+  /// Presents a full-screen paywall for [trigger].
+  ///
+  /// You must have a trigger and workflow configured in the Helium dashboard
+  /// (https://app.tryhelium.com/workflows) in order to show a paywall.
+  ///
+  /// [eventHandlers] receive this presentation's paywall lifecycle events.
+  /// [customPaywallTraits] are custom traits sent to the paywall; user traits
+  /// are automatically included, as is "trigger", and on duplicate keys the
+  /// value from [customPaywallTraits] wins.
+  ///
+  /// [dontShowIfAlreadyEntitled], when true, skips the paywall if the user
+  /// already has an active entitlement for a product on it: [onEntitled] is
+  /// called (or [onPaywallSkip] when [onEntitled] is not provided) and a
+  /// `paywallSkipped` event is fired. Defaults to false, which is right for
+  /// most paywalls: user-initiated paywalls (e.g. "Upgrade to Premium") and
+  /// onboarding paywalls should always show, and entitled users can still use
+  /// "Restore Purchases". Enable it only where a paying user must never see a
+  /// paywall, such as one presented automatically on app open. If your app
+  /// already tracks entitlement, keep it false and check
+  /// [hasEntitlementForPaywall] or [hasAnyActiveSubscription] before
+  /// presenting instead. See
+  /// https://docs.tryhelium.com/sdk/quickstart-flutter#checking-subscription-status-%26-entitlements
   ///
   /// [onEntitled] is called when the user becomes entitled to a product on the
   /// paywall — on purchase success or restore. If [dontShowIfAlreadyEntitled]
