@@ -45,10 +45,12 @@ enum HeliumPaymentProcessor {
 }
 
 /// Reason a paywall was skipped (not shown) for a trigger. Present on
-/// `paywallSkipped` events.
+/// `paywallSkipped` events. [unknown] only appears if the native payload
+/// carried no recognised reason.
 enum PaywallSkippedReason {
   targetingHoldout,
-  alreadyEntitled;
+  alreadyEntitled,
+  unknown;
 
   static PaywallSkippedReason? fromValue(String? value) {
     if (value == null) return null;

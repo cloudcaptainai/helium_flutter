@@ -143,12 +143,11 @@ class HeliumFlutter {
   /// value from [customPaywallTraits] wins.
   ///
   /// [dontShowIfAlreadyEntitled], when true, skips the paywall if the user
-  /// already has an active entitlement for a product on it: [onEntitled] is
-  /// called (or [onPaywallSkip] when [onEntitled] is not provided) and a
-  /// `paywallSkipped` event is fired. Defaults to false, which is right for
-  /// most paywalls: user-initiated paywalls (e.g. "Upgrade to Premium") and
-  /// onboarding paywalls should always show, and entitled users can still use
-  /// "Restore Purchases". Enable it only where a paying user must never see a
+  /// already has an active entitlement for a product on it. Defaults to false,
+  /// which is right for most paywalls: user-initiated paywalls (e.g. "Upgrade
+  /// to Premium") and onboarding paywalls should almost always show, and
+  /// entitled users can still use "Restore Purchases". Enable it only where a
+  /// paying user must never see a
   /// paywall, such as one presented automatically on app open. If your app
   /// already tracks entitlement, keep it false and use your existing
   /// entitlement logic instead. See

@@ -394,7 +394,7 @@ void main() {
     expectHandlerDidNotThrow(reply);
   });
 
-  testWidgets('an unrecognized skipReason does not invoke onPaywallSkip',
+  testWidgets('an unrecognized skipReason still invokes onPaywallSkip as unknown',
       (WidgetTester tester) async {
     await pumpContext(tester);
     await platform.initialize(apiKey: initializeValue.apiKey);
@@ -411,7 +411,9 @@ void main() {
       'triggerName': 'onboarding',
       'skipReason': 'somethingNew',
     }));
-    expect(skips, isEmpty);
+    expect(skips, hasLength(1));
+    expect(skips.single.triggerName, 'onboarding');
+    expect(skips.single.skipReason, PaywallSkippedReason.unknown);
   });
 
   testWidgets(

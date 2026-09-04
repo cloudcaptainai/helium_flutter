@@ -979,16 +979,14 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
     if (args is! Map || args['type'] != 'paywallSkipped') return null;
     final rawSkipReason = args['skipReason']?.toString();
     final skipReason = PaywallSkippedReason.fromValue(rawSkipReason);
-    if (skipReason == null) {
-      log('[Helium] Unrecognized paywallSkipped skipReason: $rawSkipReason');
-      return null;
-    }
     final triggerName = args['triggerName']?.toString();
-    if (triggerName == null) {
-      log('[Helium] paywallSkipped event is missing triggerName');
-      return null;
+    if (skipReason == null || triggerName == null) {
+      log('[Helium] paywallSkipped event is missing triggerName or has an unrecognized skipReason: $args');
     }
-    return PaywallSkippedEvent(triggerName: triggerName, skipReason: skipReason);
+    return PaywallSkippedEvent(
+      triggerName: triggerName ?? 'hlm_unknown',
+      skipReason: skipReason ?? PaywallSkippedReason.unknown,
+    );
   }
 
   void _dispatchEntitled(PaywallSkippedEvent? skipEvent) {
