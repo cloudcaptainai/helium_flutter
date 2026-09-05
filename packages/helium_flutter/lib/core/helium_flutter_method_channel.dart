@@ -22,11 +22,15 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
 
   /// Callbacks for the current [presentUpsell] presentation. [_currentOnEntitled]
   /// is invoked from the native `onEntitled` closure (via the [onPaywallEntitledMethodName]
-  /// method call); [_currentOnPaywallUnavailable] is derived from `paywallOpenFailed`.
+  /// method call); [_currentOnPaywallSkip] from the native `onPaywallNotShown`
+  /// closure (via [onPaywallSkipMethodName]) or, when no `onEntitled` was
+  /// supplied, from an already-entitled `paywallSkipped` entitled payload;
+  /// [_currentOnPaywallUnavailable] is derived from `paywallOpenFailed`.
   ///
-  /// Both are one-shot: capture into a local and null the field before invoking,
+  /// All are one-shot: capture into a local and null the field before invoking,
   /// so a callback that re-enters [presentUpsell] keeps its freshly stored handler.
   void Function()? _currentOnEntitled;
+  void Function(PaywallSkippedEvent event)? _currentOnPaywallSkip;
   void Function()? _currentOnPaywallUnavailable;
 
   @override
@@ -85,20 +89,20 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
     _isInitialized = true;
 
     try {
-      final result =
-          await methodChannel.invokeMethod<String?>(setupCoreMethodName,
-              _buildNativeArgs(
-                apiKey: apiKey,
-                purchaseDelegate: purchaseDelegate,
-                customAPIEndpoint: customAPIEndpoint,
-                customUserId: customUserId,
-                customUserTraits: customUserTraits,
-                revenueCatAppUserId: revenueCatAppUserId,
-                fallbackBundleAssetPath: fallbackBundleAssetPath,
-                environment: environment,
-                paywallLoadingConfig: paywallLoadingConfig,
-                androidConsumableProductIds: androidConsumableProductIds,
-              ));
+      final result = await methodChannel.invokeMethod<String?>(
+          setupCoreMethodName,
+          _buildNativeArgs(
+            apiKey: apiKey,
+            purchaseDelegate: purchaseDelegate,
+            customAPIEndpoint: customAPIEndpoint,
+            customUserId: customUserId,
+            customUserTraits: customUserTraits,
+            revenueCatAppUserId: revenueCatAppUserId,
+            fallbackBundleAssetPath: fallbackBundleAssetPath,
+            environment: environment,
+            paywallLoadingConfig: paywallLoadingConfig,
+            androidConsumableProductIds: androidConsumableProductIds,
+          ));
       return result;
     } catch (e) {
       _isInitialized = false;
@@ -130,20 +134,20 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
     _isInitialized = true;
 
     try {
-      final result =
-          await methodChannel.invokeMethod<String?>(initializeMethodName,
-              _buildNativeArgs(
-                apiKey: apiKey,
-                purchaseDelegate: purchaseDelegate,
-                customAPIEndpoint: customAPIEndpoint,
-                customUserId: customUserId,
-                customUserTraits: customUserTraits,
-                revenueCatAppUserId: revenueCatAppUserId,
-                fallbackBundleAssetPath: fallbackBundleAssetPath,
-                environment: environment,
-                paywallLoadingConfig: paywallLoadingConfig,
-                androidConsumableProductIds: androidConsumableProductIds,
-              ));
+      final result = await methodChannel.invokeMethod<String?>(
+          initializeMethodName,
+          _buildNativeArgs(
+            apiKey: apiKey,
+            purchaseDelegate: purchaseDelegate,
+            customAPIEndpoint: customAPIEndpoint,
+            customUserId: customUserId,
+            customUserTraits: customUserTraits,
+            revenueCatAppUserId: revenueCatAppUserId,
+            fallbackBundleAssetPath: fallbackBundleAssetPath,
+            environment: environment,
+            paywallLoadingConfig: paywallLoadingConfig,
+            androidConsumableProductIds: androidConsumableProductIds,
+          ));
       return result;
     } catch (e) {
       _isInitialized = false;
@@ -224,9 +228,14 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
             (args is Map) ? Map<String, dynamic>.from(args) : {};
         _handlePaywallEventHandlers(HeliumPaywallEvent.fromMap(eventDict));
       } else if (handler.method == onPaywallEntitledMethodName) {
-        final onEntitled = _currentOnEntitled;
-        _currentOnEntitled = null;
-        _safeInvokeCallback(onEntitled, 'onEntitled');
+        _dispatchEntitled(_paywallSkippedEventFrom(handler.arguments));
+      } else if (handler.method == onPaywallSkipMethodName) {
+        final event = _paywallSkippedEventFrom(handler.arguments);
+        if (event?.skipReason == PaywallSkippedReason.alreadyEntitled) {
+          _dispatchEntitled(event);
+        } else {
+          _dispatchPaywallSkip(event);
+        }
       } else if (handler.method == onHeliumLogEventMethodName) {
         final dynamic args = handler.arguments;
         final Map<String, dynamic> eventMap =
@@ -346,6 +355,7 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
     Map<String, dynamic>? customPaywallTraits,
     bool? dontShowIfAlreadyEntitled,
     void Function()? onEntitled,
+    void Function(PaywallSkippedEvent event)? onPaywallSkip,
     void Function()? onPaywallUnavailable,
   }) async {
     _fallbackContext = context;
@@ -353,6 +363,7 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
     // Store current event handlers and presentation callbacks
     _currentEventHandlers = eventHandlers;
     _currentOnEntitled = onEntitled;
+    _currentOnPaywallSkip = onPaywallSkip;
     _currentOnPaywallUnavailable = onPaywallUnavailable;
 
     try {
@@ -369,6 +380,7 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
       log('[Helium] Unexpected present upsell error: ${e.message}');
       _currentEventHandlers = null;
       _currentOnEntitled = null;
+      _currentOnPaywallSkip = null;
       _currentOnPaywallUnavailable = null;
       try {
         await methodChannel.invokeMethod<String?>(
@@ -516,6 +528,7 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
     _fallbackContext = null;
     _currentEventHandlers = null;
     _currentOnEntitled = null;
+    _currentOnPaywallSkip = null;
     _currentOnPaywallUnavailable = null;
     // Reset native SDK state
     try {
@@ -962,6 +975,39 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
     }
   }
 
+  PaywallSkippedEvent? _paywallSkippedEventFrom(dynamic args) {
+    if (args is! Map || args['type'] != 'paywallSkipped') return null;
+    final rawSkipReason = args['skipReason']?.toString();
+    final skipReason = PaywallSkippedReason.fromValue(rawSkipReason);
+    final triggerName = args['triggerName']?.toString();
+    if (skipReason == null || triggerName == null) {
+      log('[Helium] paywallSkipped event is missing triggerName or has an unrecognized skipReason: $args');
+    }
+    return PaywallSkippedEvent(
+      triggerName: triggerName ?? 'hlm_unknown',
+      skipReason: skipReason ?? PaywallSkippedReason.unknown,
+    );
+  }
+
+  void _dispatchEntitled(PaywallSkippedEvent? skipEvent) {
+    final onEntitled = _currentOnEntitled;
+    _currentOnEntitled = null;
+    if (onEntitled == null) {
+      _dispatchPaywallSkip(skipEvent);
+      return;
+    }
+    _currentOnPaywallSkip = null;
+    _safeInvokeCallback(onEntitled, 'onEntitled');
+  }
+
+  void _dispatchPaywallSkip(PaywallSkippedEvent? event) {
+    if (event == null) return;
+    final onPaywallSkip = _currentOnPaywallSkip;
+    _currentOnPaywallSkip = null;
+    if (onPaywallSkip == null) return;
+    _safeInvokeCallback(() => onPaywallSkip(event), 'onPaywallSkip');
+  }
+
   void _handlePaywallEvent(HeliumPaywallEvent heliumPaywallEvent) {
     final trigger = heliumPaywallEvent.triggerName;
     switch (heliumPaywallEvent.type) {
@@ -974,6 +1020,7 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
           // after this event. It is cleared once it fires (or on the next
           // presentUpsell).
           _currentOnPaywallUnavailable = null;
+          _currentOnPaywallSkip = null;
         }
         break;
       case 'paywallSkipped':
@@ -986,6 +1033,7 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
         final unavailableReason = heliumPaywallEvent.paywallUnavailableReason;
         final onPaywallUnavailable = _currentOnPaywallUnavailable;
         _currentOnPaywallUnavailable = null;
+        _currentOnPaywallSkip = null;
         if (unavailableReason != "alreadyPresented" &&
             unavailableReason != "secondTryNoMatch") {
           _currentOnEntitled = null;

@@ -174,6 +174,9 @@ class _HomePageState extends State<HomePage> {
                     onEntitled: () {
                       debugPrint('[Helium] onEntitled');
                     },
+                    onPaywallSkip: (event) {
+                      debugPrint('[Helium] onPaywallSkip ${event.skipReason.name}');
+                    },
                     onPaywallUnavailable: () {
                       debugPrint('[Helium] onPaywallUnavailable');
                     },

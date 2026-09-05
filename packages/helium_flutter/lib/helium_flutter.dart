@@ -132,12 +132,40 @@ class HeliumFlutter {
     });
   }
 
-  ///Presents view based on [trigger]
+  /// Presents a full-screen paywall for [trigger].
+  ///
+  /// You must have a trigger and workflow configured in the Helium dashboard
+  /// (https://app.tryhelium.com/workflows) in order to show a paywall.
+  ///
+  /// [eventHandlers] receive this presentation's paywall lifecycle events.
+  /// [customPaywallTraits] are custom traits sent to the paywall; user traits
+  /// are automatically included, as is "trigger", and on duplicate keys the
+  /// value from [customPaywallTraits] wins.
+  ///
+  /// [dontShowIfAlreadyEntitled], when true, skips the paywall if the user
+  /// already has an active entitlement for a product on it. Defaults to false,
+  /// which is right for most paywalls: user-initiated paywalls (e.g. "Upgrade
+  /// to Premium") and onboarding paywalls should almost always show, and
+  /// entitled users can still use "Restore Purchases". Enable it only where a
+  /// paying user must never see a
+  /// paywall, such as one presented automatically on app open. If your app
+  /// already tracks entitlement, keep it false and use your existing
+  /// entitlement logic instead. See
+  /// https://docs.tryhelium.com/sdk/quickstart-flutter#checking-subscription-status-%26-entitlements
   ///
   /// [onEntitled] is called when the user becomes entitled to a product on the
   /// paywall — on purchase success or restore. If [dontShowIfAlreadyEntitled]
   /// is true, it is also called instead of showing the paywall when the user
   /// already owns a product on it.
+  ///
+  /// [onPaywallSkip] is called when the paywall is intentionally not shown for
+  /// [trigger] — a targeting holdout configured in your workflow
+  /// (`skipReason` = [PaywallSkippedReason.targetingHoldout]), or, when
+  /// [dontShowIfAlreadyEntitled] is true, an already-entitled user
+  /// (`skipReason` = [PaywallSkippedReason.alreadyEntitled]). For
+  /// already-entitled skips [onEntitled] takes precedence: [onPaywallSkip] is
+  /// only called for that case when [onEntitled] is not provided. Not called
+  /// for errors — see [onPaywallUnavailable].
   ///
   /// [onPaywallUnavailable] is called when the Helium paywall for [trigger]
   /// cannot be shown — neither the configured paywall nor a Helium fallback
@@ -154,6 +182,7 @@ class HeliumFlutter {
     Map<String, dynamic>? customPaywallTraits,
     bool? dontShowIfAlreadyEntitled,
     void Function()? onEntitled,
+    void Function(PaywallSkippedEvent event)? onPaywallSkip,
     void Function()? onPaywallUnavailable,
   }) =>
       HeliumFlutterPlatform.instance.presentUpsell(
@@ -163,6 +192,7 @@ class HeliumFlutter {
         customPaywallTraits: customPaywallTraits,
         dontShowIfAlreadyEntitled: dontShowIfAlreadyEntitled,
         onEntitled: onEntitled,
+        onPaywallSkip: onPaywallSkip,
         onPaywallUnavailable: onPaywallUnavailable,
       );
 

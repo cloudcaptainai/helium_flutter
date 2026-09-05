@@ -479,14 +479,28 @@ public class HeliumFlutterPlugin: NSObject, FlutterPlugin {
                     self?.channel.invokeMethod("onPaywallEventHandler", arguments: event.toDictionary())
                 }
             ),
-            onEntitled: { [weak self] in
+            onEntitled: { [weak self] entitledEvent in
                 DispatchQueue.main.async {
-                    self?.channel.invokeMethod("onPaywallEntitled", arguments: nil)
+                    self?.channel.invokeMethod("onPaywallEntitled", arguments: entitledEvent.event.toDictionary())
                 }
             }
-        ) { _ in
-            // paywallNotShownReason callback - handled Dart-side via the
-            // paywallOpenFailed event (see onPaywallUnavailable).
+        ) { [weak self] reason in
+            let skipReason: PaywallSkippedReason
+            switch reason {
+            case .targetingHoldout:
+                skipReason = .targetingHoldout
+            case .alreadyEntitled:
+                skipReason = .alreadyEntitled
+            case .error:
+                return
+            }
+            DispatchQueue.main.async {
+                self?.channel.invokeMethod("onPaywallSkip", arguments: [
+                    "type": "paywallSkipped",
+                    "triggerName": trigger,
+                    "skipReason": skipReason.rawValue
+                ])
+            }
         }
     }
 

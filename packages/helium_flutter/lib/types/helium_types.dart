@@ -45,10 +45,12 @@ enum HeliumPaymentProcessor {
 }
 
 /// Reason a paywall was skipped (not shown) for a trigger. Present on
-/// `paywallSkipped` events.
+/// `paywallSkipped` events. [unknown] is a defensive default and should not
+/// occur in normal use.
 enum PaywallSkippedReason {
   targetingHoldout,
-  alreadyEntitled;
+  alreadyEntitled,
+  unknown;
 
   static PaywallSkippedReason? fromValue(String? value) {
     if (value == null) return null;
@@ -241,6 +243,20 @@ class PaywallOpenFailedEvent {
     required this.isSecondTry,
     this.loadTimeTakenMS,
     this.loadingBudgetMS,
+  });
+}
+
+/// Passed to `onPaywallSkip` when the paywall for a trigger is intentionally
+/// not shown: a targeting holdout, or an already-entitled user when
+/// `dontShowIfAlreadyEntitled` is true.
+class PaywallSkippedEvent {
+  final String type = 'paywallSkipped';
+  final String triggerName;
+  final PaywallSkippedReason skipReason;
+
+  PaywallSkippedEvent({
+    required this.triggerName,
+    required this.skipReason,
   });
 }
 

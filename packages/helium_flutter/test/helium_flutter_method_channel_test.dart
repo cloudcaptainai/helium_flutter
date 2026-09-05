@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:helium_flutter/core/const/contants.dart';
 import 'package:helium_flutter/core/helium_flutter_method_channel.dart';
+import 'package:helium_flutter/helium_flutter.dart';
 
 import 'core/const.dart';
 
@@ -31,26 +32,26 @@ void main() {
     );
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(channel, (MethodCall methodCall) async {
-          switch (methodCall.method) {
-            case initializeMethodName:
-              log(methodCall.arguments.toString());
-              return 'Initialization started!';
-            case getHeliumUserIdMethodName:
-              return 'Test';
-            case hideUpsellMethodName:
-              return true;
-            case hideAllUpsellsMethodName:
-              return true;
-            case overrideUserIdMethodName:
-              return methodCall.arguments['newUserId'];
-            case paywallsLoadedMethodName:
-              return true;
-            case presentUpsellMethodName:
-              return 'Upsell presented!';
-            default:
-          }
-          return null;
-        });
+      switch (methodCall.method) {
+        case initializeMethodName:
+          log(methodCall.arguments.toString());
+          return 'Initialization started!';
+        case getHeliumUserIdMethodName:
+          return 'Test';
+        case hideUpsellMethodName:
+          return true;
+        case hideAllUpsellsMethodName:
+          return true;
+        case overrideUserIdMethodName:
+          return methodCall.arguments['newUserId'];
+        case paywallsLoadedMethodName:
+          return true;
+        case presentUpsellMethodName:
+          return 'Upsell presented!';
+        default:
+      }
+      return null;
+    });
   });
 
   tearDown(() {
@@ -114,12 +115,21 @@ void main() {
 
   // Simulates a native -> Dart method call to the handler registered via
   // setMethodCallHandler (i.e. how the native side reports events back).
-  Future<void> sendFromNative(MethodCall call) {
-    return TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+  Future<ByteData?> sendFromNative(MethodCall call) async {
+    ByteData? reply;
+    await TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .handlePlatformMessage(
       heliumFlutter,
       const StandardMethodCodec().encodeMethodCall(call),
-      (ByteData? _) {},
+      (ByteData? data) => reply = data,
+    );
+    return reply;
+  }
+
+  void expectHandlerDidNotThrow(ByteData? reply) {
+    expect(
+      () => const StandardMethodCodec().decodeEnvelope(reply!),
+      returnsNormally,
     );
   }
 
@@ -167,10 +177,9 @@ void main() {
       onEntitled: () => throw Exception('boom'),
     );
 
-    // Reaching the assertion means the exception did not propagate out of the
-    // method-channel handler.
-    await sendFromNative(const MethodCall(onPaywallEntitledMethodName));
-    expect(true, isTrue);
+    final reply =
+        await sendFromNative(const MethodCall(onPaywallEntitledMethodName));
+    expectHandlerDidNotThrow(reply);
   });
 
   testWidgets('onPaywallUnavailable fires on paywallOpenFailed',
@@ -234,5 +243,299 @@ void main() {
     }));
     await tester.pump();
     expect(unavailableCalls, 1);
+  });
+
+  const skipArgs = {
+    'type': 'paywallSkipped',
+    'triggerName': 'onboarding',
+    'skipReason': 'targetingHoldout',
+  };
+  const alreadyEntitledArgs = {
+    'type': 'paywallSkipped',
+    'triggerName': 'onboarding',
+    'skipReason': 'alreadyEntitled',
+  };
+
+  testWidgets('onPaywallSkip fires on onPaywallSkip and then clears',
+      (WidgetTester tester) async {
+    await pumpContext(tester);
+    await platform.initialize(apiKey: initializeValue.apiKey);
+
+    final skips = <PaywallSkippedEvent>[];
+    await platform.presentUpsell(
+      context: context,
+      trigger: 'onboarding',
+      onPaywallSkip: skips.add,
+    );
+
+    await sendFromNative(const MethodCall(onPaywallSkipMethodName, skipArgs));
+    expect(skips, hasLength(1));
+    expect(skips.single.triggerName, 'onboarding');
+    expect(skips.single.skipReason, PaywallSkippedReason.targetingHoldout);
+
+    await sendFromNative(const MethodCall(onPaywallSkipMethodName, skipArgs));
+    expect(skips, hasLength(1));
+  });
+
+  testWidgets('already-entitled routes to onPaywallSkip without onEntitled',
+      (WidgetTester tester) async {
+    await pumpContext(tester);
+    await platform.initialize(apiKey: initializeValue.apiKey);
+
+    final skips = <PaywallSkippedEvent>[];
+    await platform.presentUpsell(
+      context: context,
+      trigger: 'onboarding',
+      onPaywallSkip: skips.add,
+    );
+
+    await sendFromNative(
+        const MethodCall(onPaywallEntitledMethodName, alreadyEntitledArgs));
+    expect(skips, hasLength(1));
+    expect(skips.single.skipReason, PaywallSkippedReason.alreadyEntitled);
+  });
+
+  testWidgets('already-entitled routes to onEntitled when provided',
+      (WidgetTester tester) async {
+    await pumpContext(tester);
+    await platform.initialize(apiKey: initializeValue.apiKey);
+
+    var entitledCalls = 0;
+    final skips = <PaywallSkippedEvent>[];
+    await platform.presentUpsell(
+      context: context,
+      trigger: 'onboarding',
+      onEntitled: () => entitledCalls++,
+      onPaywallSkip: skips.add,
+    );
+
+    await sendFromNative(
+        const MethodCall(onPaywallEntitledMethodName, alreadyEntitledArgs));
+    expect(entitledCalls, 1);
+    expect(skips, isEmpty);
+  });
+
+  testWidgets(
+      'dedicated already-entitled skip routes to onEntitled when provided',
+      (WidgetTester tester) async {
+    await pumpContext(tester);
+    await platform.initialize(apiKey: initializeValue.apiKey);
+
+    var entitledCalls = 0;
+    final skips = <PaywallSkippedEvent>[];
+    await platform.presentUpsell(
+      context: context,
+      trigger: 'onboarding',
+      onEntitled: () => entitledCalls++,
+      onPaywallSkip: skips.add,
+    );
+
+    await sendFromNative(
+        const MethodCall(onPaywallSkipMethodName, alreadyEntitledArgs));
+    expect(entitledCalls, 1);
+    expect(skips, isEmpty);
+  });
+
+  testWidgets(
+      'already-entitled consumed by onEntitled clears pending onPaywallSkip',
+      (WidgetTester tester) async {
+    await pumpContext(tester);
+    await platform.initialize(apiKey: initializeValue.apiKey);
+
+    var entitledCalls = 0;
+    final skips = <PaywallSkippedEvent>[];
+    await platform.presentUpsell(
+      context: context,
+      trigger: 'onboarding',
+      onEntitled: () => entitledCalls++,
+      onPaywallSkip: skips.add,
+    );
+
+    await sendFromNative(
+        const MethodCall(onPaywallEntitledMethodName, alreadyEntitledArgs));
+    await sendFromNative(
+        const MethodCall(onPaywallSkipMethodName, alreadyEntitledArgs));
+    expect(entitledCalls, 1);
+    expect(skips, isEmpty);
+  });
+
+  testWidgets('onPaywallEntitled with null arguments still calls onEntitled',
+      (WidgetTester tester) async {
+    await pumpContext(tester);
+    await platform.initialize(apiKey: initializeValue.apiKey);
+
+    var entitledCalls = 0;
+    final skips = <PaywallSkippedEvent>[];
+    await platform.presentUpsell(
+      context: context,
+      trigger: 'onboarding',
+      onEntitled: () => entitledCalls++,
+      onPaywallSkip: skips.add,
+    );
+
+    await sendFromNative(const MethodCall(onPaywallEntitledMethodName));
+    expect(entitledCalls, 1);
+    expect(skips, isEmpty);
+  });
+
+  testWidgets('a throwing onPaywallSkip callback is contained',
+      (WidgetTester tester) async {
+    await pumpContext(tester);
+    await platform.initialize(apiKey: initializeValue.apiKey);
+
+    await platform.presentUpsell(
+      context: context,
+      trigger: 'onboarding',
+      onPaywallSkip: (_) => throw Exception('boom'),
+    );
+
+    final reply = await sendFromNative(
+        const MethodCall(onPaywallSkipMethodName, skipArgs));
+    expectHandlerDidNotThrow(reply);
+  });
+
+  testWidgets('an unrecognized skipReason still invokes onPaywallSkip as unknown',
+      (WidgetTester tester) async {
+    await pumpContext(tester);
+    await platform.initialize(apiKey: initializeValue.apiKey);
+
+    final skips = <PaywallSkippedEvent>[];
+    await platform.presentUpsell(
+      context: context,
+      trigger: 'onboarding',
+      onPaywallSkip: skips.add,
+    );
+
+    await sendFromNative(const MethodCall(onPaywallSkipMethodName, {
+      'type': 'paywallSkipped',
+      'triggerName': 'onboarding',
+      'skipReason': 'somethingNew',
+    }));
+    expect(skips, hasLength(1));
+    expect(skips.single.triggerName, 'onboarding');
+    expect(skips.single.skipReason, PaywallSkippedReason.unknown);
+  });
+
+  testWidgets(
+      'global paywallSkipped event does not clear pending onPaywallSkip',
+      (WidgetTester tester) async {
+    await pumpContext(tester);
+    await platform.initialize(apiKey: initializeValue.apiKey);
+
+    final skips = <PaywallSkippedEvent>[];
+    await platform.presentUpsell(
+      context: context,
+      trigger: 'onboarding',
+      onPaywallSkip: skips.add,
+    );
+
+    await sendFromNative(const MethodCall(onPaywallEventMethodName, skipArgs));
+    await sendFromNative(const MethodCall(onPaywallSkipMethodName, skipArgs));
+    expect(skips, hasLength(1));
+  });
+
+  testWidgets('onPaywallSkip re-entering presentUpsell keeps the fresh handler',
+      (WidgetTester tester) async {
+    await pumpContext(tester);
+    await platform.initialize(apiKey: initializeValue.apiKey);
+
+    final secondSkips = <PaywallSkippedEvent>[];
+    await platform.presentUpsell(
+      context: context,
+      trigger: 'onboarding',
+      onPaywallSkip: (_) {
+        platform.presentUpsell(
+          context: context,
+          trigger: 'second',
+          onPaywallSkip: secondSkips.add,
+        );
+      },
+    );
+
+    await sendFromNative(const MethodCall(onPaywallSkipMethodName, skipArgs));
+    await sendFromNative(const MethodCall(onPaywallSkipMethodName, skipArgs));
+    expect(secondSkips, hasLength(1));
+  });
+
+  testWidgets('paywallClose clears pending onPaywallSkip',
+      (WidgetTester tester) async {
+    await pumpContext(tester);
+    await platform.initialize(apiKey: initializeValue.apiKey);
+
+    final skips = <PaywallSkippedEvent>[];
+    await platform.presentUpsell(
+      context: context,
+      trigger: 'onboarding',
+      onPaywallSkip: skips.add,
+    );
+
+    await sendFromNative(const MethodCall(onPaywallEventMethodName, {
+      'type': 'paywallClose',
+      'triggerName': 'onboarding',
+    }));
+    await sendFromNative(const MethodCall(onPaywallSkipMethodName, skipArgs));
+    expect(skips, isEmpty);
+  });
+
+  testWidgets('paywallOpenFailed clears pending onPaywallSkip',
+      (WidgetTester tester) async {
+    await pumpContext(tester);
+    await platform.initialize(apiKey: initializeValue.apiKey);
+
+    final skips = <PaywallSkippedEvent>[];
+    await platform.presentUpsell(
+      context: context,
+      trigger: 'onboarding',
+      onPaywallSkip: skips.add,
+    );
+
+    await sendFromNative(const MethodCall(onPaywallEventMethodName, {
+      'type': 'paywallOpenFailed',
+      'triggerName': 'onboarding',
+      'paywallUnavailableReason': 'someError',
+    }));
+    await tester.pump();
+    await sendFromNative(const MethodCall(onPaywallSkipMethodName, skipArgs));
+    expect(skips, isEmpty);
+  });
+
+  testWidgets('a failed presentUpsell bridge call clears pending onPaywallSkip',
+      (WidgetTester tester) async {
+    await pumpContext(tester);
+    await platform.initialize(apiKey: initializeValue.apiKey);
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(channel, (MethodCall methodCall) async {
+      if (methodCall.method == presentUpsellMethodName) {
+        throw PlatformException(code: 'x');
+      }
+      return null;
+    });
+
+    final skips = <PaywallSkippedEvent>[];
+    await platform.presentUpsell(
+      context: context,
+      trigger: 'onboarding',
+      onPaywallSkip: skips.add,
+    );
+
+    await sendFromNative(const MethodCall(onPaywallSkipMethodName, skipArgs));
+    expect(skips, isEmpty);
+  });
+
+  testWidgets('resetHelium clears pending onPaywallSkip',
+      (WidgetTester tester) async {
+    await pumpContext(tester);
+    await platform.initialize(apiKey: initializeValue.apiKey);
+
+    final skips = <PaywallSkippedEvent>[];
+    await platform.presentUpsell(
+      context: context,
+      trigger: 'onboarding',
+      onPaywallSkip: skips.add,
+    );
+
+    await platform.resetHelium();
+    await sendFromNative(const MethodCall(onPaywallSkipMethodName, skipArgs));
+    expect(skips, isEmpty);
   });
 }
