@@ -499,6 +499,28 @@ void main() {
     expect(skips, isEmpty);
   });
 
+  testWidgets('a missing native plugin routes presentUpsell to onPaywallUnavailable',
+      (WidgetTester tester) async {
+    await pumpContext(tester);
+    await platform.initialize(apiKey: initializeValue.apiKey);
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMessageHandler(heliumFlutter, (ByteData? message) async => null);
+
+    var unavailableCalls = 0;
+    final skips = <PaywallSkippedEvent>[];
+    final result = await platform.presentUpsell(
+      context: context,
+      trigger: 'onboarding',
+      onPaywallSkip: skips.add,
+      onPaywallUnavailable: () => unavailableCalls++,
+    );
+
+    expect(result, startsWith('Failed to present upsell'));
+    expect(unavailableCalls, 1);
+    await sendFromNative(const MethodCall(onPaywallSkipMethodName, skipArgs));
+    expect(skips, isEmpty);
+  });
+
   testWidgets('a failed presentUpsell bridge call clears pending onPaywallSkip',
       (WidgetTester tester) async {
     await pumpContext(tester);

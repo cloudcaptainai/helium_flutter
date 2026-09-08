@@ -376,8 +376,8 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
         },
       );
       return result;
-    } on PlatformException catch (e) {
-      log('[Helium] Unexpected present upsell error: ${e.message}');
+    } on Exception catch (e) {
+      log('[Helium] Unexpected present upsell error: $e');
       _currentEventHandlers = null;
       _currentOnEntitled = null;
       _currentOnPaywallSkip = null;
@@ -398,7 +398,7 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
       // Helium paywall could not be shown; signal the caller regardless of
       // whether the Flutter fallback view is displayed.
       _safeInvokeCallback(onPaywallUnavailable, 'onPaywallUnavailable');
-      return "Failed to present upsell: '${e.message}'.";
+      return "Failed to present upsell: '$e'.";
     }
   }
 
