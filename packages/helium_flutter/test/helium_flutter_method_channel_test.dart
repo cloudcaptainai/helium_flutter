@@ -538,4 +538,129 @@ void main() {
     await sendFromNative(const MethodCall(onPaywallSkipMethodName, skipArgs));
     expect(skips, isEmpty);
   });
+
+  const previewTrigger = 'helium_preview_trigger';
+
+  Future<void> perCall(String type, {String trigger = 'onboarding'}) =>
+      sendFromNative(MethodCall(onPaywallEventHandlerMethodName, {
+        'type': type,
+        'triggerName': trigger,
+        'paywallName': 'test-paywall',
+      }));
+
+  Future<void> globalEvent(Map<String, dynamic> args) =>
+      sendFromNative(MethodCall(onPaywallEventMethodName, args));
+
+  PaywallEventHandlers collectInto(List<String> types) =>
+      PaywallEventHandlers(onAnyEvent: (event) => types.add(event.type));
+
+  testWidgets('a repeat present rejected as alreadyPresented keeps the on-screen handlers',
+      (WidgetTester tester) async {
+    await pumpContext(tester);
+    await platform.initialize(apiKey: initializeValue.apiKey);
+    final types = <String>[];
+    var unavailableCalls = 0;
+
+    await platform.presentUpsell(
+      context: context,
+      trigger: 'onboarding',
+      eventHandlers: collectInto(types),
+      onPaywallUnavailable: () => unavailableCalls++,
+    );
+    await perCall('paywallOpen');
+    await platform.presentUpsell(
+      context: context,
+      trigger: 'onboarding',
+      eventHandlers: collectInto(types),
+      onPaywallUnavailable: () => unavailableCalls++,
+    );
+    await globalEvent({
+      'type': 'paywallOpenFailed',
+      'triggerName': 'onboarding',
+      'paywallUnavailableReason': 'alreadyPresented',
+    });
+    await perCall('purchasePressed');
+    await perCall('purchaseCancelled');
+    await perCall('purchaseRestoreFailed');
+
+    expect(types, ['paywallOpen', 'purchasePressed', 'purchaseCancelled', 'purchaseRestoreFailed']);
+    expect(unavailableCalls, 0);
+  });
+
+  testWidgets('a second try with no match keeps the on-screen handlers',
+      (WidgetTester tester) async {
+    await pumpContext(tester);
+    await platform.initialize(apiKey: initializeValue.apiKey);
+    final types = <String>[];
+
+    await platform.presentUpsell(
+      context: context,
+      trigger: 'onboarding',
+      eventHandlers: collectInto(types),
+    );
+    await perCall('paywallOpen');
+    await globalEvent({
+      'type': 'paywallOpenFailed',
+      'triggerName': 'onboarding_second_try',
+      'paywallUnavailableReason': 'secondTryNoMatch',
+    });
+    await perCall('purchasePressed');
+
+    expect(types, ['paywallOpen', 'purchasePressed']);
+  });
+
+  testWidgets('preview paywall events are delivered and the preview lifecycle does not detach handlers',
+      (WidgetTester tester) async {
+    await pumpContext(tester);
+    await platform.initialize(apiKey: initializeValue.apiKey);
+    final types = <String>[];
+
+    await platform.presentUpsell(
+      context: context,
+      trigger: 'onboarding',
+      eventHandlers: collectInto(types),
+    );
+    await perCall('paywallOpen');
+    await perCall('paywallOpen', trigger: previewTrigger);
+    await perCall('purchaseRestoreFailed', trigger: previewTrigger);
+    await globalEvent({
+      'type': 'paywallOpenFailed',
+      'triggerName': previewTrigger,
+      'paywallUnavailableReason': 'paywallsNotDownloaded',
+    });
+    await globalEvent({
+      'type': 'paywallClose',
+      'triggerName': previewTrigger,
+      'isSecondTry': false,
+    });
+    await perCall('purchasePressed');
+
+    expect(types, ['paywallOpen', 'paywallOpen', 'purchaseRestoreFailed', 'purchasePressed']);
+  });
+
+  testWidgets('a real open failure still clears the handlers and reports it',
+      (WidgetTester tester) async {
+    await pumpContext(tester);
+    await platform.initialize(apiKey: initializeValue.apiKey);
+    final types = <String>[];
+    var unavailableCalls = 0;
+
+    await platform.presentUpsell(
+      context: context,
+      trigger: 'onboarding',
+      eventHandlers: collectInto(types),
+      onPaywallUnavailable: () => unavailableCalls++,
+    );
+    await perCall('paywallOpen');
+    await globalEvent({
+      'type': 'paywallOpenFailed',
+      'triggerName': 'onboarding',
+      'paywallUnavailableReason': 'paywallsNotDownloaded',
+    });
+    await tester.pump();
+    await perCall('purchasePressed');
+
+    expect(types, ['paywallOpen']);
+    expect(unavailableCalls, 1);
+  });
 }
