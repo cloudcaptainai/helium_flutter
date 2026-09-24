@@ -1008,6 +1008,11 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
     _safeInvokeCallback(() => onPaywallSkip(event), 'onPaywallSkip');
   }
 
+  static const _previewTriggers = {
+    'helium_preview_trigger',
+    'helium_preview_trigger_second_try',
+  };
+
   void _handlePaywallEvent(HeliumPaywallEvent heliumPaywallEvent) {
     final trigger = heliumPaywallEvent.triggerName;
     if (_previewTriggers.contains(trigger)) return;
@@ -1266,8 +1271,3 @@ class UpsellViewForTrigger extends StatelessWidget {
     }
   }
 }
-
-const _previewTriggers = {
-  'helium_preview_trigger',
-  'helium_preview_trigger_second_try',
-};
