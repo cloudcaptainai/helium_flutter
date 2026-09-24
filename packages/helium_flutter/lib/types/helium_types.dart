@@ -331,6 +331,7 @@ class HeliumPaywallEvent {
   Map<String, dynamic> get rawData => _data;
   String get type => _get<String>('type') ?? '';
   String? get triggerName => _get<String>('triggerName');
+  String? get presentationId => _get<String>('presentationId');
   String? get paywallName => _get<String>('paywallName');
   String? get productId => _get<String>('productId');
   String? get buttonName => _get<String>('buttonName');

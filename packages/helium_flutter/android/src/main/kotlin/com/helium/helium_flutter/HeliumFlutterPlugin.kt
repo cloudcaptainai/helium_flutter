@@ -184,9 +184,12 @@ class HeliumFlutterPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
         val customPaywallTraits = convertToHeliumUserTraits(customPaywallTraitsMap)
 
         val dontShowIfAlreadyEntitled = args["dontShowIfAlreadyEntitled"] as? Boolean ?: false
+        val presentationId = args["presentationId"] as? String
 
         val eventListener = PaywallEventHandlers(onAnyEvent = { event ->
-          invokeOnMainThread("onPaywallEventHandler", HeliumEventDictionaryMapper.toDictionary(event))
+          val eventMap = HeliumEventDictionaryMapper.toDictionary(event).toMutableMap()
+          presentationId?.let { eventMap["presentationId"] = it }
+          invokeOnMainThread("onPaywallEventHandler", eventMap)
         })
 
         Helium.presentPaywall(
@@ -197,24 +200,34 @@ class HeliumFlutterPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
             dontShowIfAlreadyEntitled = dontShowIfAlreadyEntitled
           ),
           onEntitled = { entitledEvent ->
-            invokeOnMainThread("onPaywallEntitled", HeliumEventDictionaryMapper.toDictionary(entitledEvent.event))
+            val entitledEventMap = HeliumEventDictionaryMapper.toDictionary(entitledEvent.event).toMutableMap()
+            presentationId?.let { entitledEventMap["presentationId"] = it }
+            invokeOnMainThread("onPaywallEntitled", entitledEventMap)
           },
           eventListener = eventListener,
           onPaywallNotShown = { reason ->
             val skipReason = when (reason) {
               PaywallNotShownReason.TargetingHoldout -> PaywallSkippedReason.TargetingHoldout
               PaywallNotShownReason.AlreadyEntitled -> PaywallSkippedReason.AlreadyEntitled
-              is PaywallNotShownReason.Error -> null
+              is PaywallNotShownReason.Error -> {
+                val eventMap = mutableMapOf<String, Any>(
+                  "type" to "paywallOpenFailed",
+                  "triggerName" to trigger,
+                  "paywallUnavailableReason" to (reason.unavailableReason?.rawValue ?: "unknown")
+                )
+                presentationId?.let { eventMap["presentationId"] = it }
+                invokeOnMainThread("onPaywallUnavailable", eventMap)
+                null
+              }
             }
             if (skipReason != null) {
-              invokeOnMainThread(
-                "onPaywallSkip",
-                mapOf(
-                  "type" to "paywallSkipped",
-                  "triggerName" to trigger,
-                  "skipReason" to skipReason.rawValue
-                )
+              val eventMap = mutableMapOf<String, Any>(
+                "type" to "paywallSkipped",
+                "triggerName" to trigger,
+                "skipReason" to skipReason.rawValue
               )
+              presentationId?.let { eventMap["presentationId"] = it }
+              invokeOnMainThread("onPaywallSkip", eventMap)
             }
           }
         )
