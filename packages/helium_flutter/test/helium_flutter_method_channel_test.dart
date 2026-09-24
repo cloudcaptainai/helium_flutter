@@ -567,13 +567,16 @@ void main() {
   Future<void> globalEvent(Map<String, dynamic> args) =>
       sendFromNative(MethodCall(onPaywallEventMethodName, args));
 
-  Future<void> unavailable(String presentationId,
-          {String trigger = 'onboarding'}) =>
+  Future<void> unavailable(
+    String? presentationId, {
+    String trigger = 'onboarding',
+    String reason = 'paywallsNotDownloaded',
+  }) =>
       sendFromNative(MethodCall(onPaywallUnavailableMethodName, {
         'type': 'paywallOpenFailed',
         'triggerName': trigger,
-        'paywallUnavailableReason': 'paywallsNotDownloaded',
-        'presentationId': presentationId,
+        'paywallUnavailableReason': reason,
+        if (presentationId != null) 'presentationId': presentationId,
       }));
 
   PaywallEventHandlers collectInto(List<String> types) =>
@@ -923,6 +926,108 @@ void main() {
 
     expect(types, ['paywallOpen']);
     expect(unavailableCalls, 1);
+  });
+
+  testWidgets('does not report a rejected repeat present as unavailable',
+      (WidgetTester tester) async {
+    await pumpContext(tester);
+    await platform.initialize(apiKey: initializeValue.apiKey);
+    final firstTypes = <String>[];
+    final rejectedTypes = <String>[];
+    var unavailableCalls = 0;
+
+    await platform.presentUpsell(
+      context: context,
+      trigger: 'onboarding',
+      eventHandlers: collectInto(firstTypes),
+    );
+    final firstId = lastPresentationId!;
+    await platform.presentUpsell(
+      context: context,
+      trigger: 'onboarding',
+      eventHandlers: collectInto(rejectedTypes),
+      onPaywallUnavailable: () => unavailableCalls++,
+    );
+    final rejectedId = lastPresentationId!;
+    await unavailable(rejectedId, reason: 'alreadyPresented');
+    await tester.pump();
+    await globalEvent({
+      'type': 'paywallOpenFailed',
+      'triggerName': 'onboarding',
+      'paywallUnavailableReason': 'alreadyPresented',
+    });
+    await perCall('paywallOpen', presentationId: firstId);
+    await perCall('paywallOpen', presentationId: rejectedId);
+
+    expect(unavailableCalls, 0);
+    expect(firstTypes, ['paywallOpen']);
+    expect(rejectedTypes, isEmpty);
+  });
+
+  testWidgets('ignores a second-try miss reported as unavailable',
+      (WidgetTester tester) async {
+    await pumpContext(tester);
+    await platform.initialize(apiKey: initializeValue.apiKey);
+    final types = <String>[];
+    var unavailableCalls = 0;
+
+    await platform.presentUpsell(
+      context: context,
+      trigger: 'onboarding',
+      eventHandlers: collectInto(types),
+      onPaywallUnavailable: () => unavailableCalls++,
+    );
+    await perCall('paywallOpen');
+    await unavailable(lastPresentationId!,
+        trigger: 'onboarding_second_try', reason: 'secondTryNoMatch');
+    await tester.pump();
+    await perCall('purchasePressed');
+
+    expect(unavailableCalls, 0);
+    expect(types, ['paywallOpen', 'purchasePressed']);
+  });
+
+  testWidgets('leaves a loading present alone when a global rejection names another trigger',
+      (WidgetTester tester) async {
+    await pumpContext(tester);
+    await platform.initialize(apiKey: initializeValue.apiKey);
+    final types = <String>[];
+
+    await platform.presentUpsell(
+      context: context,
+      trigger: 'onboarding',
+      eventHandlers: collectInto(types),
+    );
+    await globalEvent({
+      'type': 'paywallOpenFailed',
+      'triggerName': previewTrigger,
+      'paywallUnavailableReason': 'alreadyPresented',
+    });
+    await perCall('paywallOpen');
+
+    expect(types, ['paywallOpen']);
+  });
+
+  testWidgets('drops an unavailable report without a presentation id when no presentation can take it',
+      (WidgetTester tester) async {
+    await pumpContext(tester);
+    await platform.initialize(apiKey: initializeValue.apiKey);
+    final types = <String>[];
+    var unavailableCalls = 0;
+
+    await platform.presentUpsell(
+      context: context,
+      trigger: 'onboarding',
+      eventHandlers: collectInto(types),
+      onPaywallUnavailable: () => unavailableCalls++,
+    );
+    await perCall('paywallOpen');
+    await unavailable(null);
+    await tester.pump();
+    await perCall('purchasePressed');
+
+    expect(unavailableCalls, 0);
+    expect(types, ['paywallOpen', 'purchasePressed']);
   });
 
   testWidgets('resetHelium clears every presentation',

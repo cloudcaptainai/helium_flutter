@@ -221,7 +221,8 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
           _paywallSkippedEventFrom(handler.arguments),
           presentation: _presentationFor(
             _presentationIdFrom(handler.arguments),
-            (candidate) => candidate.onEntitled != null,
+            (candidate) =>
+                candidate.onEntitled != null || candidate.onPaywallSkip != null,
           ),
         );
       } else if (handler.method == onPaywallSkipMethodName) {
@@ -1040,12 +1041,12 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
 
   _Presentation? _presentationFor(
     String? presentationId,
-    bool Function(_Presentation candidate) fallback,
+    bool Function(_Presentation candidate) matchesWithoutId,
   ) {
     if (presentationId != null) {
       return _presentations[presentationId];
     }
-    return _latestPresentation(fallback) ?? _latestPresentation();
+    return _latestPresentation(matchesWithoutId);
   }
 
   void _endPresentation(_Presentation presentation) {
@@ -1086,10 +1087,16 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
   void _handlePaywallUnavailable(dynamic args) {
     final Map<String, dynamic> eventMap =
         (args is Map) ? Map<String, dynamic>.from(args) : {};
+    final reason = eventMap['paywallUnavailableReason'];
+    if (reason == 'secondTryNoMatch') return;
     final presentation = _presentationFor(
       eventMap['presentationId'] as String?,
       (candidate) => !candidate.opened && !candidate.closed,
     );
+    if (reason == 'alreadyPresented') {
+      presentation?.rejected = true;
+      return;
+    }
     if (presentation != null) {
       final onPaywallUnavailable = presentation.onPaywallUnavailable;
       _presentations.remove(presentation.id);
@@ -1114,9 +1121,7 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
         _latestPresentation((candidate) =>
             !candidate.opened &&
             !candidate.closed &&
-            candidate.trigger == trigger) ??
-        _latestPresentation(
-            (candidate) => !candidate.opened && !candidate.closed);
+            candidate.trigger == trigger);
     if (rejected != null) {
       _presentations.remove(rejected.id);
     }
