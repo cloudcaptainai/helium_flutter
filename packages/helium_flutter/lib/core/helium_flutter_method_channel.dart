@@ -1117,7 +1117,8 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
       return;
     }
     final trigger = heliumPaywallEvent.triggerName;
-    final rejected = _latestPresentation((candidate) => candidate.rejected) ??
+    final rejected = _latestPresentation((candidate) =>
+            candidate.rejected && candidate.trigger == trigger) ??
         _latestPresentation((candidate) =>
             !candidate.opened &&
             !candidate.closed &&

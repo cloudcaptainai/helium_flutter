@@ -928,6 +928,48 @@ void main() {
     expect(unavailableCalls, 1);
   });
 
+  testWidgets('resolves interleaved rejections by trigger',
+      (WidgetTester tester) async {
+    await pumpContext(tester);
+    await platform.initialize(apiKey: initializeValue.apiKey);
+    final firstTypes = <String>[];
+    final secondTypes = <String>[];
+
+    await platform.presentUpsell(
+      context: context,
+      trigger: 'onboarding',
+      eventHandlers: collectInto(firstTypes),
+    );
+    final firstId = lastPresentationId!;
+    await platform.presentUpsell(
+      context: context,
+      trigger: 'settings',
+      eventHandlers: collectInto(secondTypes),
+    );
+    final secondId = lastPresentationId!;
+    await perCall('paywallOpenFailed',
+        presentationId: firstId,
+        extra: {'paywallUnavailableReason': 'alreadyPresented'});
+    await globalEvent({
+      'type': 'paywallOpenFailed',
+      'triggerName': 'settings',
+      'paywallUnavailableReason': 'alreadyPresented',
+    });
+    await perCall('paywallOpenFailed',
+        presentationId: firstId,
+        extra: {'paywallUnavailableReason': 'alreadyPresented'});
+    await perCall('paywallOpen', trigger: 'settings', presentationId: secondId);
+    await globalEvent({
+      'type': 'paywallOpenFailed',
+      'triggerName': 'onboarding',
+      'paywallUnavailableReason': 'alreadyPresented',
+    });
+    await perCall('paywallOpen', presentationId: firstId);
+
+    expect(firstTypes, ['paywallOpenFailed', 'paywallOpenFailed']);
+    expect(secondTypes, isEmpty);
+  });
+
   testWidgets('does not report a rejected repeat present as unavailable',
       (WidgetTester tester) async {
     await pumpContext(tester);
