@@ -1008,8 +1008,14 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
     _safeInvokeCallback(() => onPaywallSkip(event), 'onPaywallSkip');
   }
 
+  static const _previewTriggers = {
+    'helium_preview_trigger',
+    'helium_preview_trigger_second_try',
+  };
+
   void _handlePaywallEvent(HeliumPaywallEvent heliumPaywallEvent) {
     final trigger = heliumPaywallEvent.triggerName;
+    if (_previewTriggers.contains(trigger)) return;
     switch (heliumPaywallEvent.type) {
       case 'paywallClose':
         if (heliumPaywallEvent.isSecondTry != true) {
@@ -1029,21 +1035,22 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
         _currentOnPaywallUnavailable = null;
         break;
       case 'paywallOpenFailed':
-        _currentEventHandlers = null;
         final unavailableReason = heliumPaywallEvent.paywallUnavailableReason;
+        if (unavailableReason == 'alreadyPresented' ||
+            unavailableReason == 'secondTryNoMatch') {
+          break;
+        }
+        _currentEventHandlers = null;
         final onPaywallUnavailable = _currentOnPaywallUnavailable;
         _currentOnPaywallUnavailable = null;
         _currentOnPaywallSkip = null;
-        if (unavailableReason != "alreadyPresented" &&
-            unavailableReason != "secondTryNoMatch") {
-          _currentOnEntitled = null;
-          _safeInvokeCallback(onPaywallUnavailable, 'onPaywallUnavailable');
-          if (trigger != null) {
-            // Dispatch on next frame to let event handling finish processing
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              _showFallbackSheet(trigger);
-            });
-          }
+        _currentOnEntitled = null;
+        _safeInvokeCallback(onPaywallUnavailable, 'onPaywallUnavailable');
+        if (trigger != null) {
+          // Dispatch on next frame to let event handling finish processing
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            _showFallbackSheet(trigger);
+          });
         }
         break;
     }
