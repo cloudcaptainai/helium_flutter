@@ -31,6 +31,16 @@ void main() {
     expect(describePurchasesError(e), 'There was a problem with the store. code: 2');
   });
 
+  test('ignores an underlying message that is not a string', () {
+    final e = PlatformException(
+      code: '0',
+      message: 'Unknown error.',
+      details: {'underlyingErrorMessage': 42},
+    );
+
+    expect(describePurchasesError(e), 'Unknown error. code: 0');
+  });
+
   test('falls back when the exception carries no message or details', () {
     final e = PlatformException(code: '0');
 
