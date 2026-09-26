@@ -19,7 +19,7 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
 
   bool _isInitialized = false;
   PaywallEventHandlers? _embeddedEventHandlers;
-  final Map<String, _Presentation> _presentations = {};
+  final Map<String, _PaywallPresentation> _paywallPresentations = {};
   int _presentationSequence = 0;
 
   @override
@@ -215,28 +215,21 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
         final dynamic args = handler.arguments;
         final Map<String, dynamic> eventDict =
             (args is Map) ? Map<String, dynamic>.from(args) : {};
-        _handlePaywallEventHandlers(HeliumPaywallEvent.fromMap(eventDict));
+        final presentationId = eventDict.remove('presentationId') as String?;
+        _handlePaywallEventHandlers(
+          HeliumPaywallEvent.fromMap(eventDict),
+          presentationId: presentationId,
+        );
       } else if (handler.method == onPaywallEntitledMethodName) {
         _dispatchEntitled(
           _paywallSkippedEventFrom(handler.arguments),
-          presentation: _presentationFor(
-            _presentationIdFrom(handler.arguments),
-            (candidate) =>
-                candidate.onEntitled != null || candidate.onPaywallSkip != null,
-          ),
+          presentation: _presentationFor(handler.arguments),
         );
       } else if (handler.method == onPaywallSkipMethodName) {
-        final event = _paywallSkippedEventFrom(handler.arguments);
-        final presentation = _presentationFor(
-          _presentationIdFrom(handler.arguments),
-          (candidate) =>
-              candidate.onPaywallSkip != null || candidate.onEntitled != null,
+        _dispatchPaywallSkip(
+          _paywallSkippedEventFrom(handler.arguments),
+          presentation: _presentationFor(handler.arguments),
         );
-        if (event?.skipReason == PaywallSkippedReason.alreadyEntitled) {
-          _dispatchEntitled(event, presentation: presentation);
-        } else {
-          _dispatchPaywallSkip(event, presentation: presentation);
-        }
       } else if (handler.method == onPaywallUnavailableMethodName) {
         _handlePaywallUnavailable(handler.arguments);
       } else if (handler.method == onHeliumLogEventMethodName) {
@@ -364,7 +357,7 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
     _fallbackContext = context;
 
     _presentationSequence += 1;
-    final presentation = _Presentation(
+    final presentation = _PaywallPresentation(
       id: '$trigger:${DateTime.now().millisecondsSinceEpoch.toRadixString(36)}:$_presentationSequence',
       trigger: trigger,
       eventHandlers: eventHandlers,
@@ -372,7 +365,7 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
       onPaywallSkip: onPaywallSkip,
       onPaywallUnavailable: onPaywallUnavailable,
     );
-    _presentations[presentation.id] = presentation;
+    _paywallPresentations[presentation.id] = presentation;
 
     try {
       final result = await methodChannel.invokeMethod<String?>(
@@ -387,7 +380,7 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
       return result;
     } on PlatformException catch (e) {
       log('[Helium] Unexpected present upsell error: ${e.message}');
-      _presentations.remove(presentation.id);
+      _paywallPresentations.remove(presentation.id);
       try {
         await methodChannel.invokeMethod<String?>(
           fallbackOpenEventMethodName,
@@ -533,7 +526,7 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
     _isFallbackSheetShowing = false;
     _fallbackContext = null;
     _embeddedEventHandlers = null;
-    _presentations.clear();
+    _paywallPresentations.clear();
     // Reset native SDK state
     try {
       await methodChannel.invokeMethod<void>(
@@ -868,8 +861,10 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
     });
   }
 
-  void _handlePaywallEventHandlers(HeliumPaywallEvent event) {
-    final presentationId = event.presentationId;
+  void _handlePaywallEventHandlers(
+    HeliumPaywallEvent event, {
+    String? presentationId,
+  }) {
     if (presentationId == null) {
       final handlers = _embeddedEventHandlers;
       if (handlers != null) {
@@ -877,7 +872,7 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
       }
       return;
     }
-    final presentation = _presentations[presentationId];
+    final presentation = _paywallPresentations[presentationId];
     if (presentation == null) return;
     if (event.type == 'paywallOpen' && event.isSecondTry != true) {
       presentation.opened = true;
@@ -1025,42 +1020,35 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
     );
   }
 
-  String? _presentationIdFrom(dynamic args) =>
-      args is Map ? args['presentationId'] as String? : null;
+  _PaywallPresentation? _presentationFor(dynamic args) {
+    final presentationId =
+        args is Map ? args['presentationId'] as String? : null;
+    return presentationId == null ? null : _paywallPresentations[presentationId];
+  }
 
-  _Presentation? _latestPresentation(
-      [bool Function(_Presentation candidate)? predicate]) {
-    _Presentation? match;
-    for (final presentation in _presentations.values) {
-      if (predicate == null || predicate(presentation)) {
+  _PaywallPresentation? _latestPresentation(
+      bool Function(_PaywallPresentation candidate) predicate) {
+    _PaywallPresentation? match;
+    for (final presentation in _paywallPresentations.values) {
+      if (predicate(presentation)) {
         match = presentation;
       }
     }
     return match;
   }
 
-  _Presentation? _presentationFor(
-    String? presentationId,
-    bool Function(_Presentation candidate) matchesWithoutId,
-  ) {
-    if (presentationId != null) {
-      return _presentations[presentationId];
-    }
-    return _latestPresentation(matchesWithoutId);
-  }
-
-  void _endPresentation(_Presentation presentation) {
+  void _endPresentation(_PaywallPresentation presentation) {
     presentation.closed = true;
     presentation.eventHandlers = null;
     presentation.onPaywallUnavailable = null;
     presentation.onPaywallSkip = null;
     if (presentation.onEntitled == null) {
-      _presentations.remove(presentation.id);
+      _paywallPresentations.remove(presentation.id);
     }
   }
 
   void _dispatchEntitled(PaywallSkippedEvent? skipEvent,
-      {_Presentation? presentation}) {
+      {_PaywallPresentation? presentation}) {
     final onEntitled = presentation?.onEntitled;
     if (onEntitled == null) {
       _dispatchPaywallSkip(skipEvent, presentation: presentation);
@@ -1068,17 +1056,17 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
     }
     presentation!.onEntitled = null;
     if (skipEvent != null || presentation.closed) {
-      _presentations.remove(presentation.id);
+      _paywallPresentations.remove(presentation.id);
     }
     _safeInvokeCallback(onEntitled, 'onEntitled');
   }
 
   void _dispatchPaywallSkip(PaywallSkippedEvent? event,
-      {_Presentation? presentation}) {
+      {_PaywallPresentation? presentation}) {
     if (event == null) return;
     final onPaywallSkip = presentation?.onPaywallSkip;
     if (presentation != null) {
-      _presentations.remove(presentation.id);
+      _paywallPresentations.remove(presentation.id);
     }
     if (onPaywallSkip == null) return;
     _safeInvokeCallback(() => onPaywallSkip(event), 'onPaywallSkip');
@@ -1089,17 +1077,14 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
         (args is Map) ? Map<String, dynamic>.from(args) : {};
     final reason = eventMap['paywallUnavailableReason'];
     if (reason == 'secondTryNoMatch') return;
-    final presentation = _presentationFor(
-      eventMap['presentationId'] as String?,
-      (candidate) => !candidate.opened && !candidate.closed,
-    );
+    final presentation = _presentationFor(eventMap);
     if (reason == 'alreadyPresented') {
       presentation?.rejected = true;
       return;
     }
     if (presentation != null) {
       final onPaywallUnavailable = presentation.onPaywallUnavailable;
-      _presentations.remove(presentation.id);
+      _paywallPresentations.remove(presentation.id);
       _safeInvokeCallback(onPaywallUnavailable, 'onPaywallUnavailable');
     }
     final trigger = eventMap['triggerName'] as String?;
@@ -1124,7 +1109,7 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
             !candidate.closed &&
             candidate.trigger == trigger);
     if (rejected != null) {
-      _presentations.remove(rejected.id);
+      _paywallPresentations.remove(rejected.id);
     }
   }
 
@@ -1233,7 +1218,7 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
 /// A wrapper widget that handles the asynchronous fetching of download status
 /// and then displays the appropriate UI. Fetching download status should be
 /// nearly synchronous.
-class _Presentation {
+class _PaywallPresentation {
   final String id;
   final String trigger;
   bool opened = false;
@@ -1244,7 +1229,7 @@ class _Presentation {
   void Function(PaywallSkippedEvent event)? onPaywallSkip;
   void Function()? onPaywallUnavailable;
 
-  _Presentation({
+  _PaywallPresentation({
     required this.id,
     required this.trigger,
     this.eventHandlers,

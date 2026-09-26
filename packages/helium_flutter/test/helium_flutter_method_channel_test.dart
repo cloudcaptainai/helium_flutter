@@ -163,11 +163,13 @@ void main() {
       onEntitled: () => entitledCalls++,
     );
 
-    await sendFromNative(const MethodCall(onPaywallEntitledMethodName));
+    await sendFromNative(MethodCall(
+        onPaywallEntitledMethodName, {'presentationId': lastPresentationId}));
     expect(entitledCalls, 1);
 
     // Fires once, then clears — a second native call is a no-op.
-    await sendFromNative(const MethodCall(onPaywallEntitledMethodName));
+    await sendFromNative(MethodCall(
+        onPaywallEntitledMethodName, {'presentationId': lastPresentationId}));
     expect(entitledCalls, 1);
   });
 
@@ -182,8 +184,8 @@ void main() {
       onEntitled: () => throw Exception('boom'),
     );
 
-    final reply =
-        await sendFromNative(const MethodCall(onPaywallEntitledMethodName));
+    final reply = await sendFromNative(MethodCall(
+        onPaywallEntitledMethodName, {'presentationId': lastPresentationId}));
     expectHandlerDidNotThrow(reply);
   });
 
@@ -252,16 +254,18 @@ void main() {
     expect(unavailableCalls, 1);
   });
 
-  const skipArgs = {
-    'type': 'paywallSkipped',
-    'triggerName': 'onboarding',
-    'skipReason': 'targetingHoldout',
-  };
-  const alreadyEntitledArgs = {
-    'type': 'paywallSkipped',
-    'triggerName': 'onboarding',
-    'skipReason': 'alreadyEntitled',
-  };
+  Map<String, dynamic> skipArgs() => {
+        'type': 'paywallSkipped',
+        'triggerName': 'onboarding',
+        'skipReason': 'targetingHoldout',
+        'presentationId': lastPresentationId,
+      };
+  Map<String, dynamic> alreadyEntitledArgs() => {
+        'type': 'paywallSkipped',
+        'triggerName': 'onboarding',
+        'skipReason': 'alreadyEntitled',
+        'presentationId': lastPresentationId,
+      };
 
   testWidgets('onPaywallSkip fires on onPaywallSkip and then clears',
       (WidgetTester tester) async {
@@ -275,12 +279,12 @@ void main() {
       onPaywallSkip: skips.add,
     );
 
-    await sendFromNative(const MethodCall(onPaywallSkipMethodName, skipArgs));
+    await sendFromNative(MethodCall(onPaywallSkipMethodName, skipArgs()));
     expect(skips, hasLength(1));
     expect(skips.single.triggerName, 'onboarding');
     expect(skips.single.skipReason, PaywallSkippedReason.targetingHoldout);
 
-    await sendFromNative(const MethodCall(onPaywallSkipMethodName, skipArgs));
+    await sendFromNative(MethodCall(onPaywallSkipMethodName, skipArgs()));
     expect(skips, hasLength(1));
   });
 
@@ -297,7 +301,7 @@ void main() {
     );
 
     await sendFromNative(
-        const MethodCall(onPaywallEntitledMethodName, alreadyEntitledArgs));
+        MethodCall(onPaywallEntitledMethodName, alreadyEntitledArgs()));
     expect(skips, hasLength(1));
     expect(skips.single.skipReason, PaywallSkippedReason.alreadyEntitled);
   });
@@ -317,28 +321,7 @@ void main() {
     );
 
     await sendFromNative(
-        const MethodCall(onPaywallEntitledMethodName, alreadyEntitledArgs));
-    expect(entitledCalls, 1);
-    expect(skips, isEmpty);
-  });
-
-  testWidgets(
-      'dedicated already-entitled skip routes to onEntitled when provided',
-      (WidgetTester tester) async {
-    await pumpContext(tester);
-    await platform.initialize(apiKey: initializeValue.apiKey);
-
-    var entitledCalls = 0;
-    final skips = <PaywallSkippedEvent>[];
-    await platform.presentUpsell(
-      context: context,
-      trigger: 'onboarding',
-      onEntitled: () => entitledCalls++,
-      onPaywallSkip: skips.add,
-    );
-
-    await sendFromNative(
-        const MethodCall(onPaywallSkipMethodName, alreadyEntitledArgs));
+        MethodCall(onPaywallEntitledMethodName, alreadyEntitledArgs()));
     expect(entitledCalls, 1);
     expect(skips, isEmpty);
   });
@@ -359,14 +342,14 @@ void main() {
     );
 
     await sendFromNative(
-        const MethodCall(onPaywallEntitledMethodName, alreadyEntitledArgs));
+        MethodCall(onPaywallEntitledMethodName, alreadyEntitledArgs()));
     await sendFromNative(
-        const MethodCall(onPaywallSkipMethodName, alreadyEntitledArgs));
+        MethodCall(onPaywallSkipMethodName, alreadyEntitledArgs()));
     expect(entitledCalls, 1);
     expect(skips, isEmpty);
   });
 
-  testWidgets('onPaywallEntitled with null arguments still calls onEntitled',
+  testWidgets('onPaywallEntitled without a presentation id is ignored',
       (WidgetTester tester) async {
     await pumpContext(tester);
     await platform.initialize(apiKey: initializeValue.apiKey);
@@ -381,7 +364,7 @@ void main() {
     );
 
     await sendFromNative(const MethodCall(onPaywallEntitledMethodName));
-    expect(entitledCalls, 1);
+    expect(entitledCalls, 0);
     expect(skips, isEmpty);
   });
 
@@ -397,7 +380,7 @@ void main() {
     );
 
     final reply = await sendFromNative(
-        const MethodCall(onPaywallSkipMethodName, skipArgs));
+        MethodCall(onPaywallSkipMethodName, skipArgs()));
     expectHandlerDidNotThrow(reply);
   });
 
@@ -413,10 +396,11 @@ void main() {
       onPaywallSkip: skips.add,
     );
 
-    await sendFromNative(const MethodCall(onPaywallSkipMethodName, {
+    await sendFromNative(MethodCall(onPaywallSkipMethodName, {
       'type': 'paywallSkipped',
       'triggerName': 'onboarding',
       'skipReason': 'somethingNew',
+      'presentationId': lastPresentationId,
     }));
     expect(skips, hasLength(1));
     expect(skips.single.triggerName, 'onboarding');
@@ -436,8 +420,8 @@ void main() {
       onPaywallSkip: skips.add,
     );
 
-    await sendFromNative(const MethodCall(onPaywallEventMethodName, skipArgs));
-    await sendFromNative(const MethodCall(onPaywallSkipMethodName, skipArgs));
+    await sendFromNative(MethodCall(onPaywallEventMethodName, skipArgs()));
+    await sendFromNative(MethodCall(onPaywallSkipMethodName, skipArgs()));
     expect(skips, hasLength(1));
   });
 
@@ -459,8 +443,8 @@ void main() {
       },
     );
 
-    await sendFromNative(const MethodCall(onPaywallSkipMethodName, skipArgs));
-    await sendFromNative(const MethodCall(onPaywallSkipMethodName, skipArgs));
+    await sendFromNative(MethodCall(onPaywallSkipMethodName, skipArgs()));
+    await sendFromNative(MethodCall(onPaywallSkipMethodName, skipArgs()));
     expect(secondSkips, hasLength(1));
   });
 
@@ -481,7 +465,7 @@ void main() {
       'triggerName': 'onboarding',
       'presentationId': lastPresentationId,
     }));
-    await sendFromNative(const MethodCall(onPaywallSkipMethodName, skipArgs));
+    await sendFromNative(MethodCall(onPaywallSkipMethodName, skipArgs()));
     expect(skips, isEmpty);
   });
 
@@ -504,7 +488,7 @@ void main() {
       'presentationId': lastPresentationId,
     }));
     await tester.pump();
-    await sendFromNative(const MethodCall(onPaywallSkipMethodName, skipArgs));
+    await sendFromNative(MethodCall(onPaywallSkipMethodName, skipArgs()));
     expect(skips, isEmpty);
   });
 
@@ -527,7 +511,7 @@ void main() {
       onPaywallSkip: skips.add,
     );
 
-    await sendFromNative(const MethodCall(onPaywallSkipMethodName, skipArgs));
+    await sendFromNative(MethodCall(onPaywallSkipMethodName, skipArgs()));
     expect(skips, isEmpty);
   });
 
@@ -544,7 +528,7 @@ void main() {
     );
 
     await platform.resetHelium();
-    await sendFromNative(const MethodCall(onPaywallSkipMethodName, skipArgs));
+    await sendFromNative(MethodCall(onPaywallSkipMethodName, skipArgs()));
     expect(skips, isEmpty);
   });
 
@@ -762,7 +746,7 @@ void main() {
     );
     final secondId = lastPresentationId!;
     await sendFromNative(MethodCall(onPaywallSkipMethodName, {
-      ...skipArgs,
+      ...skipArgs(),
       'presentationId': firstId,
     }));
     await perCall('paywallOpen', trigger: 'settings', presentationId: secondId);
@@ -793,7 +777,7 @@ void main() {
       onEntitled: () => secondEntitled++,
     );
     await sendFromNative(MethodCall(onPaywallEntitledMethodName, {
-      ...alreadyEntitledArgs,
+      ...alreadyEntitledArgs(),
       'presentationId': firstId,
     }));
 
@@ -880,7 +864,7 @@ void main() {
       'triggerName': 'onboarding',
       'isSecondTry': false,
     });
-    await globalEvent(skipArgs);
+    await globalEvent(skipArgs());
     await perCall('purchasePressed');
 
     expect(types, ['paywallOpen', 'purchasePressed']);
@@ -1050,7 +1034,7 @@ void main() {
     expect(types, ['paywallOpen']);
   });
 
-  testWidgets('drops an unavailable report without a presentation id when no presentation can take it',
+  testWidgets('ignores an unavailable report without a presentation id',
       (WidgetTester tester) async {
     await pumpContext(tester);
     await platform.initialize(apiKey: initializeValue.apiKey);
@@ -1063,13 +1047,29 @@ void main() {
       eventHandlers: collectInto(types),
       onPaywallUnavailable: () => unavailableCalls++,
     );
-    await perCall('paywallOpen');
     await unavailable(null);
     await tester.pump();
-    await perCall('purchasePressed');
+    await perCall('paywallOpen');
 
     expect(unavailableCalls, 0);
-    expect(types, ['paywallOpen', 'purchasePressed']);
+    expect(types, ['paywallOpen']);
+  });
+
+  testWidgets('keeps the presentation id off the events handed to the app',
+      (WidgetTester tester) async {
+    await pumpContext(tester);
+    await platform.initialize(apiKey: initializeValue.apiKey);
+    final events = <HeliumPaywallEvent>[];
+
+    await platform.presentUpsell(
+      context: context,
+      trigger: 'onboarding',
+      eventHandlers: PaywallEventHandlers(onAnyEvent: events.add),
+    );
+    await perCall('paywallOpen');
+
+    expect(events, hasLength(1));
+    expect(events.single.rawData.containsKey('presentationId'), isFalse);
   });
 
   testWidgets('resetHelium clears every presentation',
