@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:helium_flutter/helium_flutter.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
 import 'dart:developer';
+import 'purchases_error_description.dart';
 
 /// RevenueCat implementation of [HeliumPurchaseDelegate].
 ///
@@ -219,7 +220,7 @@ class RevenueCatPurchaseDelegate extends HeliumPurchaseDelegate
       case PurchasesErrorCode.paymentPendingError:
         return HeliumPurchaseResult(status: HeliumTransactionStatus.pending);
       default:
-        return _createFailedResult(e.message ?? 'Unknown error');
+        return _createFailedResult(describePurchasesError(e));
     }
   }
 
