@@ -17,8 +17,9 @@ void main() {
 
   late InitializeValue initializeValue;
   late BuildContext context;
+  String? lastPresentationId;
 
-  setUp(() {
+  setUp(() async {
     initializeValue = InitializeValue(
       apiKey: 'sk-your-api-key',
       customAPIEndpoint: 'https://example.com',
@@ -47,11 +48,14 @@ void main() {
         case paywallsLoadedMethodName:
           return true;
         case presentUpsellMethodName:
+          lastPresentationId = methodCall.arguments['presentationId'];
           return 'Upsell presented!';
         default:
       }
       return null;
     });
+    lastPresentationId = null;
+    await platform.resetHelium();
   });
 
   tearDown(() {
@@ -111,6 +115,7 @@ void main() {
       await platform.presentUpsell(context: context, trigger: 'onboarding'),
       'Upsell presented!',
     );
+    expect(lastPresentationId, startsWith('onboarding:'));
   });
 
   // Simulates a native -> Dart method call to the handler registered via
@@ -158,11 +163,13 @@ void main() {
       onEntitled: () => entitledCalls++,
     );
 
-    await sendFromNative(const MethodCall(onPaywallEntitledMethodName));
+    await sendFromNative(MethodCall(
+        onPaywallEntitledMethodName, {'presentationId': lastPresentationId}));
     expect(entitledCalls, 1);
 
     // Fires once, then clears — a second native call is a no-op.
-    await sendFromNative(const MethodCall(onPaywallEntitledMethodName));
+    await sendFromNative(MethodCall(
+        onPaywallEntitledMethodName, {'presentationId': lastPresentationId}));
     expect(entitledCalls, 1);
   });
 
@@ -177,12 +184,12 @@ void main() {
       onEntitled: () => throw Exception('boom'),
     );
 
-    final reply =
-        await sendFromNative(const MethodCall(onPaywallEntitledMethodName));
+    final reply = await sendFromNative(MethodCall(
+        onPaywallEntitledMethodName, {'presentationId': lastPresentationId}));
     expectHandlerDidNotThrow(reply);
   });
 
-  testWidgets('onPaywallUnavailable fires on paywallOpenFailed',
+  testWidgets('onPaywallUnavailable fires on onPaywallUnavailable',
       (WidgetTester tester) async {
     await pumpContext(tester);
     await platform.initialize(apiKey: initializeValue.apiKey);
@@ -194,10 +201,11 @@ void main() {
       onPaywallUnavailable: () => unavailableCalls++,
     );
 
-    await sendFromNative(const MethodCall(onPaywallEventMethodName, {
+    await sendFromNative(MethodCall(onPaywallUnavailableMethodName, {
       'type': 'paywallOpenFailed',
       'triggerName': 'onboarding',
       'paywallUnavailableReason': 'someError',
+      'presentationId': lastPresentationId,
     }));
     await tester.pump(); // flush the post-frame fallback-sheet dispatch (no-op)
     expect(unavailableCalls, 1);
@@ -237,24 +245,27 @@ void main() {
     );
 
     // Missing triggerName gates only the Flutter fallback view, not the callback.
-    await sendFromNative(const MethodCall(onPaywallEventMethodName, {
+    await sendFromNative(MethodCall(onPaywallUnavailableMethodName, {
       'type': 'paywallOpenFailed',
       'paywallUnavailableReason': 'someError',
+      'presentationId': lastPresentationId,
     }));
     await tester.pump();
     expect(unavailableCalls, 1);
   });
 
-  const skipArgs = {
-    'type': 'paywallSkipped',
-    'triggerName': 'onboarding',
-    'skipReason': 'targetingHoldout',
-  };
-  const alreadyEntitledArgs = {
-    'type': 'paywallSkipped',
-    'triggerName': 'onboarding',
-    'skipReason': 'alreadyEntitled',
-  };
+  Map<String, dynamic> skipArgs() => {
+        'type': 'paywallSkipped',
+        'triggerName': 'onboarding',
+        'skipReason': 'targetingHoldout',
+        'presentationId': lastPresentationId,
+      };
+  Map<String, dynamic> alreadyEntitledArgs() => {
+        'type': 'paywallSkipped',
+        'triggerName': 'onboarding',
+        'skipReason': 'alreadyEntitled',
+        'presentationId': lastPresentationId,
+      };
 
   testWidgets('onPaywallSkip fires on onPaywallSkip and then clears',
       (WidgetTester tester) async {
@@ -268,12 +279,12 @@ void main() {
       onPaywallSkip: skips.add,
     );
 
-    await sendFromNative(const MethodCall(onPaywallSkipMethodName, skipArgs));
+    await sendFromNative(MethodCall(onPaywallSkipMethodName, skipArgs()));
     expect(skips, hasLength(1));
     expect(skips.single.triggerName, 'onboarding');
     expect(skips.single.skipReason, PaywallSkippedReason.targetingHoldout);
 
-    await sendFromNative(const MethodCall(onPaywallSkipMethodName, skipArgs));
+    await sendFromNative(MethodCall(onPaywallSkipMethodName, skipArgs()));
     expect(skips, hasLength(1));
   });
 
@@ -290,7 +301,7 @@ void main() {
     );
 
     await sendFromNative(
-        const MethodCall(onPaywallEntitledMethodName, alreadyEntitledArgs));
+        MethodCall(onPaywallEntitledMethodName, alreadyEntitledArgs()));
     expect(skips, hasLength(1));
     expect(skips.single.skipReason, PaywallSkippedReason.alreadyEntitled);
   });
@@ -310,28 +321,7 @@ void main() {
     );
 
     await sendFromNative(
-        const MethodCall(onPaywallEntitledMethodName, alreadyEntitledArgs));
-    expect(entitledCalls, 1);
-    expect(skips, isEmpty);
-  });
-
-  testWidgets(
-      'dedicated already-entitled skip routes to onEntitled when provided',
-      (WidgetTester tester) async {
-    await pumpContext(tester);
-    await platform.initialize(apiKey: initializeValue.apiKey);
-
-    var entitledCalls = 0;
-    final skips = <PaywallSkippedEvent>[];
-    await platform.presentUpsell(
-      context: context,
-      trigger: 'onboarding',
-      onEntitled: () => entitledCalls++,
-      onPaywallSkip: skips.add,
-    );
-
-    await sendFromNative(
-        const MethodCall(onPaywallSkipMethodName, alreadyEntitledArgs));
+        MethodCall(onPaywallEntitledMethodName, alreadyEntitledArgs()));
     expect(entitledCalls, 1);
     expect(skips, isEmpty);
   });
@@ -352,14 +342,14 @@ void main() {
     );
 
     await sendFromNative(
-        const MethodCall(onPaywallEntitledMethodName, alreadyEntitledArgs));
+        MethodCall(onPaywallEntitledMethodName, alreadyEntitledArgs()));
     await sendFromNative(
-        const MethodCall(onPaywallSkipMethodName, alreadyEntitledArgs));
+        MethodCall(onPaywallSkipMethodName, alreadyEntitledArgs()));
     expect(entitledCalls, 1);
     expect(skips, isEmpty);
   });
 
-  testWidgets('onPaywallEntitled with null arguments still calls onEntitled',
+  testWidgets('onPaywallEntitled without a presentation id is ignored',
       (WidgetTester tester) async {
     await pumpContext(tester);
     await platform.initialize(apiKey: initializeValue.apiKey);
@@ -374,7 +364,7 @@ void main() {
     );
 
     await sendFromNative(const MethodCall(onPaywallEntitledMethodName));
-    expect(entitledCalls, 1);
+    expect(entitledCalls, 0);
     expect(skips, isEmpty);
   });
 
@@ -390,7 +380,7 @@ void main() {
     );
 
     final reply = await sendFromNative(
-        const MethodCall(onPaywallSkipMethodName, skipArgs));
+        MethodCall(onPaywallSkipMethodName, skipArgs()));
     expectHandlerDidNotThrow(reply);
   });
 
@@ -406,10 +396,11 @@ void main() {
       onPaywallSkip: skips.add,
     );
 
-    await sendFromNative(const MethodCall(onPaywallSkipMethodName, {
+    await sendFromNative(MethodCall(onPaywallSkipMethodName, {
       'type': 'paywallSkipped',
       'triggerName': 'onboarding',
       'skipReason': 'somethingNew',
+      'presentationId': lastPresentationId,
     }));
     expect(skips, hasLength(1));
     expect(skips.single.triggerName, 'onboarding');
@@ -429,8 +420,8 @@ void main() {
       onPaywallSkip: skips.add,
     );
 
-    await sendFromNative(const MethodCall(onPaywallEventMethodName, skipArgs));
-    await sendFromNative(const MethodCall(onPaywallSkipMethodName, skipArgs));
+    await sendFromNative(MethodCall(onPaywallEventMethodName, skipArgs()));
+    await sendFromNative(MethodCall(onPaywallSkipMethodName, skipArgs()));
     expect(skips, hasLength(1));
   });
 
@@ -452,8 +443,8 @@ void main() {
       },
     );
 
-    await sendFromNative(const MethodCall(onPaywallSkipMethodName, skipArgs));
-    await sendFromNative(const MethodCall(onPaywallSkipMethodName, skipArgs));
+    await sendFromNative(MethodCall(onPaywallSkipMethodName, skipArgs()));
+    await sendFromNative(MethodCall(onPaywallSkipMethodName, skipArgs()));
     expect(secondSkips, hasLength(1));
   });
 
@@ -469,11 +460,12 @@ void main() {
       onPaywallSkip: skips.add,
     );
 
-    await sendFromNative(const MethodCall(onPaywallEventMethodName, {
+    await sendFromNative(MethodCall(onPaywallEventHandlerMethodName, {
       'type': 'paywallClose',
       'triggerName': 'onboarding',
+      'presentationId': lastPresentationId,
     }));
-    await sendFromNative(const MethodCall(onPaywallSkipMethodName, skipArgs));
+    await sendFromNative(MethodCall(onPaywallSkipMethodName, skipArgs()));
     expect(skips, isEmpty);
   });
 
@@ -489,13 +481,14 @@ void main() {
       onPaywallSkip: skips.add,
     );
 
-    await sendFromNative(const MethodCall(onPaywallEventMethodName, {
+    await sendFromNative(MethodCall(onPaywallUnavailableMethodName, {
       'type': 'paywallOpenFailed',
       'triggerName': 'onboarding',
       'paywallUnavailableReason': 'someError',
+      'presentationId': lastPresentationId,
     }));
     await tester.pump();
-    await sendFromNative(const MethodCall(onPaywallSkipMethodName, skipArgs));
+    await sendFromNative(MethodCall(onPaywallSkipMethodName, skipArgs()));
     expect(skips, isEmpty);
   });
 
@@ -518,7 +511,7 @@ void main() {
       onPaywallSkip: skips.add,
     );
 
-    await sendFromNative(const MethodCall(onPaywallSkipMethodName, skipArgs));
+    await sendFromNative(MethodCall(onPaywallSkipMethodName, skipArgs()));
     expect(skips, isEmpty);
   });
 
@@ -535,21 +528,40 @@ void main() {
     );
 
     await platform.resetHelium();
-    await sendFromNative(const MethodCall(onPaywallSkipMethodName, skipArgs));
+    await sendFromNative(MethodCall(onPaywallSkipMethodName, skipArgs()));
     expect(skips, isEmpty);
   });
 
   const previewTrigger = 'helium_preview_trigger';
 
-  Future<void> perCall(String type, {String trigger = 'onboarding'}) =>
+  Future<void> perCall(
+    String type, {
+    String trigger = 'onboarding',
+    String? presentationId,
+    Map<String, dynamic> extra = const {},
+  }) =>
       sendFromNative(MethodCall(onPaywallEventHandlerMethodName, {
         'type': type,
         'triggerName': trigger,
         'paywallName': 'test-paywall',
+        'presentationId': presentationId ?? lastPresentationId,
+        ...extra,
       }));
 
   Future<void> globalEvent(Map<String, dynamic> args) =>
       sendFromNative(MethodCall(onPaywallEventMethodName, args));
+
+  Future<void> unavailable(
+    String? presentationId, {
+    String trigger = 'onboarding',
+    String reason = 'paywallsNotDownloaded',
+  }) =>
+      sendFromNative(MethodCall(onPaywallUnavailableMethodName, {
+        'type': 'paywallOpenFailed',
+        'triggerName': trigger,
+        'paywallUnavailableReason': reason,
+        if (presentationId != null) 'presentationId': presentationId,
+      }));
 
   PaywallEventHandlers collectInto(List<String> types) =>
       PaywallEventHandlers(onAnyEvent: (event) => types.add(event.type));
@@ -559,6 +571,7 @@ void main() {
     await pumpContext(tester);
     await platform.initialize(apiKey: initializeValue.apiKey);
     final types = <String>[];
+    final rejectedTypes = <String>[];
     var unavailableCalls = 0;
 
     await platform.presentUpsell(
@@ -567,24 +580,95 @@ void main() {
       eventHandlers: collectInto(types),
       onPaywallUnavailable: () => unavailableCalls++,
     );
+    final id = lastPresentationId!;
     await perCall('paywallOpen');
     await platform.presentUpsell(
       context: context,
       trigger: 'onboarding',
-      eventHandlers: collectInto(types),
+      eventHandlers: collectInto(rejectedTypes),
       onPaywallUnavailable: () => unavailableCalls++,
     );
+    final rejectedId = lastPresentationId!;
     await globalEvent({
       'type': 'paywallOpenFailed',
       'triggerName': 'onboarding',
       'paywallUnavailableReason': 'alreadyPresented',
     });
-    await perCall('purchasePressed');
-    await perCall('purchaseCancelled');
-    await perCall('purchaseRestoreFailed');
+    await perCall('purchasePressed', presentationId: id);
+    await perCall('purchaseCancelled', presentationId: id);
+    await perCall('purchaseRestoreFailed', presentationId: id);
+    await perCall('purchasePressed', presentationId: rejectedId);
 
     expect(types, ['paywallOpen', 'purchasePressed', 'purchaseCancelled', 'purchaseRestoreFailed']);
+    expect(rejectedTypes, isEmpty);
     expect(unavailableCalls, 0);
+  });
+
+  testWidgets('drops the rejected present when native reports the rejection on its own channel',
+      (WidgetTester tester) async {
+    await pumpContext(tester);
+    await platform.initialize(apiKey: initializeValue.apiKey);
+    final types = <String>[];
+    final rejectedTypes = <String>[];
+
+    await platform.presentUpsell(
+      context: context,
+      trigger: 'onboarding',
+      eventHandlers: collectInto(types),
+    );
+    final id = lastPresentationId!;
+    await perCall('paywallOpen');
+    await platform.presentUpsell(
+      context: context,
+      trigger: 'onboarding',
+      eventHandlers: collectInto(rejectedTypes),
+    );
+    final rejectedId = lastPresentationId!;
+    await perCall('paywallOpenFailed',
+        presentationId: rejectedId,
+        extra: {'paywallUnavailableReason': 'alreadyPresented'});
+    await globalEvent({
+      'type': 'paywallOpenFailed',
+      'triggerName': 'onboarding',
+      'paywallUnavailableReason': 'alreadyPresented',
+    });
+    await perCall('purchasePressed', presentationId: id);
+    await perCall('purchasePressed', presentationId: rejectedId);
+
+    expect(types, ['paywallOpen', 'purchasePressed']);
+    expect(rejectedTypes, ['paywallOpenFailed']);
+  });
+
+  testWidgets('keeps the first present when a same-trigger repeat lands before it opens',
+      (WidgetTester tester) async {
+    await pumpContext(tester);
+    await platform.initialize(apiKey: initializeValue.apiKey);
+    final firstTypes = <String>[];
+    final rejectedTypes = <String>[];
+
+    await platform.presentUpsell(
+      context: context,
+      trigger: 'onboarding',
+      eventHandlers: collectInto(firstTypes),
+    );
+    final firstId = lastPresentationId!;
+    await platform.presentUpsell(
+      context: context,
+      trigger: 'onboarding',
+      eventHandlers: collectInto(rejectedTypes),
+    );
+    final rejectedId = lastPresentationId!;
+    await perCall('paywallOpen', presentationId: firstId);
+    await globalEvent({
+      'type': 'paywallOpenFailed',
+      'triggerName': 'onboarding',
+      'paywallUnavailableReason': 'alreadyPresented',
+    });
+    await perCall('purchasePressed', presentationId: firstId);
+    await perCall('purchasePressed', presentationId: rejectedId);
+
+    expect(firstTypes, ['paywallOpen', 'purchasePressed']);
+    expect(rejectedTypes, isEmpty);
   });
 
   testWidgets('a second try with no match keeps the on-screen handlers',
@@ -623,6 +707,8 @@ void main() {
     await perCall('paywallOpen');
     await perCall('paywallOpen', trigger: previewTrigger);
     await perCall('purchaseRestoreFailed', trigger: previewTrigger);
+    await perCall('paywallClose',
+        trigger: previewTrigger, extra: {'isSecondTry': false});
     await globalEvent({
       'type': 'paywallOpenFailed',
       'triggerName': previewTrigger,
@@ -635,7 +721,173 @@ void main() {
     });
     await perCall('purchasePressed');
 
-    expect(types, ['paywallOpen', 'paywallOpen', 'purchaseRestoreFailed', 'purchasePressed']);
+    expect(types, ['paywallOpen', 'paywallOpen', 'purchaseRestoreFailed', 'paywallClose', 'purchasePressed']);
+  });
+
+  testWidgets('routes a skip to the present that registered it',
+      (WidgetTester tester) async {
+    await pumpContext(tester);
+    await platform.initialize(apiKey: initializeValue.apiKey);
+    final firstSkips = <PaywallSkippedEvent>[];
+    final secondSkips = <PaywallSkippedEvent>[];
+    final secondTypes = <String>[];
+
+    await platform.presentUpsell(
+      context: context,
+      trigger: 'onboarding',
+      onPaywallSkip: firstSkips.add,
+    );
+    final firstId = lastPresentationId!;
+    await platform.presentUpsell(
+      context: context,
+      trigger: 'settings',
+      eventHandlers: collectInto(secondTypes),
+      onPaywallSkip: secondSkips.add,
+    );
+    final secondId = lastPresentationId!;
+    await sendFromNative(MethodCall(onPaywallSkipMethodName, {
+      ...skipArgs(),
+      'presentationId': firstId,
+    }));
+    await perCall('paywallOpen', trigger: 'settings', presentationId: secondId);
+    await perCall('purchasePressed',
+        trigger: 'settings', presentationId: secondId);
+
+    expect(firstSkips, hasLength(1));
+    expect(secondSkips, isEmpty);
+    expect(secondTypes, ['paywallOpen', 'purchasePressed']);
+  });
+
+  testWidgets("routes an already-entitled skip to that present's onEntitled",
+      (WidgetTester tester) async {
+    await pumpContext(tester);
+    await platform.initialize(apiKey: initializeValue.apiKey);
+    var firstEntitled = 0;
+    var secondEntitled = 0;
+
+    await platform.presentUpsell(
+      context: context,
+      trigger: 'onboarding',
+      onEntitled: () => firstEntitled++,
+    );
+    final firstId = lastPresentationId!;
+    await platform.presentUpsell(
+      context: context,
+      trigger: 'settings',
+      onEntitled: () => secondEntitled++,
+    );
+    await sendFromNative(MethodCall(onPaywallEntitledMethodName, {
+      ...alreadyEntitledArgs(),
+      'presentationId': firstId,
+    }));
+
+    expect(firstEntitled, 1);
+    expect(secondEntitled, 0);
+  });
+
+  testWidgets('routes an open failure to the present that failed',
+      (WidgetTester tester) async {
+    await pumpContext(tester);
+    await platform.initialize(apiKey: initializeValue.apiKey);
+    var firstUnavailable = 0;
+    var secondUnavailable = 0;
+    final secondTypes = <String>[];
+
+    await platform.presentUpsell(
+      context: context,
+      trigger: 'onboarding',
+      onPaywallUnavailable: () => firstUnavailable++,
+    );
+    final firstId = lastPresentationId!;
+    await platform.presentUpsell(
+      context: context,
+      trigger: 'settings',
+      eventHandlers: collectInto(secondTypes),
+      onPaywallUnavailable: () => secondUnavailable++,
+    );
+    final secondId = lastPresentationId!;
+    await unavailable(firstId);
+    await tester.pump();
+    await perCall('paywallOpen', trigger: 'settings', presentationId: secondId);
+
+    expect(firstUnavailable, 1);
+    expect(secondUnavailable, 0);
+    expect(secondTypes, ['paywallOpen']);
+  });
+
+  testWidgets('ends a presentation on its own close but still delivers a later entitled event',
+      (WidgetTester tester) async {
+    await pumpContext(tester);
+    await platform.initialize(apiKey: initializeValue.apiKey);
+    final types = <String>[];
+    var entitledCalls = 0;
+
+    await platform.presentUpsell(
+      context: context,
+      trigger: 'onboarding',
+      eventHandlers: collectInto(types),
+      onEntitled: () => entitledCalls++,
+    );
+    final id = lastPresentationId!;
+    await perCall('paywallOpen');
+    await perCall('paywallClose', extra: {'isSecondTry': false});
+    await perCall('purchasePressed');
+    await sendFromNative(MethodCall(onPaywallEntitledMethodName, {
+      'type': 'purchaseSucceeded',
+      'triggerName': 'onboarding',
+      'presentationId': id,
+    }));
+    await sendFromNative(MethodCall(onPaywallEntitledMethodName, {
+      'type': 'purchaseSucceeded',
+      'triggerName': 'onboarding',
+      'presentationId': id,
+    }));
+
+    expect(types, ['paywallOpen', 'paywallClose']);
+    expect(entitledCalls, 1);
+  });
+
+  testWidgets('ignores close and skipped events on the global channel',
+      (WidgetTester tester) async {
+    await pumpContext(tester);
+    await platform.initialize(apiKey: initializeValue.apiKey);
+    final types = <String>[];
+
+    await platform.presentUpsell(
+      context: context,
+      trigger: 'onboarding',
+      eventHandlers: collectInto(types),
+    );
+    await perCall('paywallOpen');
+    await globalEvent({
+      'type': 'paywallClose',
+      'triggerName': 'onboarding',
+      'isSecondTry': false,
+    });
+    await globalEvent(skipArgs());
+    await perCall('purchasePressed');
+
+    expect(types, ['paywallOpen', 'purchasePressed']);
+  });
+
+  testWidgets('per-call events without a presentation id do not reach presentUpsell handlers',
+      (WidgetTester tester) async {
+    await pumpContext(tester);
+    await platform.initialize(apiKey: initializeValue.apiKey);
+    final types = <String>[];
+
+    await platform.presentUpsell(
+      context: context,
+      trigger: 'onboarding',
+      eventHandlers: collectInto(types),
+    );
+    await sendFromNative(const MethodCall(onPaywallEventHandlerMethodName, {
+      'type': 'paywallOpen',
+      'triggerName': 'onboarding',
+      'paywallName': 'test-paywall',
+    }));
+
+    expect(types, isEmpty);
   });
 
   testWidgets('a real open failure still clears the handlers and reports it',
@@ -652,15 +904,189 @@ void main() {
       onPaywallUnavailable: () => unavailableCalls++,
     );
     await perCall('paywallOpen');
-    await globalEvent({
-      'type': 'paywallOpenFailed',
-      'triggerName': 'onboarding',
-      'paywallUnavailableReason': 'paywallsNotDownloaded',
-    });
+    await unavailable(lastPresentationId!);
     await tester.pump();
     await perCall('purchasePressed');
 
     expect(types, ['paywallOpen']);
     expect(unavailableCalls, 1);
+  });
+
+  testWidgets('resolves interleaved rejections by trigger',
+      (WidgetTester tester) async {
+    await pumpContext(tester);
+    await platform.initialize(apiKey: initializeValue.apiKey);
+    final firstTypes = <String>[];
+    final secondTypes = <String>[];
+
+    await platform.presentUpsell(
+      context: context,
+      trigger: 'onboarding',
+      eventHandlers: collectInto(firstTypes),
+    );
+    final firstId = lastPresentationId!;
+    await platform.presentUpsell(
+      context: context,
+      trigger: 'settings',
+      eventHandlers: collectInto(secondTypes),
+    );
+    final secondId = lastPresentationId!;
+    await perCall('paywallOpenFailed',
+        presentationId: firstId,
+        extra: {'paywallUnavailableReason': 'alreadyPresented'});
+    await globalEvent({
+      'type': 'paywallOpenFailed',
+      'triggerName': 'settings',
+      'paywallUnavailableReason': 'alreadyPresented',
+    });
+    await perCall('paywallOpenFailed',
+        presentationId: firstId,
+        extra: {'paywallUnavailableReason': 'alreadyPresented'});
+    await perCall('paywallOpen', trigger: 'settings', presentationId: secondId);
+    await globalEvent({
+      'type': 'paywallOpenFailed',
+      'triggerName': 'onboarding',
+      'paywallUnavailableReason': 'alreadyPresented',
+    });
+    await perCall('paywallOpen', presentationId: firstId);
+
+    expect(firstTypes, ['paywallOpenFailed', 'paywallOpenFailed']);
+    expect(secondTypes, isEmpty);
+  });
+
+  testWidgets('does not report a rejected repeat present as unavailable',
+      (WidgetTester tester) async {
+    await pumpContext(tester);
+    await platform.initialize(apiKey: initializeValue.apiKey);
+    final firstTypes = <String>[];
+    final rejectedTypes = <String>[];
+    var unavailableCalls = 0;
+
+    await platform.presentUpsell(
+      context: context,
+      trigger: 'onboarding',
+      eventHandlers: collectInto(firstTypes),
+    );
+    final firstId = lastPresentationId!;
+    await platform.presentUpsell(
+      context: context,
+      trigger: 'onboarding',
+      eventHandlers: collectInto(rejectedTypes),
+      onPaywallUnavailable: () => unavailableCalls++,
+    );
+    final rejectedId = lastPresentationId!;
+    await unavailable(rejectedId, reason: 'alreadyPresented');
+    await tester.pump();
+    await globalEvent({
+      'type': 'paywallOpenFailed',
+      'triggerName': 'onboarding',
+      'paywallUnavailableReason': 'alreadyPresented',
+    });
+    await perCall('paywallOpen', presentationId: firstId);
+    await perCall('paywallOpen', presentationId: rejectedId);
+
+    expect(unavailableCalls, 0);
+    expect(firstTypes, ['paywallOpen']);
+    expect(rejectedTypes, isEmpty);
+  });
+
+  testWidgets('ignores a second-try miss reported as unavailable',
+      (WidgetTester tester) async {
+    await pumpContext(tester);
+    await platform.initialize(apiKey: initializeValue.apiKey);
+    final types = <String>[];
+    var unavailableCalls = 0;
+
+    await platform.presentUpsell(
+      context: context,
+      trigger: 'onboarding',
+      eventHandlers: collectInto(types),
+      onPaywallUnavailable: () => unavailableCalls++,
+    );
+    await perCall('paywallOpen');
+    await unavailable(lastPresentationId!,
+        trigger: 'onboarding_second_try', reason: 'secondTryNoMatch');
+    await tester.pump();
+    await perCall('purchasePressed');
+
+    expect(unavailableCalls, 0);
+    expect(types, ['paywallOpen', 'purchasePressed']);
+  });
+
+  testWidgets('leaves a loading present alone when a global rejection names another trigger',
+      (WidgetTester tester) async {
+    await pumpContext(tester);
+    await platform.initialize(apiKey: initializeValue.apiKey);
+    final types = <String>[];
+
+    await platform.presentUpsell(
+      context: context,
+      trigger: 'onboarding',
+      eventHandlers: collectInto(types),
+    );
+    await globalEvent({
+      'type': 'paywallOpenFailed',
+      'triggerName': previewTrigger,
+      'paywallUnavailableReason': 'alreadyPresented',
+    });
+    await perCall('paywallOpen');
+
+    expect(types, ['paywallOpen']);
+  });
+
+  testWidgets('ignores an unavailable report without a presentation id',
+      (WidgetTester tester) async {
+    await pumpContext(tester);
+    await platform.initialize(apiKey: initializeValue.apiKey);
+    final types = <String>[];
+    var unavailableCalls = 0;
+
+    await platform.presentUpsell(
+      context: context,
+      trigger: 'onboarding',
+      eventHandlers: collectInto(types),
+      onPaywallUnavailable: () => unavailableCalls++,
+    );
+    await unavailable(null);
+    await tester.pump();
+    await perCall('paywallOpen');
+
+    expect(unavailableCalls, 0);
+    expect(types, ['paywallOpen']);
+  });
+
+  testWidgets('keeps the presentation id off the events handed to the app',
+      (WidgetTester tester) async {
+    await pumpContext(tester);
+    await platform.initialize(apiKey: initializeValue.apiKey);
+    final events = <HeliumPaywallEvent>[];
+
+    await platform.presentUpsell(
+      context: context,
+      trigger: 'onboarding',
+      eventHandlers: PaywallEventHandlers(onAnyEvent: events.add),
+    );
+    await perCall('paywallOpen');
+
+    expect(events, hasLength(1));
+    expect(events.single.rawData.containsKey('presentationId'), isFalse);
+  });
+
+  testWidgets('resetHelium clears every presentation',
+      (WidgetTester tester) async {
+    await pumpContext(tester);
+    await platform.initialize(apiKey: initializeValue.apiKey);
+    final types = <String>[];
+
+    await platform.presentUpsell(
+      context: context,
+      trigger: 'onboarding',
+      eventHandlers: collectInto(types),
+    );
+    await perCall('paywallOpen');
+    await platform.resetHelium();
+    await perCall('purchasePressed');
+
+    expect(types, ['paywallOpen']);
   });
 }

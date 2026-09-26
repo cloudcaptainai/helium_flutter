@@ -77,7 +77,8 @@ public class HeliumFlutterPlugin: NSObject, FlutterPlugin {
                 let trigger = args["trigger"] as? String ?? ""
                 let customPaywallTraits = args["customPaywallTraits"] as? [String: Any]
                 let dontShowIfAlreadyEntitled = args["dontShowIfAlreadyEntitled"] as? Bool
-                presentUpsell(trigger: trigger, customPaywallTraits: customPaywallTraits, dontShowIfAlreadyEntitled: dontShowIfAlreadyEntitled)
+                let presentationId = args["presentationId"] as? String
+                presentUpsell(trigger: trigger, customPaywallTraits: customPaywallTraits, dontShowIfAlreadyEntitled: dontShowIfAlreadyEntitled, presentationId: presentationId)
                 result("Upsell presented!")
             } else {
                 result("Upsell not presented - invalid arguments")
@@ -463,7 +464,7 @@ public class HeliumFlutterPlugin: NSObject, FlutterPlugin {
         Helium.shared.initialize(apiKey: parsed.apiKey)
     }
 
-    public func presentUpsell(trigger: String, customPaywallTraits: [String: Any]? = nil, dontShowIfAlreadyEntitled: Bool? = nil) {
+    public func presentUpsell(trigger: String, customPaywallTraits: [String: Any]? = nil, dontShowIfAlreadyEntitled: Bool? = nil, presentationId: String? = nil) {
         var paywallTraits: HeliumUserTraits? = nil
         if let paywallTraitsMap = convertMarkersToBooleans(customPaywallTraits) {
             paywallTraits = HeliumUserTraits(paywallTraitsMap)
@@ -476,12 +477,20 @@ public class HeliumFlutterPlugin: NSObject, FlutterPlugin {
             ),
             eventHandlers: PaywallEventHandlers.withHandlers(
                 onAnyEvent: { [weak self] event in
-                    self?.channel.invokeMethod("onPaywallEventHandler", arguments: event.toDictionary())
+                    var eventDict = event.toDictionary()
+                    if let presentationId {
+                        eventDict["presentationId"] = presentationId
+                    }
+                    self?.channel.invokeMethod("onPaywallEventHandler", arguments: eventDict)
                 }
             ),
             onEntitled: { [weak self] entitledEvent in
+                var eventDict = entitledEvent.event.toDictionary()
+                if let presentationId {
+                    eventDict["presentationId"] = presentationId
+                }
                 DispatchQueue.main.async {
-                    self?.channel.invokeMethod("onPaywallEntitled", arguments: entitledEvent.event.toDictionary())
+                    self?.channel.invokeMethod("onPaywallEntitled", arguments: eventDict)
                 }
             }
         ) { [weak self] reason in
@@ -491,15 +500,30 @@ public class HeliumFlutterPlugin: NSObject, FlutterPlugin {
                 skipReason = .targetingHoldout
             case .alreadyEntitled:
                 skipReason = .alreadyEntitled
-            case .error:
+            case .error(let unavailableReason):
+                var eventData: [String: Any] = [
+                    "type": "paywallOpenFailed",
+                    "triggerName": trigger,
+                    "paywallUnavailableReason": unavailableReason.rawValue
+                ]
+                if let presentationId {
+                    eventData["presentationId"] = presentationId
+                }
+                DispatchQueue.main.async {
+                    self?.channel.invokeMethod("onPaywallUnavailable", arguments: eventData)
+                }
                 return
             }
+            var eventData: [String: Any] = [
+                "type": "paywallSkipped",
+                "triggerName": trigger,
+                "skipReason": skipReason.rawValue
+            ]
+            if let presentationId {
+                eventData["presentationId"] = presentationId
+            }
             DispatchQueue.main.async {
-                self?.channel.invokeMethod("onPaywallSkip", arguments: [
-                    "type": "paywallSkipped",
-                    "triggerName": trigger,
-                    "skipReason": skipReason.rawValue
-                ])
+                self?.channel.invokeMethod("onPaywallSkip", arguments: eventData)
             }
         }
     }
