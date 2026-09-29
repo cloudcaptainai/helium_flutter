@@ -588,7 +588,6 @@ void main() {
       eventHandlers: collectInto(rejectedTypes),
       onPaywallUnavailable: () => unavailableCalls++,
     );
-    final rejectedId = lastPresentationId!;
     await globalEvent({
       'type': 'paywallOpenFailed',
       'triggerName': 'onboarding',
@@ -597,7 +596,6 @@ void main() {
     await perCall('purchasePressed', presentationId: id);
     await perCall('purchaseCancelled', presentationId: id);
     await perCall('purchaseRestoreFailed', presentationId: id);
-    await perCall('purchasePressed', presentationId: rejectedId);
 
     expect(types, ['paywallOpen', 'purchasePressed', 'purchaseCancelled', 'purchaseRestoreFailed']);
     expect(rejectedTypes, isEmpty);
@@ -847,7 +845,7 @@ void main() {
     expect(entitledCalls, 1);
   });
 
-  testWidgets('ignores close and skipped events on the global channel',
+  testWidgets('ignores lifecycle events on the global channel',
       (WidgetTester tester) async {
     await pumpContext(tester);
     await platform.initialize(apiKey: initializeValue.apiKey);
@@ -865,6 +863,11 @@ void main() {
       'isSecondTry': false,
     });
     await globalEvent(skipArgs());
+    await globalEvent({
+      'type': 'paywallOpenFailed',
+      'triggerName': 'onboarding',
+      'paywallUnavailableReason': 'alreadyPresented',
+    });
     await perCall('purchasePressed');
 
     expect(types, ['paywallOpen', 'purchasePressed']);
@@ -912,46 +915,47 @@ void main() {
     expect(unavailableCalls, 1);
   });
 
-  testWidgets('resolves interleaved rejections by trigger',
+  testWidgets('drops every other presentation when one opens',
       (WidgetTester tester) async {
     await pumpContext(tester);
     await platform.initialize(apiKey: initializeValue.apiKey);
-    final firstTypes = <String>[];
-    final secondTypes = <String>[];
+    var earlierEntitled = 0;
+    final currentTypes = <String>[];
+    final repeatTypes = <String>[];
 
     await platform.presentUpsell(
       context: context,
       trigger: 'onboarding',
-      eventHandlers: collectInto(firstTypes),
+      onEntitled: () => earlierEntitled++,
     );
-    final firstId = lastPresentationId!;
+    final earlierId = lastPresentationId!;
+    await perCall('paywallOpen', presentationId: earlierId);
+    await perCall('paywallClose',
+        presentationId: earlierId, extra: {'isSecondTry': false});
     await platform.presentUpsell(
       context: context,
       trigger: 'settings',
-      eventHandlers: collectInto(secondTypes),
+      eventHandlers: collectInto(currentTypes),
     );
-    final secondId = lastPresentationId!;
-    await perCall('paywallOpenFailed',
-        presentationId: firstId,
-        extra: {'paywallUnavailableReason': 'alreadyPresented'});
-    await globalEvent({
-      'type': 'paywallOpenFailed',
-      'triggerName': 'settings',
-      'paywallUnavailableReason': 'alreadyPresented',
-    });
-    await perCall('paywallOpenFailed',
-        presentationId: firstId,
-        extra: {'paywallUnavailableReason': 'alreadyPresented'});
-    await perCall('paywallOpen', trigger: 'settings', presentationId: secondId);
-    await globalEvent({
-      'type': 'paywallOpenFailed',
+    final currentId = lastPresentationId!;
+    await platform.presentUpsell(
+      context: context,
+      trigger: 'settings',
+      eventHandlers: collectInto(repeatTypes),
+    );
+    final repeatId = lastPresentationId!;
+    await perCall('paywallOpen', trigger: 'settings', presentationId: currentId);
+    await perCall('purchasePressed',
+        trigger: 'settings', presentationId: repeatId);
+    await sendFromNative(MethodCall(onPaywallEntitledMethodName, {
+      'type': 'purchaseSucceeded',
       'triggerName': 'onboarding',
-      'paywallUnavailableReason': 'alreadyPresented',
-    });
-    await perCall('paywallOpen', presentationId: firstId);
+      'presentationId': earlierId,
+    }));
 
-    expect(firstTypes, ['paywallOpenFailed', 'paywallOpenFailed']);
-    expect(secondTypes, isEmpty);
+    expect(currentTypes, ['paywallOpen']);
+    expect(repeatTypes, isEmpty);
+    expect(earlierEntitled, 0);
   });
 
   testWidgets('does not report a rejected repeat present as unavailable',

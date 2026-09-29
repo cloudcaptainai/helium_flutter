@@ -198,7 +198,6 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
         final Map<String, dynamic> eventMap =
             (args is Map) ? Map<String, dynamic>.from(args) : {};
         HeliumPaywallEvent event = HeliumPaywallEvent.fromMap(eventMap);
-        _handlePaywallEvent(event);
         if (purchaseDelegate is HeliumCallbacks) {
           try {
             (purchaseDelegate as HeliumCallbacks).onPaywallEvent(event);
@@ -874,8 +873,9 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
     }
     final presentation = _paywallPresentations[presentationId];
     if (presentation == null) return;
-    if (event.type == 'paywallOpen' && event.isSecondTry != true) {
-      presentation.opened = true;
+    if (event.type == 'paywallOpen') {
+      _paywallPresentations
+          .removeWhere((id, _) => id != presentation.id);
     }
     final handlers = presentation.eventHandlers;
     if (handlers != null) {
@@ -885,12 +885,10 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
         event.isSecondTry != true &&
         event.triggerName == presentation.trigger) {
       _endPresentation(presentation);
-      if (_latestPresentation((candidate) => !candidate.closed) == null) {
-        _fallbackContext = null;
-      }
+      _fallbackContext = null;
     } else if (event.type == 'paywallOpenFailed' &&
         event.paywallUnavailableReason == 'alreadyPresented') {
-      presentation.rejected = true;
+      _paywallPresentations.remove(presentation.id);
     }
   }
 
@@ -1026,17 +1024,6 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
     return presentationId == null ? null : _paywallPresentations[presentationId];
   }
 
-  _PaywallPresentation? _latestPresentation(
-      bool Function(_PaywallPresentation candidate) predicate) {
-    _PaywallPresentation? match;
-    for (final presentation in _paywallPresentations.values) {
-      if (predicate(presentation)) {
-        match = presentation;
-      }
-    }
-    return match;
-  }
-
   void _endPresentation(_PaywallPresentation presentation) {
     presentation.closed = true;
     presentation.eventHandlers = null;
@@ -1076,12 +1063,8 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
     final Map<String, dynamic> eventMap =
         (args is Map) ? Map<String, dynamic>.from(args) : {};
     final reason = eventMap['paywallUnavailableReason'];
-    if (reason == 'secondTryNoMatch') return;
+    if (reason == 'alreadyPresented' || reason == 'secondTryNoMatch') return;
     final presentation = _presentationFor(eventMap);
-    if (reason == 'alreadyPresented') {
-      presentation?.rejected = true;
-      return;
-    }
     if (presentation != null) {
       final onPaywallUnavailable = presentation.onPaywallUnavailable;
       _paywallPresentations.remove(presentation.id);
@@ -1093,23 +1076,6 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _showFallbackSheet(trigger);
       });
-    }
-  }
-
-  void _handlePaywallEvent(HeliumPaywallEvent heliumPaywallEvent) {
-    if (heliumPaywallEvent.type != 'paywallOpenFailed' ||
-        heliumPaywallEvent.paywallUnavailableReason != 'alreadyPresented') {
-      return;
-    }
-    final trigger = heliumPaywallEvent.triggerName;
-    final rejected = _latestPresentation((candidate) =>
-            candidate.rejected && candidate.trigger == trigger) ??
-        _latestPresentation((candidate) =>
-            !candidate.opened &&
-            !candidate.closed &&
-            candidate.trigger == trigger);
-    if (rejected != null) {
-      _paywallPresentations.remove(rejected.id);
     }
   }
 
@@ -1215,15 +1181,10 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
   }
 }
 
-/// A wrapper widget that handles the asynchronous fetching of download status
-/// and then displays the appropriate UI. Fetching download status should be
-/// nearly synchronous.
 class _PaywallPresentation {
   final String id;
   final String trigger;
-  bool opened = false;
   bool closed = false;
-  bool rejected = false;
   PaywallEventHandlers? eventHandlers;
   void Function()? onEntitled;
   void Function(PaywallSkippedEvent event)? onPaywallSkip;
@@ -1239,6 +1200,9 @@ class _PaywallPresentation {
   });
 }
 
+/// A wrapper widget that handles the asynchronous fetching of download status
+/// and then displays the appropriate UI. Fetching download status should be
+/// nearly synchronous.
 class UpsellWrapperWidget extends StatefulWidget {
   final String trigger;
   final Map<String, dynamic>? customPaywallTraits;
