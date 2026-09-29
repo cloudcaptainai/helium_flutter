@@ -9,6 +9,10 @@ import 'helium_flutter_platform.dart';
 
 /// An implementation of [HeliumFlutterPlatform] that uses method channels.
 class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
+  HeliumFlutterMethodChannel() {
+    _sendWrapperSdkInfo();
+  }
+
   /// The method channel used to interact with the native platform.
   @visibleForTesting
   MethodChannel methodChannel = const MethodChannel(heliumFlutter);
@@ -35,6 +39,23 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
 
   @override
   bool get isInitialized => _isInitialized;
+
+  /// Tells the native SDK which wrapper it is running under before any other
+  /// call reaches it, so activity that happens ahead of [initialize] (such as
+  /// [presentUpsell]) is still attributed to the Flutter SDK. Method channel
+  /// calls are delivered in order, so this need not be awaited.
+  void _sendWrapperSdkInfo() {
+    try {
+      methodChannel
+          .invokeMethod<void>(
+              setWrapperSdkInfoMethodName, heliumFlutterSdkVersion)
+          .catchError((Object e) {
+        log('[Helium] Failed to set wrapper SDK info: $e');
+      });
+    } catch (e) {
+      log('[Helium] Failed to set wrapper SDK info: $e');
+    }
+  }
 
   Map<String, dynamic> _buildNativeArgs({
     required String apiKey,

@@ -39,6 +39,7 @@ const String hideAllUpsellsMethodName = 'hideAllUpsells';
 const String onHeliumLogEventMethodName = 'onHeliumLogEvent';
 const String setAndroidConsumableProductIdsMethodName = 'setAndroidConsumableProductIds';
 const String setupCoreMethodName = 'setupCore';
+const String setWrapperSdkInfoMethodName = 'setWrapperSdkInfo';
 const String enableExternalWebCheckoutMethodName = 'enableExternalWebCheckout';
 const String enableExternalWebCheckoutSuccessAndCancelMethodName =
     'enableExternalWebCheckoutSuccessAndCancel';

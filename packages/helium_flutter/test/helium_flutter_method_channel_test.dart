@@ -72,6 +72,25 @@ void main() {
       'Initialization started!',
     );
   });
+  test('wrapper SDK info reaches native before any other call', () async {
+    final calls = <MethodCall>[];
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(channel, (MethodCall methodCall) async {
+      calls.add(methodCall);
+      return null;
+    });
+
+    final freshPlatform = HeliumFlutterMethodChannel();
+    freshPlatform.setRevenueCatAppUserId('rc-user');
+    await pumpEventQueue();
+
+    expect(
+      calls.map((call) => call.method).toList(),
+      [setWrapperSdkInfoMethodName, setRevenueCatAppUserIdMethodName],
+    );
+    expect(calls.first.arguments, heliumFlutterSdkVersion);
+  });
+
   test(getHeliumUserIdMethodName, () async {
     expect(await platform.getHeliumUserId(), 'Test');
   });
