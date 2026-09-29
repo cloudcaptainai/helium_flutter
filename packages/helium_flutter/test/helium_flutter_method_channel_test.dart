@@ -915,13 +915,38 @@ void main() {
     expect(unavailableCalls, 1);
   });
 
-  testWidgets('drops every other presentation when one opens',
+  testWidgets('drops presentations that never opened when one opens',
+      (WidgetTester tester) async {
+    await pumpContext(tester);
+    await platform.initialize(apiKey: initializeValue.apiKey);
+    final currentTypes = <String>[];
+    final repeatTypes = <String>[];
+
+    await platform.presentUpsell(
+      context: context,
+      trigger: 'onboarding',
+      eventHandlers: collectInto(currentTypes),
+    );
+    final currentId = lastPresentationId!;
+    await platform.presentUpsell(
+      context: context,
+      trigger: 'onboarding',
+      eventHandlers: collectInto(repeatTypes),
+    );
+    final repeatId = lastPresentationId!;
+    await perCall('paywallOpen', presentationId: currentId);
+    await perCall('purchasePressed', presentationId: repeatId);
+
+    expect(currentTypes, ['paywallOpen']);
+    expect(repeatTypes, isEmpty);
+  });
+
+  testWidgets(
+      'keeps a closed presentation waiting on onEntitled when another paywall opens',
       (WidgetTester tester) async {
     await pumpContext(tester);
     await platform.initialize(apiKey: initializeValue.apiKey);
     var earlierEntitled = 0;
-    final currentTypes = <String>[];
-    final repeatTypes = <String>[];
 
     await platform.presentUpsell(
       context: context,
@@ -932,33 +957,50 @@ void main() {
     await perCall('paywallOpen', presentationId: earlierId);
     await perCall('paywallClose',
         presentationId: earlierId, extra: {'isSecondTry': false});
-    await platform.presentUpsell(
-      context: context,
-      trigger: 'settings',
-      eventHandlers: collectInto(currentTypes),
-    );
-    final currentId = lastPresentationId!;
-    await platform.presentUpsell(
-      context: context,
-      trigger: 'settings',
-      eventHandlers: collectInto(repeatTypes),
-    );
-    final repeatId = lastPresentationId!;
-    await perCall('paywallOpen', trigger: 'settings', presentationId: currentId);
-    await perCall('purchasePressed',
-        trigger: 'settings', presentationId: repeatId);
-    await sendFromNative(MethodCall(onPaywallEntitledMethodName, {
+    await platform.presentUpsell(context: context, trigger: 'settings');
+    await perCall('paywallOpen', trigger: 'settings');
+    final entitled = MethodCall(onPaywallEntitledMethodName, {
       'type': 'purchaseSucceeded',
       'triggerName': 'onboarding',
       'presentationId': earlierId,
-    }));
+    });
+    await sendFromNative(entitled);
+    await sendFromNative(entitled);
 
-    expect(currentTypes, ['paywallOpen']);
-    expect(repeatTypes, isEmpty);
-    expect(earlierEntitled, 0);
+    expect(earlierEntitled, 1);
   });
 
-  testWidgets('does not report a rejected repeat present as unavailable',
+  testWidgets(
+      'keeps a presentation that is still closing when another paywall opens',
+      (WidgetTester tester) async {
+    await pumpContext(tester);
+    await platform.initialize(apiKey: initializeValue.apiKey);
+    final closingTypes = <String>[];
+    var closingEntitled = 0;
+
+    await platform.presentUpsell(
+      context: context,
+      trigger: 'onboarding',
+      eventHandlers: collectInto(closingTypes),
+      onEntitled: () => closingEntitled++,
+    );
+    final closingId = lastPresentationId!;
+    await perCall('paywallOpen', presentationId: closingId);
+    await platform.presentUpsell(context: context, trigger: 'settings');
+    await perCall('paywallOpen', trigger: 'settings');
+    await perCall('paywallClose',
+        presentationId: closingId, extra: {'isSecondTry': false});
+    await sendFromNative(MethodCall(onPaywallEntitledMethodName, {
+      'type': 'purchaseSucceeded',
+      'triggerName': 'onboarding',
+      'presentationId': closingId,
+    }));
+
+    expect(closingTypes, ['paywallOpen', 'paywallClose']);
+    expect(closingEntitled, 1);
+  });
+
+  testWidgets('drops a rejected repeat present without reporting it as unavailable',
       (WidgetTester tester) async {
     await pumpContext(tester);
     await platform.initialize(apiKey: initializeValue.apiKey);
@@ -981,17 +1023,37 @@ void main() {
     final rejectedId = lastPresentationId!;
     await unavailable(rejectedId, reason: 'alreadyPresented');
     await tester.pump();
-    await globalEvent({
-      'type': 'paywallOpenFailed',
-      'triggerName': 'onboarding',
-      'paywallUnavailableReason': 'alreadyPresented',
-    });
-    await perCall('paywallOpen', presentationId: firstId);
     await perCall('paywallOpen', presentationId: rejectedId);
+    await perCall('paywallOpen', presentationId: firstId);
 
     expect(unavailableCalls, 0);
-    expect(firstTypes, ['paywallOpen']);
     expect(rejectedTypes, isEmpty);
+    expect(firstTypes, ['paywallOpen']);
+  });
+
+  testWidgets('a present made while closing keeps its fallback context',
+      (WidgetTester tester) async {
+    await pumpContext(tester);
+    await platform.initialize(
+      apiKey: initializeValue.apiKey,
+      fallbackPaywall: const Text('Fallback paywall'),
+    );
+
+    await platform.presentUpsell(
+      context: context,
+      trigger: 'onboarding',
+      eventHandlers: PaywallEventHandlers(onClose: (_) {
+        platform.presentUpsell(context: context, trigger: 'settings');
+      }),
+    );
+    await perCall('paywallOpen');
+    await perCall('paywallClose', extra: {'isSecondTry': false});
+    await tester.pump();
+    await unavailable(lastPresentationId, trigger: 'settings');
+    tester.binding.scheduleFrame();
+    await tester.pumpAndSettle();
+
+    expect(find.text('Fallback paywall'), findsOneWidget);
   });
 
   testWidgets('ignores a second-try miss reported as unavailable',

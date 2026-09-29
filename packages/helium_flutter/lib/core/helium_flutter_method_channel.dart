@@ -874,18 +874,22 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
     final presentation = _paywallPresentations[presentationId];
     if (presentation == null) return;
     if (event.type == 'paywallOpen') {
-      _paywallPresentations
-          .removeWhere((id, _) => id != presentation.id);
+      presentation.opened = true;
+      _paywallPresentations.removeWhere(
+          (id, other) => id != presentation.id && !other.opened);
+    }
+    final isOwnClose = event.type == 'paywallClose' &&
+        event.isSecondTry != true &&
+        event.triggerName == presentation.trigger;
+    if (isOwnClose) {
+      _fallbackContext = null;
     }
     final handlers = presentation.eventHandlers;
     if (handlers != null) {
       _dispatchToHandlers(handlers, event);
     }
-    if (event.type == 'paywallClose' &&
-        event.isSecondTry != true &&
-        event.triggerName == presentation.trigger) {
+    if (isOwnClose) {
       _endPresentation(presentation);
-      _fallbackContext = null;
     } else if (event.type == 'paywallOpenFailed' &&
         event.paywallUnavailableReason == 'alreadyPresented') {
       _paywallPresentations.remove(presentation.id);
@@ -1063,12 +1067,15 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
     final Map<String, dynamic> eventMap =
         (args is Map) ? Map<String, dynamic>.from(args) : {};
     final reason = eventMap['paywallUnavailableReason'];
-    if (reason == 'alreadyPresented' || reason == 'secondTryNoMatch') return;
+    if (reason == 'secondTryNoMatch') return;
     final presentation = _presentationFor(eventMap);
     if (presentation != null) {
-      final onPaywallUnavailable = presentation.onPaywallUnavailable;
       _paywallPresentations.remove(presentation.id);
-      _safeInvokeCallback(onPaywallUnavailable, 'onPaywallUnavailable');
+    }
+    if (reason == 'alreadyPresented') return;
+    if (presentation != null) {
+      _safeInvokeCallback(
+          presentation.onPaywallUnavailable, 'onPaywallUnavailable');
     }
     final trigger = eventMap['triggerName'] as String?;
     if (trigger != null) {
@@ -1184,6 +1191,7 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
 class _PaywallPresentation {
   final String id;
   final String trigger;
+  bool opened = false;
   bool closed = false;
   PaywallEventHandlers? eventHandlers;
   void Function()? onEntitled;
