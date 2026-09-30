@@ -359,6 +359,7 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
     final presentation = _PaywallPresentation(
       id: '$trigger:${DateTime.now().millisecondsSinceEpoch.toRadixString(36)}:$_presentationSequence',
       trigger: trigger,
+      context: context,
       eventHandlers: eventHandlers,
       onEntitled: onEntitled,
       onPaywallSkip: onPaywallSkip,
@@ -881,12 +882,16 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
     final isOwnClose = event.type == 'paywallClose' &&
         event.isSecondTry != true &&
         event.triggerName == presentation.trigger;
-    if (isOwnClose) {
+    if (isOwnClose && identical(_fallbackContext, presentation.context)) {
       _fallbackContext = null;
     }
     final handlers = presentation.eventHandlers;
     if (handlers != null) {
-      _dispatchToHandlers(handlers, event);
+      try {
+        _dispatchToHandlers(handlers, event);
+      } catch (e) {
+        log('[Helium] Error in paywall event handler: $e');
+      }
     }
     if (isOwnClose) {
       _endPresentation(presentation);
@@ -1029,7 +1034,10 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
   }
 
   void _endPresentation(_PaywallPresentation presentation) {
+    _paywallPresentations
+        .removeWhere((id, other) => id != presentation.id && other.closed);
     presentation.closed = true;
+    presentation.context = null;
     presentation.eventHandlers = null;
     presentation.onPaywallUnavailable = null;
     presentation.onPaywallSkip = null;
@@ -1074,6 +1082,7 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
     }
     if (reason == 'alreadyPresented') return;
     if (presentation != null) {
+      _fallbackContext = presentation.context ?? _fallbackContext;
       _safeInvokeCallback(
           presentation.onPaywallUnavailable, 'onPaywallUnavailable');
     }
@@ -1191,6 +1200,7 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
 class _PaywallPresentation {
   final String id;
   final String trigger;
+  BuildContext? context;
   bool opened = false;
   bool closed = false;
   PaywallEventHandlers? eventHandlers;
@@ -1201,6 +1211,7 @@ class _PaywallPresentation {
   _PaywallPresentation({
     required this.id,
     required this.trigger,
+    this.context,
     this.eventHandlers,
     this.onEntitled,
     this.onPaywallSkip,

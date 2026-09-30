@@ -534,7 +534,7 @@ void main() {
 
   const previewTrigger = 'helium_preview_trigger';
 
-  Future<void> perCall(
+  Future<ByteData?> perCallReply(
     String type, {
     String trigger = 'onboarding',
     String? presentationId,
@@ -547,6 +547,15 @@ void main() {
         'presentationId': presentationId ?? lastPresentationId,
         ...extra,
       }));
+
+  Future<void> perCall(
+    String type, {
+    String trigger = 'onboarding',
+    String? presentationId,
+    Map<String, dynamic> extra = const {},
+  }) =>
+      perCallReply(type,
+          trigger: trigger, presentationId: presentationId, extra: extra);
 
   Future<void> globalEvent(Map<String, dynamic> args) =>
       sendFromNative(MethodCall(onPaywallEventMethodName, args));
@@ -1029,6 +1038,94 @@ void main() {
     expect(unavailableCalls, 0);
     expect(rejectedTypes, isEmpty);
     expect(firstTypes, ['paywallOpen']);
+  });
+
+  testWidgets(
+      'keeps only the most recently closed presentation waiting on onEntitled',
+      (WidgetTester tester) async {
+    await pumpContext(tester);
+    await platform.initialize(apiKey: initializeValue.apiKey);
+    var staleEntitled = 0;
+    var latestEntitled = 0;
+
+    await platform.presentUpsell(
+      context: context,
+      trigger: 'onboarding',
+      onEntitled: () => staleEntitled++,
+    );
+    final staleId = lastPresentationId!;
+    await perCall('paywallOpen', presentationId: staleId);
+    await perCall('paywallClose',
+        presentationId: staleId, extra: {'isSecondTry': false});
+    await platform.presentUpsell(
+      context: context,
+      trigger: 'settings',
+      onEntitled: () => latestEntitled++,
+    );
+    final latestId = lastPresentationId!;
+    await perCall('paywallOpen', trigger: 'settings', presentationId: latestId);
+    await perCall('paywallClose',
+        trigger: 'settings',
+        presentationId: latestId,
+        extra: {'isSecondTry': false});
+    await sendFromNative(MethodCall(onPaywallEntitledMethodName, {
+      'type': 'purchaseSucceeded',
+      'triggerName': 'onboarding',
+      'presentationId': staleId,
+    }));
+    await sendFromNative(MethodCall(onPaywallEntitledMethodName, {
+      'type': 'purchaseSucceeded',
+      'triggerName': 'settings',
+      'presentationId': latestId,
+    }));
+
+    expect(staleEntitled, 0);
+    expect(latestEntitled, 1);
+  });
+
+  testWidgets('ends the presentation even if a close handler throws',
+      (WidgetTester tester) async {
+    await pumpContext(tester);
+    await platform.initialize(apiKey: initializeValue.apiKey);
+    final types = <String>[];
+
+    await platform.presentUpsell(
+      context: context,
+      trigger: 'onboarding',
+      eventHandlers: PaywallEventHandlers(
+        onClose: (_) => throw Exception('boom'),
+        onAnyEvent: (event) => types.add(event.type),
+      ),
+    );
+    await perCall('paywallOpen');
+    final reply = await perCallReply('paywallClose', extra: {'isSecondTry': false});
+    expectHandlerDidNotThrow(reply);
+    await perCall('purchasePressed');
+
+    expect(types, ['paywallOpen']);
+  });
+
+  testWidgets(
+      "keeps a newer presentation's fallback context when an older one closes",
+      (WidgetTester tester) async {
+    await pumpContext(tester);
+    await platform.initialize(
+      apiKey: initializeValue.apiKey,
+      fallbackPaywall: const Text('Fallback paywall'),
+    );
+
+    await platform.presentUpsell(context: context, trigger: 'onboarding');
+    final olderId = lastPresentationId!;
+    await perCall('paywallOpen', presentationId: olderId);
+    await platform.presentUpsell(context: context, trigger: 'settings');
+    final newerId = lastPresentationId!;
+    await perCall('paywallClose',
+        presentationId: olderId, extra: {'isSecondTry': false});
+    await unavailable(newerId, trigger: 'settings');
+    tester.binding.scheduleFrame();
+    await tester.pumpAndSettle();
+
+    expect(find.text('Fallback paywall'), findsOneWidget);
   });
 
   testWidgets('a present made while closing keeps its fallback context',
