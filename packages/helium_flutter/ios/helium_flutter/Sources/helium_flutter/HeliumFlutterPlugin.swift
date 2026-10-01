@@ -504,7 +504,7 @@ public class HeliumFlutterPlugin: NSObject, FlutterPlugin {
                 var eventData: [String: Any] = [
                     "type": "paywallOpenFailed",
                     "triggerName": trigger,
-                    "paywallUnavailableReason": unavailableReason.rawValue
+                    "paywallUnavailableReason": unavailableReason?.rawValue ?? "unknown"
                 ]
                 if let presentationId {
                     eventData["presentationId"] = presentationId
