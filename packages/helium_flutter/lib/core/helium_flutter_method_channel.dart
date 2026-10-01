@@ -1127,6 +1127,7 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _showFallbackSheet(trigger);
       });
+      WidgetsBinding.instance.ensureVisualUpdate();
     }
   }
 

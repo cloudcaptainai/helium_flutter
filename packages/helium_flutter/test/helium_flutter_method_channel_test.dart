@@ -1177,7 +1177,22 @@ void main() {
     await perCall('paywallClose',
         presentationId: olderId, extra: {'isSecondTry': false});
     await unavailable(newerId, trigger: 'settings');
-    tester.binding.scheduleFrame();
+    await tester.pumpAndSettle();
+
+    expect(find.text('Fallback paywall'), findsOneWidget);
+  });
+
+  testWidgets('shows the fallback sheet without waiting for another frame',
+      (WidgetTester tester) async {
+    await pumpContext(tester);
+    await platform.initialize(
+      apiKey: initializeValue.apiKey,
+      fallbackPaywall: const Text('Fallback paywall'),
+    );
+    await platform.presentUpsell(context: context, trigger: 'onboarding');
+    await tester.pumpAndSettle();
+
+    await unavailable(lastPresentationId);
     await tester.pumpAndSettle();
 
     expect(find.text('Fallback paywall'), findsOneWidget);
@@ -1202,7 +1217,6 @@ void main() {
     await perCall('paywallClose', extra: {'isSecondTry': false});
     await tester.pump();
     await unavailable(lastPresentationId, trigger: 'settings');
-    tester.binding.scheduleFrame();
     await tester.pumpAndSettle();
 
     expect(find.text('Fallback paywall'), findsOneWidget);
