@@ -1,6 +1,6 @@
 name: helium_revenuecat
 description: "Helium RevenueCat SDK. Remotely build and auto-optimize paywalls (tryhelium.com)"
-version: 3.3.12
+version: 3.3.13
 homepage: https://tryhelium.com
 
 environment:
