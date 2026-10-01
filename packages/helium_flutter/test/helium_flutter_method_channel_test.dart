@@ -926,7 +926,15 @@ void main() {
     expect(unavailableCalls, 1);
   });
 
-  testWidgets(
+  void testOnAndroid(String description, WidgetTesterCallback callback) =>
+      testWidgets(description, callback,
+          variant: TargetPlatformVariant.only(TargetPlatform.android));
+
+  void testOnIOS(String description, WidgetTesterCallback callback) =>
+      testWidgets(description, callback,
+          variant: TargetPlatformVariant.only(TargetPlatform.iOS));
+
+  testOnAndroid(
       'delivers an open failure that native reports after onPaywallUnavailable',
       (WidgetTester tester) async {
     await pumpContext(tester);
@@ -950,7 +958,7 @@ void main() {
     expect(types, ['paywallOpenFailed']);
   });
 
-  testWidgets('delivers a skip that native reports after onPaywallSkip',
+  testOnAndroid('delivers a skip that native reports after onPaywallSkip',
       (WidgetTester tester) async {
     await pumpContext(tester);
     await platform.initialize(apiKey: initializeValue.apiKey);
@@ -1280,6 +1288,90 @@ void main() {
 
     expect(events, hasLength(1));
     expect(events.single.rawData.containsKey('presentationId'), isFalse);
+  });
+
+  testOnAndroid(
+      'keeps a presentation awaiting its late native event when another paywall opens',
+      (WidgetTester tester) async {
+    await pumpContext(tester);
+    await platform.initialize(apiKey: initializeValue.apiKey);
+    final failedTypes = <String>[];
+    final retriedTypes = <String>[];
+
+    await platform.presentUpsell(
+      context: context,
+      trigger: 'onboarding',
+      eventHandlers: collectInto(failedTypes),
+    );
+    final failedId = lastPresentationId!;
+    await unavailable(failedId);
+    await tester.pump();
+    await platform.presentUpsell(
+      context: context,
+      trigger: 'onboarding',
+      eventHandlers: collectInto(retriedTypes),
+    );
+    final retriedId = lastPresentationId!;
+    await perCall('paywallOpen', presentationId: retriedId);
+    await perCall('paywallOpenFailed',
+        presentationId: failedId,
+        extra: {'paywallUnavailableReason': 'paywallsNotDownloaded'});
+    await perCall('purchasePressed', presentationId: failedId);
+
+    expect(failedTypes, ['paywallOpenFailed']);
+    expect(retriedTypes, ['paywallOpen']);
+  });
+
+  testOnIOS(
+      'drops a skipped presentation at once where native sends no later event',
+      (WidgetTester tester) async {
+    await pumpContext(tester);
+    await platform.initialize(apiKey: initializeValue.apiKey);
+    final types = <String>[];
+    final skips = <PaywallSkippedEvent>[];
+
+    await platform.presentUpsell(
+      context: context,
+      trigger: 'onboarding',
+      eventHandlers: collectInto(types),
+      onPaywallSkip: skips.add,
+    );
+    final skippedId = lastPresentationId!;
+    await sendFromNative(MethodCall(onPaywallSkipMethodName, skipArgs()));
+    await platform.presentUpsell(context: context, trigger: 'settings');
+    await perCall('paywallOpen', trigger: 'settings');
+    await perCall('purchasePressed', presentationId: skippedId);
+
+    expect(skips, hasLength(1));
+    expect(types, isEmpty);
+  });
+
+  testWidgets('does not end the host presentation when a preview fails to open',
+      (WidgetTester tester) async {
+    await pumpContext(tester);
+    await platform.initialize(apiKey: initializeValue.apiKey);
+    final types = <String>[];
+
+    await platform.presentUpsell(
+      context: context,
+      trigger: 'onboarding',
+      eventHandlers: collectInto(types),
+    );
+    await perCall('paywallOpen');
+    await perCall('paywallOpenFailed',
+        trigger: previewTrigger,
+        extra: {'paywallUnavailableReason': 'paywallsNotDownloaded'});
+    await perCall('paywallOpenFailed',
+        trigger: previewTrigger,
+        extra: {'paywallUnavailableReason': 'paywallsNotDownloaded'});
+    await perCall('purchasePressed');
+
+    expect(types, [
+      'paywallOpen',
+      'paywallOpenFailed',
+      'paywallOpenFailed',
+      'purchasePressed',
+    ]);
   });
 
   testWidgets('resetHelium clears every presentation',

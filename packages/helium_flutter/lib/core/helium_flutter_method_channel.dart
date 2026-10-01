@@ -1,5 +1,6 @@
 import 'dart:developer';
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:helium_flutter/core/const/contants.dart';
@@ -877,7 +878,7 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
     if (event.type == 'paywallOpen') {
       presentation.opened = true;
       _paywallPresentations.removeWhere(
-          (id, other) => id != presentation.id && !other.opened);
+          (id, other) => id != presentation.id && !other.opened && !other.ended);
     }
     final isOwnClose = event.type == 'paywallClose' &&
         event.isSecondTry != true &&
@@ -898,10 +899,10 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
     } else if (event.type == 'paywallOpenFailed' &&
         event.paywallUnavailableReason == 'alreadyPresented') {
       _paywallPresentations.remove(presentation.id);
-    } else if ((event.type == 'paywallOpenFailed' &&
-            event.isSecondTry != true) ||
-        event.type == 'paywallSkipped') {
-      _finishPresentation(presentation);
+    } else if (event.triggerName == presentation.trigger &&
+        ((event.type == 'paywallOpenFailed' && event.isSecondTry != true) ||
+            event.type == 'paywallSkipped')) {
+      _finishPresentation(presentation, awaitingNativeEvent: true);
     }
   }
 
@@ -1037,13 +1038,19 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
     return presentationId == null ? null : _paywallPresentations[presentationId];
   }
 
-  void _finishPresentation(_PaywallPresentation presentation) {
-    if (presentation.ended) {
+  void _finishPresentation(
+    _PaywallPresentation presentation, {
+    required bool awaitingNativeEvent,
+  }) {
+    if (presentation.ended || !awaitingNativeEvent) {
       _paywallPresentations.remove(presentation.id);
     } else {
       presentation.ended = true;
     }
   }
+
+  bool get _nativeReportsTerminalEventLate =>
+      defaultTargetPlatform == TargetPlatform.android;
 
   void _endPresentation(_PaywallPresentation presentation) {
     _paywallPresentations
@@ -1071,7 +1078,8 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
     } else if (skipEvent != null) {
       presentation.onPaywallSkip = null;
       presentation.onPaywallUnavailable = null;
-      _finishPresentation(presentation);
+      _finishPresentation(presentation,
+          awaitingNativeEvent: _nativeReportsTerminalEventLate);
     }
     _safeInvokeCallback(onEntitled, 'onEntitled');
   }
@@ -1084,7 +1092,8 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
       presentation.onPaywallSkip = null;
       presentation.onEntitled = null;
       presentation.onPaywallUnavailable = null;
-      _finishPresentation(presentation);
+      _finishPresentation(presentation,
+          awaitingNativeEvent: _nativeReportsTerminalEventLate);
     }
     if (onPaywallSkip == null) return;
     _safeInvokeCallback(() => onPaywallSkip(event), 'onPaywallSkip');
@@ -1107,7 +1116,8 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
       presentation.onPaywallUnavailable = null;
       presentation.onEntitled = null;
       presentation.onPaywallSkip = null;
-      _finishPresentation(presentation);
+      _finishPresentation(presentation,
+          awaitingNativeEvent: _nativeReportsTerminalEventLate);
       _fallbackContext = presentation.context ?? _fallbackContext;
       _safeInvokeCallback(onPaywallUnavailable, 'onPaywallUnavailable');
     }
