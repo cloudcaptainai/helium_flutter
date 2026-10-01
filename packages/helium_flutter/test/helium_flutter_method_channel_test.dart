@@ -916,12 +916,59 @@ void main() {
       onPaywallUnavailable: () => unavailableCalls++,
     );
     await perCall('paywallOpen');
-    await unavailable(lastPresentationId!);
+    await perCall('paywallOpenFailed',
+        extra: {'paywallUnavailableReason': 'webviewRenderFail'});
+    await unavailable(lastPresentationId!, reason: 'webviewRenderFail');
     await tester.pump();
     await perCall('purchasePressed');
 
-    expect(types, ['paywallOpen']);
+    expect(types, ['paywallOpen', 'paywallOpenFailed']);
     expect(unavailableCalls, 1);
+  });
+
+  testWidgets(
+      'delivers an open failure that native reports after onPaywallUnavailable',
+      (WidgetTester tester) async {
+    await pumpContext(tester);
+    await platform.initialize(apiKey: initializeValue.apiKey);
+    final types = <String>[];
+    var unavailableCalls = 0;
+
+    await platform.presentUpsell(
+      context: context,
+      trigger: 'onboarding',
+      eventHandlers: collectInto(types),
+      onPaywallUnavailable: () => unavailableCalls++,
+    );
+    await unavailable(lastPresentationId!);
+    await tester.pump();
+    await perCall('paywallOpenFailed',
+        extra: {'paywallUnavailableReason': 'paywallsNotDownloaded'});
+    await perCall('purchasePressed');
+
+    expect(unavailableCalls, 1);
+    expect(types, ['paywallOpenFailed']);
+  });
+
+  testWidgets('delivers a skip that native reports after onPaywallSkip',
+      (WidgetTester tester) async {
+    await pumpContext(tester);
+    await platform.initialize(apiKey: initializeValue.apiKey);
+    final types = <String>[];
+    final skips = <PaywallSkippedEvent>[];
+
+    await platform.presentUpsell(
+      context: context,
+      trigger: 'onboarding',
+      eventHandlers: collectInto(types),
+      onPaywallSkip: skips.add,
+    );
+    await sendFromNative(MethodCall(onPaywallSkipMethodName, skipArgs()));
+    await perCall('paywallSkipped');
+    await perCall('purchasePressed');
+
+    expect(skips, hasLength(1));
+    expect(types, ['paywallSkipped']);
   });
 
   testWidgets('drops presentations that never opened when one opens',

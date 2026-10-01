@@ -898,6 +898,10 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
     } else if (event.type == 'paywallOpenFailed' &&
         event.paywallUnavailableReason == 'alreadyPresented') {
       _paywallPresentations.remove(presentation.id);
+    } else if ((event.type == 'paywallOpenFailed' &&
+            event.isSecondTry != true) ||
+        event.type == 'paywallSkipped') {
+      _finishPresentation(presentation);
     }
   }
 
@@ -1033,6 +1037,14 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
     return presentationId == null ? null : _paywallPresentations[presentationId];
   }
 
+  void _finishPresentation(_PaywallPresentation presentation) {
+    if (presentation.ended) {
+      _paywallPresentations.remove(presentation.id);
+    } else {
+      presentation.ended = true;
+    }
+  }
+
   void _endPresentation(_PaywallPresentation presentation) {
     _paywallPresentations
         .removeWhere((id, other) => id != presentation.id && other.closed);
@@ -1054,8 +1066,12 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
       return;
     }
     presentation!.onEntitled = null;
-    if (skipEvent != null || presentation.closed) {
+    if (presentation.closed) {
       _paywallPresentations.remove(presentation.id);
+    } else if (skipEvent != null) {
+      presentation.onPaywallSkip = null;
+      presentation.onPaywallUnavailable = null;
+      _finishPresentation(presentation);
     }
     _safeInvokeCallback(onEntitled, 'onEntitled');
   }
@@ -1065,7 +1081,10 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
     if (event == null) return;
     final onPaywallSkip = presentation?.onPaywallSkip;
     if (presentation != null) {
-      _paywallPresentations.remove(presentation.id);
+      presentation.onPaywallSkip = null;
+      presentation.onEntitled = null;
+      presentation.onPaywallUnavailable = null;
+      _finishPresentation(presentation);
     }
     if (onPaywallSkip == null) return;
     _safeInvokeCallback(() => onPaywallSkip(event), 'onPaywallSkip');
@@ -1077,14 +1096,20 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
     final reason = eventMap['paywallUnavailableReason'];
     if (reason == 'secondTryNoMatch') return;
     final presentation = _presentationFor(eventMap);
-    if (presentation != null) {
-      _paywallPresentations.remove(presentation.id);
+    if (reason == 'alreadyPresented') {
+      if (presentation != null) {
+        _paywallPresentations.remove(presentation.id);
+      }
+      return;
     }
-    if (reason == 'alreadyPresented') return;
     if (presentation != null) {
+      final onPaywallUnavailable = presentation.onPaywallUnavailable;
+      presentation.onPaywallUnavailable = null;
+      presentation.onEntitled = null;
+      presentation.onPaywallSkip = null;
+      _finishPresentation(presentation);
       _fallbackContext = presentation.context ?? _fallbackContext;
-      _safeInvokeCallback(
-          presentation.onPaywallUnavailable, 'onPaywallUnavailable');
+      _safeInvokeCallback(onPaywallUnavailable, 'onPaywallUnavailable');
     }
     final trigger = eventMap['triggerName'] as String?;
     if (trigger != null) {
@@ -1203,6 +1228,7 @@ class _PaywallPresentation {
   BuildContext? context;
   bool opened = false;
   bool closed = false;
+  bool ended = false;
   PaywallEventHandlers? eventHandlers;
   void Function()? onEntitled;
   void Function(PaywallSkippedEvent event)? onPaywallSkip;
