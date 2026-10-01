@@ -209,16 +209,7 @@ class HeliumFlutterPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
             val skipReason = when (reason) {
               PaywallNotShownReason.TargetingHoldout -> PaywallSkippedReason.TargetingHoldout
               PaywallNotShownReason.AlreadyEntitled -> PaywallSkippedReason.AlreadyEntitled
-              is PaywallNotShownReason.Error -> {
-                val eventMap = mutableMapOf<String, Any>(
-                  "type" to "paywallOpenFailed",
-                  "triggerName" to trigger,
-                  "paywallUnavailableReason" to (reason.unavailableReason?.rawValue ?: "unknown")
-                )
-                presentationId?.let { eventMap["presentationId"] = it }
-                invokeOnMainThread("onPaywallUnavailable", eventMap)
-                null
-              }
+              is PaywallNotShownReason.Error -> null
             }
             if (skipReason != null) {
               val eventMap = mutableMapOf<String, Any>(
@@ -228,6 +219,14 @@ class HeliumFlutterPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
               )
               presentationId?.let { eventMap["presentationId"] = it }
               invokeOnMainThread("onPaywallSkip", eventMap)
+            } else if (reason is PaywallNotShownReason.Error) {
+              val eventMap = mutableMapOf<String, Any>(
+                "type" to "paywallOpenFailed",
+                "triggerName" to trigger,
+                "paywallUnavailableReason" to (reason.unavailableReason?.rawValue ?: "unknown")
+              )
+              presentationId?.let { eventMap["presentationId"] = it }
+              invokeOnMainThread("onPaywallUnavailable", eventMap)
             }
           }
         )
