@@ -1,5 +1,6 @@
 import 'dart:developer';
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:helium_flutter/core/const/contants.dart';
@@ -22,20 +23,9 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
   BuildContext? _fallbackContext;
 
   bool _isInitialized = false;
-  PaywallEventHandlers? _currentEventHandlers;
-
-  /// Callbacks for the current [presentUpsell] presentation. [_currentOnEntitled]
-  /// is invoked from the native `onEntitled` closure (via the [onPaywallEntitledMethodName]
-  /// method call); [_currentOnPaywallSkip] from the native `onPaywallNotShown`
-  /// closure (via [onPaywallSkipMethodName]) or, when no `onEntitled` was
-  /// supplied, from an already-entitled `paywallSkipped` entitled payload;
-  /// [_currentOnPaywallUnavailable] is derived from `paywallOpenFailed`.
-  ///
-  /// All are one-shot: capture into a local and null the field before invoking,
-  /// so a callback that re-enters [presentUpsell] keeps its freshly stored handler.
-  void Function()? _currentOnEntitled;
-  void Function(PaywallSkippedEvent event)? _currentOnPaywallSkip;
-  void Function()? _currentOnPaywallUnavailable;
+  PaywallEventHandlers? _embeddedEventHandlers;
+  final Map<String, _PaywallPresentation> _paywallPresentations = {};
+  int _presentationSequence = 0;
 
   @override
   bool get isInitialized => _isInitialized;
@@ -230,7 +220,6 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
         final Map<String, dynamic> eventMap =
             (args is Map) ? Map<String, dynamic>.from(args) : {};
         HeliumPaywallEvent event = HeliumPaywallEvent.fromMap(eventMap);
-        _handlePaywallEvent(event);
         if (purchaseDelegate is HeliumCallbacks) {
           try {
             (purchaseDelegate as HeliumCallbacks).onPaywallEvent(event);
@@ -247,16 +236,23 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
         final dynamic args = handler.arguments;
         final Map<String, dynamic> eventDict =
             (args is Map) ? Map<String, dynamic>.from(args) : {};
-        _handlePaywallEventHandlers(HeliumPaywallEvent.fromMap(eventDict));
+        final presentationId = eventDict.remove('presentationId') as String?;
+        _handlePaywallEventHandlers(
+          HeliumPaywallEvent.fromMap(eventDict),
+          presentationId: presentationId,
+        );
       } else if (handler.method == onPaywallEntitledMethodName) {
-        _dispatchEntitled(_paywallSkippedEventFrom(handler.arguments));
+        _dispatchEntitled(
+          _paywallSkippedEventFrom(handler.arguments),
+          presentation: _presentationFor(handler.arguments),
+        );
       } else if (handler.method == onPaywallSkipMethodName) {
-        final event = _paywallSkippedEventFrom(handler.arguments);
-        if (event?.skipReason == PaywallSkippedReason.alreadyEntitled) {
-          _dispatchEntitled(event);
-        } else {
-          _dispatchPaywallSkip(event);
-        }
+        _dispatchPaywallSkip(
+          _paywallSkippedEventFrom(handler.arguments),
+          presentation: _presentationFor(handler.arguments),
+        );
+      } else if (handler.method == onPaywallUnavailableMethodName) {
+        _handlePaywallUnavailable(handler.arguments);
       } else if (handler.method == onHeliumLogEventMethodName) {
         final dynamic args = handler.arguments;
         final Map<String, dynamic> eventMap =
@@ -381,11 +377,17 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
   }) async {
     _fallbackContext = context;
 
-    // Store current event handlers and presentation callbacks
-    _currentEventHandlers = eventHandlers;
-    _currentOnEntitled = onEntitled;
-    _currentOnPaywallSkip = onPaywallSkip;
-    _currentOnPaywallUnavailable = onPaywallUnavailable;
+    _presentationSequence += 1;
+    final presentation = _PaywallPresentation(
+      id: '$trigger:${DateTime.now().millisecondsSinceEpoch.toRadixString(36)}:$_presentationSequence',
+      trigger: trigger,
+      context: context,
+      eventHandlers: eventHandlers,
+      onEntitled: onEntitled,
+      onPaywallSkip: onPaywallSkip,
+      onPaywallUnavailable: onPaywallUnavailable,
+    );
+    _paywallPresentations[presentation.id] = presentation;
 
     try {
       final result = await methodChannel.invokeMethod<String?>(
@@ -394,15 +396,13 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
           'trigger': trigger,
           'customPaywallTraits': _convertBooleansToMarkers(customPaywallTraits),
           'dontShowIfAlreadyEntitled': dontShowIfAlreadyEntitled,
+          'presentationId': presentation.id,
         },
       );
       return result;
     } on PlatformException catch (e) {
       log('[Helium] Unexpected present upsell error: ${e.message}');
-      _currentEventHandlers = null;
-      _currentOnEntitled = null;
-      _currentOnPaywallSkip = null;
-      _currentOnPaywallUnavailable = null;
+      _paywallPresentations.remove(presentation.id);
       try {
         await methodChannel.invokeMethod<String?>(
           fallbackOpenEventMethodName,
@@ -547,10 +547,8 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
     _fallbackPaywallWidget = null;
     _isFallbackSheetShowing = false;
     _fallbackContext = null;
-    _currentEventHandlers = null;
-    _currentOnEntitled = null;
-    _currentOnPaywallSkip = null;
-    _currentOnPaywallUnavailable = null;
+    _embeddedEventHandlers = null;
+    _paywallPresentations.clear();
     // Reset native SDK state
     try {
       await methodChannel.invokeMethod<void>(
@@ -885,9 +883,58 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
     });
   }
 
-  void _handlePaywallEventHandlers(HeliumPaywallEvent event) {
-    if (_currentEventHandlers == null) return;
+  void _handlePaywallEventHandlers(
+    HeliumPaywallEvent event, {
+    String? presentationId,
+  }) {
+    if (presentationId == null) {
+      final handlers = _embeddedEventHandlers;
+      if (handlers != null) {
+        try {
+          _dispatchToHandlers(handlers, event);
+        } catch (e) {
+          log('[Helium] Error in paywall event handler: $e');
+        }
+      }
+      return;
+    }
+    final presentation = _paywallPresentations[presentationId];
+    if (presentation == null) return;
+    if (event.type == 'paywallOpen') {
+      presentation.opened = true;
+      _paywallPresentations.removeWhere(
+          (id, other) => id != presentation.id && !other.opened && !other.ended);
+    }
+    final isOwnClose = event.type == 'paywallClose' &&
+        event.isSecondTry != true &&
+        event.triggerName == presentation.trigger;
+    if (isOwnClose && identical(_fallbackContext, presentation.context)) {
+      _fallbackContext = null;
+    }
+    final handlers = presentation.eventHandlers;
+    if (handlers != null) {
+      try {
+        _dispatchToHandlers(handlers, event);
+      } catch (e) {
+        log('[Helium] Error in paywall event handler: $e');
+      }
+    }
+    if (isOwnClose) {
+      _endPresentation(presentation);
+    } else if (event.type == 'paywallOpenFailed' &&
+        event.paywallUnavailableReason == 'alreadyPresented') {
+      _paywallPresentations.remove(presentation.id);
+    } else if (event.triggerName == presentation.trigger &&
+        ((event.type == 'paywallOpenFailed' && event.isSecondTry != true) ||
+            event.type == 'paywallSkipped')) {
+      _finishPresentation(presentation, awaitingNativeEvent: true);
+    }
+  }
 
+  void _dispatchToHandlers(
+    PaywallEventHandlers handlers,
+    HeliumPaywallEvent event,
+  ) {
     final eventType = event.type;
     final triggerName = event.triggerName ?? 'unknown';
     final paywallName = event.paywallName ?? 'unknown';
@@ -895,7 +942,7 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
 
     switch (eventType) {
       case 'paywallOpen':
-        _currentEventHandlers?.onOpen?.call(PaywallOpenEvent(
+        handlers.onOpen?.call(PaywallOpenEvent(
           triggerName: triggerName,
           paywallName: paywallName,
           isSecondTry: isSecondTry,
@@ -906,14 +953,14 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
         ));
         break;
       case 'paywallClose':
-        _currentEventHandlers?.onClose?.call(PaywallCloseEvent(
+        handlers.onClose?.call(PaywallCloseEvent(
           triggerName: triggerName,
           paywallName: paywallName,
           isSecondTry: isSecondTry,
         ));
         break;
       case 'paywallDismissed':
-        _currentEventHandlers?.onDismissed?.call(PaywallDismissedEvent(
+        handlers.onDismissed?.call(PaywallDismissedEvent(
           triggerName: triggerName,
           paywallName: paywallName,
           isSecondTry: isSecondTry,
@@ -921,7 +968,7 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
         break;
       case 'purchaseSucceeded':
         final productId = event.productId ?? 'unknown';
-        _currentEventHandlers?.onPurchaseSucceeded?.call(PurchaseSucceededEvent(
+        handlers.onPurchaseSucceeded?.call(PurchaseSucceededEvent(
           productId: productId,
           triggerName: triggerName,
           paywallName: paywallName,
@@ -930,7 +977,7 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
         ));
         break;
       case 'paywallOpenFailed':
-        _currentEventHandlers?.onOpenFailed?.call(PaywallOpenFailedEvent(
+        handlers.onOpenFailed?.call(PaywallOpenFailedEvent(
           triggerName: triggerName,
           paywallName: paywallName,
           isSecondTry: isSecondTry,
@@ -941,7 +988,7 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
         ));
         break;
       case 'customPaywallAction':
-        _currentEventHandlers?.onCustomPaywallAction
+        handlers.onCustomPaywallAction
             ?.call(CustomPaywallActionEvent(
           triggerName: triggerName,
           paywallName: paywallName,
@@ -951,7 +998,7 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
         ));
         break;
     }
-    _currentEventHandlers?.onAnyEvent?.call(event);
+    handlers.onAnyEvent?.call(event);
   }
 
   /// Routes native SDK log events to the appropriate log method.
@@ -1010,70 +1057,102 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
     );
   }
 
-  void _dispatchEntitled(PaywallSkippedEvent? skipEvent) {
-    final onEntitled = _currentOnEntitled;
-    _currentOnEntitled = null;
+  _PaywallPresentation? _presentationFor(dynamic args) {
+    final presentationId =
+        args is Map ? args['presentationId'] as String? : null;
+    return presentationId == null ? null : _paywallPresentations[presentationId];
+  }
+
+  void _finishPresentation(
+    _PaywallPresentation presentation, {
+    required bool awaitingNativeEvent,
+  }) {
+    if (presentation.ended || !awaitingNativeEvent) {
+      _paywallPresentations.remove(presentation.id);
+    } else {
+      presentation.ended = true;
+    }
+  }
+
+  bool get _nativeReportsTerminalEventLate =>
+      defaultTargetPlatform == TargetPlatform.android;
+
+  void _endPresentation(_PaywallPresentation presentation) {
+    _paywallPresentations
+        .removeWhere((id, other) => id != presentation.id && other.closed);
+    presentation.closed = true;
+    presentation.context = null;
+    presentation.eventHandlers = null;
+    presentation.onPaywallUnavailable = null;
+    presentation.onPaywallSkip = null;
+    if (presentation.onEntitled == null) {
+      _paywallPresentations.remove(presentation.id);
+    }
+  }
+
+  void _dispatchEntitled(PaywallSkippedEvent? skipEvent,
+      {_PaywallPresentation? presentation}) {
+    final onEntitled = presentation?.onEntitled;
     if (onEntitled == null) {
-      _dispatchPaywallSkip(skipEvent);
+      _dispatchPaywallSkip(skipEvent, presentation: presentation);
       return;
     }
-    _currentOnPaywallSkip = null;
+    presentation!.onEntitled = null;
+    if (presentation.closed) {
+      _paywallPresentations.remove(presentation.id);
+    } else if (skipEvent != null) {
+      presentation.onPaywallSkip = null;
+      presentation.onPaywallUnavailable = null;
+      _finishPresentation(presentation,
+          awaitingNativeEvent: _nativeReportsTerminalEventLate);
+    }
     _safeInvokeCallback(onEntitled, 'onEntitled');
   }
 
-  void _dispatchPaywallSkip(PaywallSkippedEvent? event) {
+  void _dispatchPaywallSkip(PaywallSkippedEvent? event,
+      {_PaywallPresentation? presentation}) {
     if (event == null) return;
-    final onPaywallSkip = _currentOnPaywallSkip;
-    _currentOnPaywallSkip = null;
+    final onPaywallSkip = presentation?.onPaywallSkip;
+    if (presentation != null) {
+      presentation.onPaywallSkip = null;
+      presentation.onEntitled = null;
+      presentation.onPaywallUnavailable = null;
+      _finishPresentation(presentation,
+          awaitingNativeEvent: _nativeReportsTerminalEventLate);
+    }
     if (onPaywallSkip == null) return;
     _safeInvokeCallback(() => onPaywallSkip(event), 'onPaywallSkip');
   }
 
-  static const _previewTriggers = {
-    'helium_preview_trigger',
-    'helium_preview_trigger_second_try',
-  };
-
-  void _handlePaywallEvent(HeliumPaywallEvent heliumPaywallEvent) {
-    final trigger = heliumPaywallEvent.triggerName;
-    if (_previewTriggers.contains(trigger)) return;
-    switch (heliumPaywallEvent.type) {
-      case 'paywallClose':
-        if (heliumPaywallEvent.isSecondTry != true) {
-          _currentEventHandlers = null;
-          _fallbackContext = null;
-          // onEntitled is intentionally NOT cleared here: the native onEntitled
-          // closure fires when the paywall closes after a purchase, i.e. right
-          // after this event. It is cleared once it fires (or on the next
-          // presentUpsell).
-          _currentOnPaywallUnavailable = null;
-          _currentOnPaywallSkip = null;
-        }
-        break;
-      case 'paywallSkipped':
-        _currentEventHandlers = null;
-        _fallbackContext = null;
-        _currentOnPaywallUnavailable = null;
-        break;
-      case 'paywallOpenFailed':
-        final unavailableReason = heliumPaywallEvent.paywallUnavailableReason;
-        if (unavailableReason == 'alreadyPresented' ||
-            unavailableReason == 'secondTryNoMatch') {
-          break;
-        }
-        _currentEventHandlers = null;
-        final onPaywallUnavailable = _currentOnPaywallUnavailable;
-        _currentOnPaywallUnavailable = null;
-        _currentOnPaywallSkip = null;
-        _currentOnEntitled = null;
-        _safeInvokeCallback(onPaywallUnavailable, 'onPaywallUnavailable');
-        if (trigger != null) {
-          // Dispatch on next frame to let event handling finish processing
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            _showFallbackSheet(trigger);
-          });
-        }
-        break;
+  void _handlePaywallUnavailable(dynamic args) {
+    final Map<String, dynamic> eventMap =
+        (args is Map) ? Map<String, dynamic>.from(args) : {};
+    final reason = eventMap['paywallUnavailableReason'];
+    if (reason == 'secondTryNoMatch') return;
+    final presentation = _presentationFor(eventMap);
+    if (reason == 'alreadyPresented') {
+      if (presentation != null) {
+        _paywallPresentations.remove(presentation.id);
+      }
+      return;
+    }
+    if (presentation != null) {
+      final onPaywallUnavailable = presentation.onPaywallUnavailable;
+      presentation.onPaywallUnavailable = null;
+      presentation.onEntitled = null;
+      presentation.onPaywallSkip = null;
+      _finishPresentation(presentation,
+          awaitingNativeEvent: _nativeReportsTerminalEventLate);
+      _fallbackContext = presentation.context ?? _fallbackContext;
+      _safeInvokeCallback(onPaywallUnavailable, 'onPaywallUnavailable');
+    }
+    final trigger = eventMap['triggerName'] as String?;
+    if (trigger != null) {
+      // Dispatch on next frame to let event handling finish processing
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _showFallbackSheet(trigger);
+      });
+      WidgetsBinding.instance.ensureVisualUpdate();
     }
   }
 
@@ -1090,7 +1169,7 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
     if (!Platform.isIOS && !Platform.isAndroid) {
       return UpsellViewForTrigger(trigger: trigger);
     }
-    _currentEventHandlers = eventHandlers;
+    _embeddedEventHandlers = eventHandlers;
     return UpsellWrapperWidget(
       trigger: trigger,
       customPaywallTraits: _convertBooleansToMarkers(customPaywallTraits),
@@ -1177,6 +1256,29 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
     }
     return value;
   }
+}
+
+class _PaywallPresentation {
+  final String id;
+  final String trigger;
+  BuildContext? context;
+  bool opened = false;
+  bool closed = false;
+  bool ended = false;
+  PaywallEventHandlers? eventHandlers;
+  void Function()? onEntitled;
+  void Function(PaywallSkippedEvent event)? onPaywallSkip;
+  void Function()? onPaywallUnavailable;
+
+  _PaywallPresentation({
+    required this.id,
+    required this.trigger,
+    this.context,
+    this.eventHandlers,
+    this.onEntitled,
+    this.onPaywallSkip,
+    this.onPaywallUnavailable,
+  });
 }
 
 /// A wrapper widget that handles the asynchronous fetching of download status
