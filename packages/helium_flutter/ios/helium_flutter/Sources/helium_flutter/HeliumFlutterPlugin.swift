@@ -56,6 +56,10 @@ public class HeliumFlutterPlugin: NSObject, FlutterPlugin {
 
     public func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
         switch call.method {
+        case "setWrapperSdkInfo":
+            let version = call.arguments as? String ?? "unknown"
+            HeliumSdkConfig.shared.setWrapperSdkInfo(sdk: "flutter", version: version)
+            result(nil)
         case "initialize":
             if let args = call.arguments as? [String: Any] {
                 let parsed = parseInitArgs(args)

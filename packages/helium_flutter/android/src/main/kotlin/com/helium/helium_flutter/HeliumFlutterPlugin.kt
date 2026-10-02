@@ -127,6 +127,11 @@ class HeliumFlutterPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
       "getPlatformVersion" -> {
         result.success("Android ${android.os.Build.VERSION.RELEASE}")
       }
+      "setWrapperSdkInfo" -> {
+        val version = call.arguments as? String ?: "unknown"
+        HeliumWrapperSdkConfig.setWrapperSdkInfo(sdk = "flutter", version = version)
+        result.success(null)
+      }
       "initialize" -> {
         val args = call.arguments as? Map<*, *>
         if (args == null) {
