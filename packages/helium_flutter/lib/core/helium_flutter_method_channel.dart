@@ -869,7 +869,11 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
     if (presentationId == null) {
       final handlers = _embeddedEventHandlers;
       if (handlers != null) {
-        _dispatchToHandlers(handlers, event);
+        try {
+          _dispatchToHandlers(handlers, event);
+        } catch (e) {
+          log('[Helium] Error in paywall event handler: $e');
+        }
       }
       return;
     }
