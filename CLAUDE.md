@@ -18,6 +18,7 @@ We also maintain an Expo/React Native SDK (`helium-expo`) that wraps the same na
 - **Never crash.** This SDK is distributed to apps with millions of users. Prefer defensive error handling (try/catch, backup logic) over letting exceptions propagate. A swallowed error is always better than a crash.
 - **Follow Dart/Flutter conventions.** Do not strictly follow native iOS/Android patterns nor Expo context if provided.
 - **Avoid using "fallback" in code and comments** unless referring to the Helium fallback paywall flow. This term has a specific meaning in this SDK.
+- **This repo is public — never include customer or internal data** in code, comments, commit messages, PR descriptions, or PR comments.
 
 ## Testing
 
