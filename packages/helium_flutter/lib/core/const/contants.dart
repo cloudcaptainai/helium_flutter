@@ -46,6 +46,7 @@ const String enableExternalWebCheckoutSuccessAndCancelMethodName =
     'enableExternalWebCheckoutSuccessAndCancel';
 const String disableExternalWebCheckoutMethodName = 'disableExternalWebCheckout';
 const String setAllowWebCheckoutWithoutUserIdMethodName = 'setAllowWebCheckoutWithoutUserId';
+const String setEnableWebApplePayReadinessMethodName = 'setEnableWebApplePayReadiness';
 const String hasActiveStripeEntitlementMethodName = 'hasActiveStripeEntitlement';
 const String hasActivePaddleEntitlementMethodName = 'hasActivePaddleEntitlement';
 const String createStripePortalSessionMethodName = 'createStripePortalSession';

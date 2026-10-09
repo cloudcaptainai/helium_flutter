@@ -197,6 +197,9 @@ class MockHeliumFlutterPlatform
   Future<void> setAllowWebCheckoutWithoutUserId(bool allow) async {}
 
   @override
+  Future<void> setEnableWebApplePayReadiness(bool enabled) async {}
+
+  @override
   Future<bool> hasActiveStripeEntitlement() async => false;
 
   @override
@@ -381,6 +384,10 @@ void main() {
   test(setAllowWebCheckoutWithoutUserIdMethodName, () {
     heliumFlutterPlugin.setAllowWebCheckoutWithoutUserId(true);
     heliumFlutterPlugin.setAllowWebCheckoutWithoutUserId(false);
+  });
+  test(setEnableWebApplePayReadinessMethodName, () {
+    heliumFlutterPlugin.setEnableWebApplePayReadiness(true);
+    heliumFlutterPlugin.setEnableWebApplePayReadiness(false);
   });
   test(hasActiveStripeEntitlementMethodName, () async {
     expect(await heliumFlutterPlugin.hasActiveStripeEntitlement(), false);

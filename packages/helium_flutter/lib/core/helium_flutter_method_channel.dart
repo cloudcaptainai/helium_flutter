@@ -702,6 +702,22 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
   }
 
   @override
+  Future<void> setEnableWebApplePayReadiness(bool enabled) async {
+    if (!Platform.isIOS) {
+      log('[Helium] setEnableWebApplePayReadiness is only available on iOS');
+      return;
+    }
+    try {
+      await methodChannel.invokeMethod<void>(
+        setEnableWebApplePayReadinessMethodName,
+        enabled,
+      );
+    } catch (e) {
+      log('[Helium] Failed to set enableWebApplePayReadiness: $e');
+    }
+  }
+
+  @override
   Future<bool> hasActiveStripeEntitlement() async {
     if (!Platform.isIOS) {
       log('[Helium] hasActiveStripeEntitlement is only available on iOS');

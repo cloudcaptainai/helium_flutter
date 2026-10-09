@@ -167,6 +167,10 @@ abstract class HeliumFlutterPlatform extends PlatformInterface {
   /// set via `overrideUserId`. iOS only; no-op on Android.
   Future<void> setAllowWebCheckoutWithoutUserId(bool allow);
 
+  /// Measure Apple Pay readiness at the external web checkout origin and
+  /// report it to Helium. iOS only; no-op on Android.
+  Future<void> setEnableWebApplePayReadiness(bool enabled);
+
   /// Returns `true` if the user has any active Stripe entitlement.
   /// iOS only; returns `false` on Android.
   Future<bool> hasActiveStripeEntitlement();
