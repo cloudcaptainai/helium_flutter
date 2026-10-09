@@ -12,6 +12,7 @@ import 'core/const.dart';
 class MockHeliumFlutterPlatform
     with MockPlatformInterfaceMixin
     implements HeliumFlutterPlatform {
+  final List<bool> setEnableWebApplePayReadinessValues = [];
   bool _isInitialized = false;
 
   @override
@@ -197,7 +198,9 @@ class MockHeliumFlutterPlatform
   Future<void> setAllowWebCheckoutWithoutUserId(bool allow) async {}
 
   @override
-  Future<void> setEnableWebApplePayReadiness(bool enabled) async {}
+  Future<void> setEnableWebApplePayReadiness(bool enabled) async {
+    setEnableWebApplePayReadinessValues.add(enabled);
+  }
 
   @override
   Future<bool> hasActiveStripeEntitlement() async => false;
@@ -385,9 +388,10 @@ void main() {
     heliumFlutterPlugin.setAllowWebCheckoutWithoutUserId(true);
     heliumFlutterPlugin.setAllowWebCheckoutWithoutUserId(false);
   });
-  test(setEnableWebApplePayReadinessMethodName, () {
-    heliumFlutterPlugin.setEnableWebApplePayReadiness(true);
-    heliumFlutterPlugin.setEnableWebApplePayReadiness(false);
+  test(setEnableWebApplePayReadinessMethodName, () async {
+    await heliumFlutterPlugin.setEnableWebApplePayReadiness(true);
+    await heliumFlutterPlugin.setEnableWebApplePayReadiness(false);
+    expect(fakePlatform.setEnableWebApplePayReadinessValues, [true, false]);
   });
   test(hasActiveStripeEntitlementMethodName, () async {
     expect(await heliumFlutterPlugin.hasActiveStripeEntitlement(), false);

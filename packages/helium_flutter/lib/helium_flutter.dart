@@ -416,10 +416,12 @@ class HeliumFlutter {
   /// The measurement is an optimization signal rather than a guarantee. It is
   /// taken in an offscreen web view owned by the app, not in the browser the
   /// user is handed off to, and the Wallet can change between the measurement
-  /// and checkout. The first launch after install delays the config request by
-  /// up to two seconds so the measurement can be reported; later launches
-  /// report the stored measurement immediately and re-measure in the
-  /// background. Nothing about presentation waits on it.
+  /// and checkout. The first foreground launch after install delays the config
+  /// request by up to two seconds so the measurement can be reported; later
+  /// launches report the stored measurement immediately and re-measure in the
+  /// background. A launch into the background skips the probe and the wait,
+  /// and measures once the app becomes active. Nothing about presentation
+  /// waits on it.
   ///
   /// Measured only when [enableExternalWebCheckout] is configured. Defaults to
   /// `true`. Set [enabled] to `false` to stop measuring; the launch request
