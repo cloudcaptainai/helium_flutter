@@ -407,27 +407,10 @@ class HeliumFlutter {
   Future<void> setAllowWebCheckoutWithoutUserId(bool allow) =>
       HeliumFlutterPlatform.instance.setAllowWebCheckoutWithoutUserId(allow);
 
-  /// Measures whether Apple Pay reports a card it can pay with at the origin
-  /// external web checkout is served from, and reports it to Helium so a
-  /// workflow can target on it. Call this before [initialize], and `await` it
-  /// to guarantee the setting is applied before [initialize] runs on the
-  /// native side; otherwise the first launch is already measured.
-  ///
-  /// The measurement is an optimization signal rather than a guarantee. It is
-  /// taken in an offscreen web view owned by the app, not in the browser the
-  /// user is handed off to, and the Wallet can change between the measurement
-  /// and checkout. The first foreground launch after install delays the config
-  /// request by up to two seconds so the measurement can be reported; later
-  /// launches report the stored measurement immediately and re-measure in the
-  /// background. A launch into the background skips the probe and the wait,
-  /// and measures once the app becomes active. Nothing about presentation
-  /// waits on it.
-  ///
-  /// Measured only when [enableExternalWebCheckout] is configured. Defaults to
-  /// `true`. Set [enabled] to `false` to stop measuring; the launch request
-  /// then reports `unknown:notMeasured`. Apps that declare `WKAppBoundDomains`
-  /// must list `bundles.clickthrough.to` for it to be measured; otherwise it
-  /// reports `unknown:probeFailed`.
+  /// Measures browser Apple Pay readiness for external web checkout and
+  /// reports it to Helium for targeting. Call before [initialize]. Defaults to
+  /// `true`; pass `false` to opt out. Apps that declare `WKAppBoundDomains`
+  /// must list `bundles.clickthrough.to` for the measurement to run.
   ///
   /// Currently only supported on iOS; a no-op on Android. Errors are logged
   /// internally and never thrown to the caller.
