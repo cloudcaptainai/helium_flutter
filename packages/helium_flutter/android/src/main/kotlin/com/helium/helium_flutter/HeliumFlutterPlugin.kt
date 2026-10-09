@@ -456,6 +456,7 @@ class HeliumFlutterPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
       "enableExternalWebCheckoutSuccessAndCancel",
       "disableExternalWebCheckout",
       "setAllowWebCheckoutWithoutUserId",
+      "setEnableWebApplePayReadiness",
       "createStripePortalSession",
       "createPaddlePortalSession",
       "getPaddleCustomerId",

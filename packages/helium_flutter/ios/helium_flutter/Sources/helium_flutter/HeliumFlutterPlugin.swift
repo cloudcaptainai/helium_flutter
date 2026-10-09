@@ -238,6 +238,13 @@ public class HeliumFlutterPlugin: NSObject, FlutterPlugin {
             let allow = call.arguments as? Bool ?? false
             Helium.config.allowWebCheckoutWithoutUserId = allow
             result("allowWebCheckoutWithoutUserId set!")
+        case "setEnableWebApplePayReadiness":
+            guard let enabled = call.arguments as? Bool else {
+                result(FlutterError(code: "BAD_ARGS", message: "enabled must be a Bool", details: nil))
+                return
+            }
+            Helium.config.enableWebApplePayReadiness = enabled
+            result("enableWebApplePayReadiness set!")
         case "hasActiveStripeEntitlement":
             Task {
                 let hasEntitlement = await Helium.entitlements.hasActiveStripeEntitlement()
