@@ -407,6 +407,16 @@ class HeliumFlutter {
   Future<void> setAllowWebCheckoutWithoutUserId(bool allow) =>
       HeliumFlutterPlatform.instance.setAllowWebCheckoutWithoutUserId(allow);
 
+  /// Measures browser Apple Pay readiness for external web checkout and
+  /// reports it to Helium for targeting. Call before [initialize]. Defaults to
+  /// `true`; pass `false` to opt out. Apps that declare `WKAppBoundDomains`
+  /// must list `bundles.clickthrough.to` for the measurement to run.
+  ///
+  /// Currently only supported on iOS; a no-op on Android. Errors are logged
+  /// internally and never thrown to the caller.
+  Future<void> setEnableWebApplePayReadiness(bool enabled) =>
+      HeliumFlutterPlatform.instance.setEnableWebApplePayReadiness(enabled);
+
   /// Returns `true` if the user has any active Stripe entitlement.
   /// Currently only supported on iOS; returns `false` on Android.
   Future<bool> hasActiveStripeEntitlement() =>

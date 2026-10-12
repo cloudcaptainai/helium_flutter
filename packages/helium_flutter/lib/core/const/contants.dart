@@ -1,5 +1,5 @@
 // SDK version - keep in sync with pubspec.yaml
-const String heliumFlutterSdkVersion = '3.3.14';
+const String heliumFlutterSdkVersion = '3.3.15';
 
 //Native view type
 const String upsellViewForTrigger = 'upsellViewForTrigger';
@@ -46,6 +46,7 @@ const String enableExternalWebCheckoutSuccessAndCancelMethodName =
     'enableExternalWebCheckoutSuccessAndCancel';
 const String disableExternalWebCheckoutMethodName = 'disableExternalWebCheckout';
 const String setAllowWebCheckoutWithoutUserIdMethodName = 'setAllowWebCheckoutWithoutUserId';
+const String setEnableWebApplePayReadinessMethodName = 'setEnableWebApplePayReadiness';
 const String hasActiveStripeEntitlementMethodName = 'hasActiveStripeEntitlement';
 const String hasActivePaddleEntitlementMethodName = 'hasActivePaddleEntitlement';
 const String createStripePortalSessionMethodName = 'createStripePortalSession';

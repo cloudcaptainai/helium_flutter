@@ -176,6 +176,8 @@ class MockHeliumFlutterPlatform
   @override
   Future<void> setAllowWebCheckoutWithoutUserId(bool allow) async {}
   @override
+  Future<void> setEnableWebApplePayReadiness(bool enabled) async {}
+  @override
   Future<bool> hasActiveStripeEntitlement() async => false;
   @override
   Future<bool> hasActivePaddleEntitlement() async => false;

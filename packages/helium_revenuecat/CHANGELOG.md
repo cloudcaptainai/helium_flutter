@@ -1,3 +1,6 @@
+## 3.3.15
+- Bumped to stay in sync with helium_flutter 3.3.15 (adds `setEnableWebApplePayReadiness`).
+
 ## 3.3.14
 - Updated helium-swift dependency to 4.13.0
 - Updated Helium Android dependency to 4.7.3
