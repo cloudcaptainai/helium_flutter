@@ -964,6 +964,7 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
           isSecondTry: isSecondTry,
           viewType: 'presented',
           paywallUnavailableReason: event.paywallUnavailableReason,
+          reason: event.reason,
           loadTimeTakenMS: event.loadTimeTakenMS,
           loadingBudgetMS: event.loadingBudgetMS,
         ));
@@ -999,6 +1000,7 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
           isSecondTry: isSecondTry,
           error: event.error ?? '',
           paywallUnavailableReason: event.paywallUnavailableReason ?? '',
+          reason: event.reason,
           loadTimeTakenMS: event.loadTimeTakenMS,
           loadingBudgetMS: event.loadingBudgetMS,
         ));

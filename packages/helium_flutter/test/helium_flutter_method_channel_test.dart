@@ -1424,4 +1424,87 @@ void main() {
 
     expect(types, ['paywallOpen']);
   });
+
+  testWidgets('onOpenFailed carries the server reason when native sends one',
+      (WidgetTester tester) async {
+    await pumpContext(tester);
+    await platform.initialize(apiKey: initializeValue.apiKey);
+    final failures = <PaywallOpenFailedEvent>[];
+    final anyEvents = <HeliumPaywallEvent>[];
+
+    await platform.presentUpsell(
+      context: context,
+      trigger: 'onboarding',
+      eventHandlers: PaywallEventHandlers(
+        onOpenFailed: failures.add,
+        onAnyEvent: anyEvents.add,
+      ),
+    );
+    await sendFromNative(MethodCall(onPaywallEventHandlerMethodName, {
+      'type': 'paywallOpenFailed',
+      'triggerName': 'onboarding',
+      'paywallUnavailableReason': 'triggerHasNoPaywall',
+      'reason': 'No live workflow targets this trigger.',
+      'presentationId': lastPresentationId,
+    }));
+
+    expect(failures.single.paywallUnavailableReason, 'triggerHasNoPaywall');
+    expect(failures.single.reason, 'No live workflow targets this trigger.');
+    expect(anyEvents.single.reason, 'No live workflow targets this trigger.');
+  });
+
+  testWidgets('onOpen carries the server reason for a fallback shown in its place',
+      (WidgetTester tester) async {
+    await pumpContext(tester);
+    await platform.initialize(apiKey: initializeValue.apiKey);
+    final opens = <PaywallOpenEvent>[];
+
+    await platform.presentUpsell(
+      context: context,
+      trigger: 'onboarding',
+      eventHandlers: PaywallEventHandlers(onOpen: opens.add),
+    );
+    await sendFromNative(MethodCall(onPaywallEventHandlerMethodName, {
+      'type': 'paywallOpen',
+      'triggerName': 'onboarding',
+      'paywallName': 'fallback-paywall',
+      'paywallUnavailableReason': 'triggerHasNoPaywall',
+      'reason': 'No live workflow targets this trigger.',
+      'presentationId': lastPresentationId,
+    }));
+
+    expect(opens.single.reason, 'No live workflow targets this trigger.');
+  });
+
+  testWidgets('the server reason is null when native omits it',
+      (WidgetTester tester) async {
+    await pumpContext(tester);
+    await platform.initialize(apiKey: initializeValue.apiKey);
+    final opens = <PaywallOpenEvent>[];
+    final failures = <PaywallOpenFailedEvent>[];
+
+    await platform.presentUpsell(
+      context: context,
+      trigger: 'onboarding',
+      eventHandlers: PaywallEventHandlers(
+        onOpen: opens.add,
+        onOpenFailed: failures.add,
+      ),
+    );
+    await sendFromNative(MethodCall(onPaywallEventHandlerMethodName, {
+      'type': 'paywallOpen',
+      'triggerName': 'onboarding',
+      'paywallName': 'test-paywall',
+      'presentationId': lastPresentationId,
+    }));
+    await sendFromNative(MethodCall(onPaywallEventHandlerMethodName, {
+      'type': 'paywallOpenFailed',
+      'triggerName': 'onboarding',
+      'paywallUnavailableReason': 'someError',
+      'presentationId': lastPresentationId,
+    }));
+
+    expect(opens.single.reason, isNull);
+    expect(failures.single.reason, isNull);
+  });
 }

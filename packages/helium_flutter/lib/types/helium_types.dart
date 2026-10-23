@@ -160,6 +160,11 @@ class PaywallOpenEvent {
   /// Set when a fallback was shown in place of the configured paywall.
   final String? paywallUnavailableReason;
 
+  /// The server's explanation of why [triggerName] resolved to no paywall.
+  /// Present only when [paywallUnavailableReason] is `triggerHasNoPaywall`
+  /// and the server supplied one.
+  final String? reason;
+
   /// Time the loading state was shown for, in milliseconds. Present when a
   /// loading state was used for this trigger.
   final int? loadTimeTakenMS;
@@ -173,6 +178,7 @@ class PaywallOpenEvent {
     required this.isSecondTry,
     this.viewType,
     this.paywallUnavailableReason,
+    this.reason,
     this.loadTimeTakenMS,
     this.loadingBudgetMS,
   });
@@ -229,6 +235,11 @@ class PaywallOpenFailedEvent {
   final String? paywallUnavailableReason;
   final bool isSecondTry;
 
+  /// The server's explanation of why [triggerName] resolved to no paywall.
+  /// Present only when [paywallUnavailableReason] is `triggerHasNoPaywall`
+  /// and the server supplied one.
+  final String? reason;
+
   /// Time the loading state was shown for before the failure, in milliseconds.
   final int? loadTimeTakenMS;
 
@@ -241,6 +252,7 @@ class PaywallOpenFailedEvent {
     required this.error,
     required this.paywallUnavailableReason,
     required this.isSecondTry,
+    this.reason,
     this.loadTimeTakenMS,
     this.loadingBudgetMS,
   });
@@ -347,6 +359,12 @@ class HeliumPaywallEvent {
   bool? get isSecondTry => _get<bool>('isSecondTry');
   String? get error => _get<String>('error');
   String? get paywallUnavailableReason => _get<String>('paywallUnavailableReason');
+
+  /// The server's explanation of why the trigger resolved to no paywall.
+  /// Present on `paywallOpen` / `paywallOpenFailed` when
+  /// [paywallUnavailableReason] is `triggerHasNoPaywall` and the server
+  /// supplied one.
+  String? get reason => _get<String>('reason');
   String? get customPaywallActionName => _get<String>('actionName');
   Map<String, dynamic>? get customPaywallActionParams => getSafeData(_data['params']);
   /// Unix timestamp in seconds
