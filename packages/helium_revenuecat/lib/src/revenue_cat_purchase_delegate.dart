@@ -107,8 +107,13 @@ class RevenueCatPurchaseDelegate extends HeliumPurchaseDelegate
       }
 
       final purchaseResult = await Purchases.purchase(PurchaseParams.storeProduct(products.first));
-      final transactionId = purchaseResult.storeTransaction.transactionIdentifier;
-      return _evaluatePurchaseResult(purchaseResult.customerInfo, productId, transactionId: transactionId);
+      final transaction = purchaseResult.storeTransaction;
+      return _evaluatePurchaseResult(
+        purchaseResult.customerInfo,
+        productId,
+        transactionId: transaction.transactionIdentifier,
+        transactionProductId: transaction.productIdentifier,
+      );
     } on PlatformException catch (e) {
       return _handlePlatformException(e);
     } catch (e) {
@@ -199,14 +204,18 @@ class RevenueCatPurchaseDelegate extends HeliumPurchaseDelegate
 
   /// Evaluates customer info to determine purchase result.
   HeliumPurchaseResult _evaluatePurchaseResult(
-      CustomerInfo customerInfo, String productId, {String? transactionId}) {
+      CustomerInfo customerInfo, String productId,
+      {String? transactionId, String? transactionProductId}) {
     if (!_isProductActive(customerInfo, productId)) {
       log('[Helium] Purchase succeeded but product not immediately active in customerInfo: $productId');
     }
+    // A same-group plan change on iOS can return the existing transaction for a different
+    // product, so report the transaction's own product to keep the pair consistent.
+    final hasTransactionProduct = transactionProductId != null && transactionProductId.isNotEmpty;
     return HeliumPurchaseResult(
       status: HeliumTransactionStatus.purchased,
-      transactionId: transactionId,
-      productId: productId,
+      transactionId: (transactionId == null || transactionId.isEmpty) ? null : transactionId,
+      productId: hasTransactionProduct ? transactionProductId : productId,
     );
   }
 
