@@ -1,5 +1,6 @@
 ## 3.3.16
 - Updated helium-swift dependency to 4.15.0
+- Updated Helium Android dependency to 4.8.0
 
 ## 3.3.15
 - Added `setEnableWebApplePayReadiness` (iOS only) to opt out of the browser Apple Pay readiness measurement for external web checkout
