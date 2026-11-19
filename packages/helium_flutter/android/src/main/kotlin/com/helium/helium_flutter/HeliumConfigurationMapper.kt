@@ -2,6 +2,11 @@ package com.helium.helium_flutter
 
 import com.tryhelium.paywall.core.HeliumEnvironment
 import com.tryhelium.paywall.core.HeliumUserTraits
+import com.tryhelium.paywall.core.HeliumUserTraitsArgument
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+import java.util.TimeZone
 import com.tryhelium.paywall.core.HeliumUserTraits.Companion.create
 
 internal fun String?.toEnvironment(): HeliumEnvironment {
@@ -52,4 +57,27 @@ internal fun convertToHeliumUserTraits(input: Map<String, Any>?): HeliumUserTrai
     if (input == null) return null
     val convertedInput = convertMarkersToBooleans(input) ?: return null
     return convertedInput.create()
+}
+
+internal fun convertHeliumUserTraitsToMap(traits: HeliumUserTraits): Map<String, Any> {
+    return traits.traits.mapValues { (_, value) -> convertTraitArgumentToValue(value) }
+}
+
+private fun convertTraitArgumentToValue(argument: HeliumUserTraitsArgument): Any {
+    return when (argument) {
+        is HeliumUserTraitsArgument.StringParam -> argument.value
+        is HeliumUserTraitsArgument.IntParam -> argument.value
+        is HeliumUserTraitsArgument.LongParam -> argument.value
+        is HeliumUserTraitsArgument.DoubleParam -> argument.value
+        is HeliumUserTraitsArgument.BooleanParam -> argument.value
+        is HeliumUserTraitsArgument.DateParam -> formatIso8601(argument.value)
+        is HeliumUserTraitsArgument.Array -> argument.items.map { convertTraitArgumentToValue(it) }
+        is HeliumUserTraitsArgument.Complex -> argument.properties.mapValues { (_, value) -> convertTraitArgumentToValue(value) }
+    }
+}
+
+private fun formatIso8601(date: Date): String {
+    val formatter = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US)
+    formatter.timeZone = TimeZone.getTimeZone("UTC")
+    return formatter.format(date)
 }

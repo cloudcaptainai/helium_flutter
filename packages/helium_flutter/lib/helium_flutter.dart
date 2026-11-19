@@ -300,6 +300,21 @@ class HeliumFlutter {
       HeliumFlutterPlatform.instance
           .setThirdPartyAnalyticsAnonymousId(anonymousId);
 
+  /// Replaces all custom user traits with [traits]. Can be called any time,
+  /// including after [initialize]. Traits can be used for paywall targeting
+  /// and personalization.
+  Future<void> setUserTraits(Map<String, dynamic> traits) =>
+      HeliumFlutterPlatform.instance.setUserTraits(traits);
+
+  /// Merges [traits] into the existing custom user traits. Keys in [traits]
+  /// overwrite existing keys; other existing traits are kept.
+  Future<void> addUserTraits(Map<String, dynamic> traits) =>
+      HeliumFlutterPlatform.instance.addUserTraits(traits);
+
+  /// Returns the current custom user traits, or an empty map if none are set.
+  Future<Map<String, dynamic>> getUserTraits() =>
+      HeliumFlutterPlatform.instance.getUserTraits();
+
   /// Set consumable product IDs for Android.
   /// These IDs will be used to identify consumable products in the Play Store
   /// and this is only respected if no custom purchaseDelegate is supplied.

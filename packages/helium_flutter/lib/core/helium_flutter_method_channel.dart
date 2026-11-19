@@ -597,6 +597,56 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
   }
 
   @override
+  Future<void> setUserTraits(Map<String, dynamic> traits) async {
+    try {
+      await methodChannel.invokeMethod<void>(
+        setUserTraitsMethodName,
+        _convertBooleansToMarkers(traits),
+      );
+    } catch (e) {
+      log('[Helium] Failed to set user traits: $e');
+    }
+  }
+
+  @override
+  Future<void> addUserTraits(Map<String, dynamic> traits) async {
+    try {
+      await methodChannel.invokeMethod<void>(
+        addUserTraitsMethodName,
+        _convertBooleansToMarkers(traits),
+      );
+    } catch (e) {
+      log('[Helium] Failed to add user traits: $e');
+    }
+  }
+
+  @override
+  Future<Map<String, dynamic>> getUserTraits() async {
+    try {
+      final result = await methodChannel.invokeMethod<Map<dynamic, dynamic>>(
+        getUserTraitsMethodName,
+      );
+      if (result == null) return {};
+      return _deepCastMap(result);
+    } catch (e) {
+      log('[Helium] Failed to get user traits: $e');
+      return {};
+    }
+  }
+
+  Map<String, dynamic> _deepCastMap(Map<dynamic, dynamic> input) {
+    return input.map(
+      (key, value) => MapEntry(key.toString(), _deepCastValue(value)),
+    );
+  }
+
+  dynamic _deepCastValue(dynamic value) {
+    if (value is Map) return _deepCastMap(value);
+    if (value is List) return value.map(_deepCastValue).toList();
+    return value;
+  }
+
+  @override
   void setAndroidConsumableProductIds(Set<String> productIds) {
     if (!Platform.isAndroid) return;
     methodChannel.invokeMethod<void>(

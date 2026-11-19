@@ -204,6 +204,16 @@ public class HeliumFlutterPlugin: NSObject, FlutterPlugin {
         case "setThirdPartyAnalyticsAnonymousId":
             Helium.identify.thirdPartyAnalyticsAnonymousId = call.arguments as? String
             result("Third-party analytics anonymous ID set!")
+        case "setUserTraits":
+            let traits = convertMarkersToBooleans(call.arguments as? [String: Any]) ?? [:]
+            Helium.identify.setUserTraits(traits)
+            result("User traits set!")
+        case "addUserTraits":
+            let traits = convertMarkersToBooleans(call.arguments as? [String: Any]) ?? [:]
+            Helium.identify.addUserTraits(traits)
+            result("User traits added!")
+        case "getUserTraits":
+            result(Helium.identify.getUserTraits())
         case "hideAllUpsells":
             Helium.shared.hideAllPaywalls()
             result(true)

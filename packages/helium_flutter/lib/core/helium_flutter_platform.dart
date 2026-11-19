@@ -136,6 +136,12 @@ abstract class HeliumFlutterPlatform extends PlatformInterface {
 
   Future<void> setThirdPartyAnalyticsAnonymousId(String? anonymousId);
 
+  Future<void> setUserTraits(Map<String, dynamic> traits);
+
+  Future<void> addUserTraits(Map<String, dynamic> traits);
+
+  Future<Map<String, dynamic>> getUserTraits();
+
   /// Set consumable product IDs for Android.
   /// These IDs will be used to identify consumable products in the Play Store
   /// and this is only respected if no custom purchaseDelegate is supplied.

@@ -43,6 +43,12 @@ void main() {
           return true;
         case hideAllUpsellsMethodName:
           return true;
+        case getUserTraitsMethodName:
+          return <Object?, Object?>{
+            'plan': 'pro',
+            'nested': <Object?, Object?>{'count': 3, 'flag': true},
+            'tags': <Object?>['a', 'b'],
+          };
         case overrideUserIdMethodName:
           return methodCall.arguments['newUserId'];
         case paywallsLoadedMethodName:
@@ -100,6 +106,33 @@ void main() {
   });
   test(hideUpsellMethodName, () async {
     expect(await platform.hideUpsell(), true);
+  });
+  test(getUserTraitsMethodName, () async {
+    final traits = await platform.getUserTraits();
+    expect(traits, {
+      'plan': 'pro',
+      'nested': {'count': 3, 'flag': true},
+      'tags': ['a', 'b'],
+    });
+    expect(traits['nested'], isA<Map<String, dynamic>>());
+  });
+  test(setUserTraitsMethodName, () async {
+    final calls = <MethodCall>[];
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(channel, (MethodCall methodCall) async {
+      calls.add(methodCall);
+      return null;
+    });
+
+    await platform.setUserTraits({'isPremium': true, 'skip': null});
+    await platform.addUserTraits({'level': 2});
+
+    expect(calls.map((c) => c.method), [
+      setUserTraitsMethodName,
+      addUserTraitsMethodName,
+    ]);
+    expect(calls[0].arguments, {'isPremium': '__helium_flutter_bool_true__'});
+    expect(calls[1].arguments, {'level': 2});
   });
   test(hideAllUpsellsMethodName, () async {
     expect(await platform.hideAllUpsells(), true);

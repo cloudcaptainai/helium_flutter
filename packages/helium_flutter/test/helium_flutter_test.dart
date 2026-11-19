@@ -172,6 +172,15 @@ class MockHeliumFlutterPlatform
   Future<void> setThirdPartyAnalyticsAnonymousId(String? anonymousId) async {}
 
   @override
+  Future<void> setUserTraits(Map<String, dynamic> traits) async {}
+
+  @override
+  Future<void> addUserTraits(Map<String, dynamic> traits) async {}
+
+  @override
+  Future<Map<String, dynamic>> getUserTraits() async => {'plan': 'pro'};
+
+  @override
   void setAndroidConsumableProductIds(Set<String> productIds) {}
 
   @override
