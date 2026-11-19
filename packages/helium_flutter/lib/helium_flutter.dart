@@ -305,7 +305,7 @@ class HeliumFlutter {
   ///
   /// Traits apply to analytics right away. Paywall targeting uses the traits
   /// present when Helium initializes, so to target on updated traits, call
-  /// `resetHelium(clearUserTraits: false)` and then [initialize] again without
+  /// `await resetHelium(clearUserTraits: false)` and then [initialize] again without
   /// passing outdated `customUserTraits`.
   Future<void> setUserTraits(Map<String, dynamic> traits) =>
       HeliumFlutterPlatform.instance.setUserTraits(traits);
