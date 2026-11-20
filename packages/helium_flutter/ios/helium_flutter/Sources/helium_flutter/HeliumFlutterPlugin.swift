@@ -106,6 +106,13 @@ public class HeliumFlutterPlugin: NSObject, FlutterPlugin {
         case "clearCustomUserId":
             Helium.identify.userId = nil
             result("Custom user id cleared!")
+        case "setCustomUserId":
+            if let newUserId = call.arguments as? String {
+                Helium.identify.userId = newUserId
+                result("Custom user id set!")
+            } else {
+                result(FlutterError(code: "BAD_ARGS", message: "newUserId not provided", details: nil))
+            }
         case "fallbackOpenEvent":
             if let args = call.arguments as? [String: Any] {
                 let trigger = args["trigger"] as? String
@@ -204,6 +211,16 @@ public class HeliumFlutterPlugin: NSObject, FlutterPlugin {
         case "setThirdPartyAnalyticsAnonymousId":
             Helium.identify.thirdPartyAnalyticsAnonymousId = call.arguments as? String
             result("Third-party analytics anonymous ID set!")
+        case "setUserTraits":
+            let traits = convertMarkersToBooleans(call.arguments as? [String: Any]) ?? [:]
+            Helium.identify.setUserTraits(traits)
+            result("User traits set!")
+        case "addUserTraits":
+            let traits = convertMarkersToBooleans(call.arguments as? [String: Any]) ?? [:]
+            Helium.identify.addUserTraits(traits)
+            result("User traits added!")
+        case "getUserTraits":
+            result(Helium.identify.getUserTraits())
         case "hideAllUpsells":
             Helium.shared.hideAllPaywalls()
             result(true)

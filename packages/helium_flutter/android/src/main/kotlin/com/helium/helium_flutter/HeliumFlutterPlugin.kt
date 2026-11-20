@@ -25,6 +25,7 @@ import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import com.helium.helium_flutter.toEnvironment
 import com.helium.helium_flutter.convertToHeliumUserTraits
+import com.helium.helium_flutter.convertHeliumUserTraitsToMap
 import com.helium.helium_flutter.CustomPaywallDelegate
 import com.tryhelium.paywall.core.Helium
 import com.tryhelium.paywall.core.event.HeliumEvent
@@ -277,6 +278,15 @@ class HeliumFlutterPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
         Helium.identity.userId = null
         result.success("Custom user id cleared!")
       }
+      "setCustomUserId" -> {
+        val newUserId = call.arguments as? String
+        if (newUserId == null) {
+          result.error("BAD_ARGS", "newUserId not provided", null)
+          return
+        }
+        Helium.identity.userId = newUserId
+        result.success("Custom user id set!")
+      }
       "fallbackOpenEvent" -> {
         result.notImplemented()
       }
@@ -445,6 +455,21 @@ class HeliumFlutterPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
       "setThirdPartyAnalyticsAnonymousId" -> {
         Helium.identity.thirdPartyAnalyticsAnonymousId = call.arguments as? String
         result.success("Third-party analytics anonymous ID set!")
+      }
+      "setUserTraits" -> {
+        @Suppress("UNCHECKED_CAST")
+        val traitsMap = call.arguments as? Map<String, Any>
+        Helium.identity.setUserTraits(convertToHeliumUserTraits(traitsMap) ?: HeliumUserTraits(emptyMap()))
+        result.success("User traits set!")
+      }
+      "addUserTraits" -> {
+        @Suppress("UNCHECKED_CAST")
+        val traitsMap = call.arguments as? Map<String, Any>
+        convertToHeliumUserTraits(traitsMap)?.let { Helium.identity.addUserTraits(it) }
+        result.success("User traits added!")
+      }
+      "getUserTraits" -> {
+        result.success(convertHeliumUserTraitsToMap(Helium.identity.getUserTraits()))
       }
       "setAndroidConsumableProductIds" -> {
         @Suppress("UNCHECKED_CAST")

@@ -98,6 +98,8 @@ abstract class HeliumFlutterPlatform extends PlatformInterface {
 
   Future<void> clearCustomUserId();
 
+  Future<void> setCustomUserId(String newUserId);
+
   Future<PaywallInfo?> getPaywallInfo(String trigger);
 
   Future<bool> handleDeepLink(String uri);
@@ -136,6 +138,12 @@ abstract class HeliumFlutterPlatform extends PlatformInterface {
 
   Future<void> setThirdPartyAnalyticsAnonymousId(String? anonymousId);
 
+  Future<void> setUserTraits(Map<String, dynamic> traits);
+
+  Future<void> addUserTraits(Map<String, dynamic> traits);
+
+  Future<Map<String, dynamic>> getUserTraits();
+
   /// Set consumable product IDs for Android.
   /// These IDs will be used to identify consumable products in the Play Store
   /// and this is only respected if no custom purchaseDelegate is supplied.
@@ -164,7 +172,7 @@ abstract class HeliumFlutterPlatform extends PlatformInterface {
   Future<void> disableExternalWebCheckout();
 
   /// Allow Web Checkout paywalls to show even when no custom user ID has been
-  /// set via `overrideUserId`. iOS only; no-op on Android.
+  /// set via `setCustomUserId`. iOS only; no-op on Android.
   Future<void> setAllowWebCheckoutWithoutUserId(bool allow);
 
   /// Measure Apple Pay readiness at the external web checkout origin and

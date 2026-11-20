@@ -93,6 +93,12 @@ class MockHeliumFlutterPlatform
   }
 
   @override
+  Future<void> setCustomUserId(String newUserId) async {
+    calls.add('setCustomUserId');
+    callArgs['setCustomUserId'] = {'newUserId': newUserId};
+  }
+
+  @override
   Future<String?> getHeliumUserId() async => 'user_id';
   @override
   Future<bool> hideUpsell() async => true;
@@ -152,6 +158,12 @@ class MockHeliumFlutterPlatform
   void setRevenueCatAppUserId(String rcAppUserId) {}
   @override
   Future<void> setThirdPartyAnalyticsAnonymousId(String? anonymousId) async {}
+  @override
+  Future<void> setUserTraits(Map<String, dynamic> traits) async {}
+  @override
+  Future<void> addUserTraits(Map<String, dynamic> traits) async {}
+  @override
+  Future<Map<String, dynamic>> getUserTraits() async => {};
   @override
   void setAndroidConsumableProductIds(Set<String> productIds) {}
   @override
@@ -382,12 +394,12 @@ void main() {
   });
 
   group('setUserIdAndSyncStripeIfNeeded (non-iOS)', () {
-    test('falls back to overrideUserId', () {
+    test('sets the custom user ID', () {
       HeliumStripe.setUserIdAndSyncStripeIfNeeded('user-456');
 
-      expect(mockPlatform.calls, ['overrideUserId']);
+      expect(mockPlatform.calls, ['setCustomUserId']);
       expect(
-          mockPlatform.callArgs['overrideUserId']!['newUserId'], 'user-456');
+          mockPlatform.callArgs['setCustomUserId']!['newUserId'], 'user-456');
     });
   });
 }

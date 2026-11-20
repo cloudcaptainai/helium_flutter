@@ -121,10 +121,10 @@ class HeliumStripe {
 
   /// Sets the user ID and syncs Stripe entitlements if needed.
   ///
-  /// On non-iOS platforms, falls back to [HeliumFlutter.overrideUserId].
+  /// On non-iOS platforms, only sets the user ID via [HeliumFlutter.setCustomUserId].
   static void setUserIdAndSyncStripeIfNeeded(String userId) {
     if (!_isIOS) {
-      HeliumFlutter().overrideUserId(newUserId: userId);
+      HeliumFlutter().setCustomUserId(userId);
       return;
     }
     _channel.invokeMethod('setUserIdAndSyncStripeIfNeeded', userId);

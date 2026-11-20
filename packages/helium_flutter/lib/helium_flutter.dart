@@ -102,6 +102,7 @@ class HeliumFlutter {
       HeliumFlutterPlatform.instance.hideAllUpsells();
 
   ///Overrides user id to given [newUserId]
+  @Deprecated('Use setCustomUserId, and setUserTraits for traits, instead.')
   Future<String?> overrideUserId({
     required String newUserId,
     Map<String, dynamic>? traits,
@@ -111,7 +112,12 @@ class HeliumFlutter {
         traits: traits,
       );
 
-  /// Clears the custom user ID previously set via [overrideUserId], reverting
+  /// Sets a custom user ID for the current user. Use [clearCustomUserId] to
+  /// revert to Helium's anonymous user ID.
+  Future<void> setCustomUserId(String newUserId) =>
+      HeliumFlutterPlatform.instance.setCustomUserId(newUserId);
+
+  /// Clears the custom user ID previously set via [setCustomUserId], reverting
   /// to Helium's anonymous user ID. Use when a user signs out.
   ///
   /// Note: [resetHelium] does not clear the custom user ID.
@@ -300,6 +306,26 @@ class HeliumFlutter {
       HeliumFlutterPlatform.instance
           .setThirdPartyAnalyticsAnonymousId(anonymousId);
 
+  /// Replaces all custom user traits with [traits]. Can be called any time,
+  /// including after [initialize].
+  ///
+  /// Traits apply to analytics right away. Paywall targeting uses the traits
+  /// present when Helium initializes, so to target on updated traits, call
+  /// `await resetHelium(clearUserTraits: false)` and then [initialize] again without
+  /// passing outdated `customUserTraits`.
+  Future<void> setUserTraits(Map<String, dynamic> traits) =>
+      HeliumFlutterPlatform.instance.setUserTraits(traits);
+
+  /// Merges [traits] into the existing custom user traits. Keys in [traits]
+  /// overwrite existing keys; other existing traits are kept. See
+  /// [setUserTraits] for how traits affect paywall targeting.
+  Future<void> addUserTraits(Map<String, dynamic> traits) =>
+      HeliumFlutterPlatform.instance.addUserTraits(traits);
+
+  /// Returns the current custom user traits, or an empty map if none are set.
+  Future<Map<String, dynamic>> getUserTraits() =>
+      HeliumFlutterPlatform.instance.getUserTraits();
+
   /// Set consumable product IDs for Android.
   /// These IDs will be used to identify consumable products in the Play Store
   /// and this is only respected if no custom purchaseDelegate is supplied.
@@ -388,18 +414,18 @@ class HeliumFlutter {
       HeliumFlutterPlatform.instance.disableExternalWebCheckout();
 
   /// Allows Web Checkout paywalls (Paddle/Stripe) to show even when no custom
-  /// user ID has been set via [overrideUserId].
+  /// user ID has been set via [setCustomUserId].
   ///
   /// By default, paywalls with Paddle or Stripe products will not show if no
   /// user ID is set, and your fallback paywall (if provided) will show
   /// instead. Set [allow] to `true` for purchase-before-signup flows — once
-  /// [overrideUserId] is called later, Helium will automatically link the
+  /// [setCustomUserId] is called later, Helium will automatically link the
   /// Paddle/Stripe customer to that user ID.
   ///
   /// **Warning:** Use with caution. If the user purchases via web checkout
   /// and your app never sets a user ID (or they uninstall before you do), the
   /// purchase may be unrecoverable for that user. Only enable this if your
-  /// app has a clear path for the user to set [overrideUserId] post-purchase.
+  /// app has a clear path for the user to call [setCustomUserId] post-purchase.
   ///
   /// Defaults to `false` on the native side. Currently only supported on iOS;
   /// a no-op on Android. Errors are logged internally and never thrown to the

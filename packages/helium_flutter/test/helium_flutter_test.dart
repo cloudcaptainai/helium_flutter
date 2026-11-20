@@ -85,6 +85,11 @@ class MockHeliumFlutterPlatform
   }
 
   @override
+  Future<void> setCustomUserId(String newUserId) {
+    return Future.value();
+  }
+
+  @override
   Future<bool> paywallsLoaded() {
     return Future.value(true);
   }
@@ -170,6 +175,15 @@ class MockHeliumFlutterPlatform
 
   @override
   Future<void> setThirdPartyAnalyticsAnonymousId(String? anonymousId) async {}
+
+  @override
+  Future<void> setUserTraits(Map<String, dynamic> traits) async {}
+
+  @override
+  Future<void> addUserTraits(Map<String, dynamic> traits) async {}
+
+  @override
+  Future<Map<String, dynamic>> getUserTraits() async => {'plan': 'pro'};
 
   @override
   void setAndroidConsumableProductIds(Set<String> productIds) {}
@@ -295,12 +309,17 @@ void main() {
   });
   test(overrideUserIdMethodName, () async {
     expect(
+      // ignore: deprecated_member_use_from_same_package
       await heliumFlutterPlugin.overrideUserId(
         newUserId: 'new_user_id',
         traits: initializeValue.customUserTraits,
       ),
       'new_user_id',
     );
+  });
+  test(setCustomUserIdMethodName, () async {
+    // Completes without throwing.
+    await heliumFlutterPlugin.setCustomUserId('new_user_id');
   });
   test(clearCustomUserIdMethodName, () async {
     // Completes without throwing.
