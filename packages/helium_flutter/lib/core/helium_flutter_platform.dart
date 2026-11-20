@@ -172,7 +172,7 @@ abstract class HeliumFlutterPlatform extends PlatformInterface {
   Future<void> disableExternalWebCheckout();
 
   /// Allow Web Checkout paywalls to show even when no custom user ID has been
-  /// set via `overrideUserId`. iOS only; no-op on Android.
+  /// set via `setCustomUserId`. iOS only; no-op on Android.
   Future<void> setAllowWebCheckoutWithoutUserId(bool allow);
 
   /// Measure Apple Pay readiness at the external web checkout origin and

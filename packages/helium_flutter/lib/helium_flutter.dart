@@ -414,18 +414,18 @@ class HeliumFlutter {
       HeliumFlutterPlatform.instance.disableExternalWebCheckout();
 
   /// Allows Web Checkout paywalls (Paddle/Stripe) to show even when no custom
-  /// user ID has been set via [overrideUserId].
+  /// user ID has been set via [setCustomUserId].
   ///
   /// By default, paywalls with Paddle or Stripe products will not show if no
   /// user ID is set, and your fallback paywall (if provided) will show
   /// instead. Set [allow] to `true` for purchase-before-signup flows — once
-  /// [overrideUserId] is called later, Helium will automatically link the
+  /// [setCustomUserId] is called later, Helium will automatically link the
   /// Paddle/Stripe customer to that user ID.
   ///
   /// **Warning:** Use with caution. If the user purchases via web checkout
   /// and your app never sets a user ID (or they uninstall before you do), the
   /// purchase may be unrecoverable for that user. Only enable this if your
-  /// app has a clear path for the user to set [overrideUserId] post-purchase.
+  /// app has a clear path for the user to call [setCustomUserId] post-purchase.
   ///
   /// Defaults to `false` on the native side. Currently only supported on iOS;
   /// a no-op on Android. Errors are logged internally and never thrown to the
