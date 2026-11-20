@@ -278,6 +278,15 @@ class HeliumFlutterPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
         Helium.identity.userId = null
         result.success("Custom user id cleared!")
       }
+      "setCustomUserId" -> {
+        val newUserId = call.arguments as? String
+        if (newUserId == null) {
+          result.error("BAD_ARGS", "newUserId not provided", null)
+          return
+        }
+        Helium.identity.userId = newUserId
+        result.success("Custom user id set!")
+      }
       "fallbackOpenEvent" -> {
         result.notImplemented()
       }

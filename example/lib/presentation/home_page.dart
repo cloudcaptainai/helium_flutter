@@ -37,7 +37,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<void> _setRandomUserId() async {
-    await _heliumFlutterPlugin.overrideUserId(newUserId: _randomUuid());
+    await _heliumFlutterPlugin.setCustomUserId(_randomUuid());
     await _refreshHeliumUserId();
   }
 

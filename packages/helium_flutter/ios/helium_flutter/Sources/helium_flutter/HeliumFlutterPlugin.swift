@@ -106,6 +106,13 @@ public class HeliumFlutterPlugin: NSObject, FlutterPlugin {
         case "clearCustomUserId":
             Helium.identify.userId = nil
             result("Custom user id cleared!")
+        case "setCustomUserId":
+            if let newUserId = call.arguments as? String {
+                Helium.identify.userId = newUserId
+                result("Custom user id set!")
+            } else {
+                result(FlutterError(code: "BAD_ARGS", message: "newUserId not provided", details: nil))
+            }
         case "fallbackOpenEvent":
             if let args = call.arguments as? [String: Any] {
                 let trigger = args["trigger"] as? String

@@ -322,6 +322,18 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
   }
 
   @override
+  Future<void> setCustomUserId(String newUserId) async {
+    try {
+      await methodChannel.invokeMethod<void>(
+        setCustomUserIdMethodName,
+        newUserId,
+      );
+    } catch (e) {
+      log('[Helium] Failed to set custom user ID: $e');
+    }
+  }
+
+  @override
   Future<bool> paywallsLoaded() async {
     final result = await methodChannel.invokeMethod<bool?>(
       paywallsLoadedMethodName,

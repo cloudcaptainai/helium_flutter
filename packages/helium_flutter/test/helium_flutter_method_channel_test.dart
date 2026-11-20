@@ -116,6 +116,19 @@ void main() {
     });
     expect(traits['nested'], isA<Map<String, dynamic>>());
   });
+  test(setCustomUserIdMethodName, () async {
+    final calls = <MethodCall>[];
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(channel, (MethodCall methodCall) async {
+      calls.add(methodCall);
+      return null;
+    });
+
+    await platform.setCustomUserId('new_user_id');
+
+    expect(calls.single.method, setCustomUserIdMethodName);
+    expect(calls.single.arguments, 'new_user_id');
+  });
   test(setUserTraitsMethodName, () async {
     final calls = <MethodCall>[];
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger

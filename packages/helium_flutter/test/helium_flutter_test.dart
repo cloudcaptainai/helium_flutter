@@ -85,6 +85,11 @@ class MockHeliumFlutterPlatform
   }
 
   @override
+  Future<void> setCustomUserId(String newUserId) {
+    return Future.value();
+  }
+
+  @override
   Future<bool> paywallsLoaded() {
     return Future.value(true);
   }
@@ -304,12 +309,17 @@ void main() {
   });
   test(overrideUserIdMethodName, () async {
     expect(
+      // ignore: deprecated_member_use_from_same_package
       await heliumFlutterPlugin.overrideUserId(
         newUserId: 'new_user_id',
         traits: initializeValue.customUserTraits,
       ),
       'new_user_id',
     );
+  });
+  test(setCustomUserIdMethodName, () async {
+    // Completes without throwing.
+    await heliumFlutterPlugin.setCustomUserId('new_user_id');
   });
   test(clearCustomUserIdMethodName, () async {
     // Completes without throwing.

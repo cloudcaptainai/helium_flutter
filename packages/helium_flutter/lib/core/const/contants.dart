@@ -21,6 +21,7 @@ const String getHeliumUserIdMethodName = 'getHeliumUserId';
 const String hideUpsellMethodName = 'hideUpsell';
 const String overrideUserIdMethodName = 'overrideUserId';
 const String clearCustomUserIdMethodName = 'clearCustomUserId';
+const String setCustomUserIdMethodName = 'setCustomUserId';
 const String paywallsLoadedMethodName = 'paywallsLoaded';
 const String presentUpsellMethodName = 'presentUpsell';
 const String fallbackOpenEventMethodName = 'fallbackOpenEvent';

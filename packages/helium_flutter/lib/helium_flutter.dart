@@ -102,6 +102,7 @@ class HeliumFlutter {
       HeliumFlutterPlatform.instance.hideAllUpsells();
 
   ///Overrides user id to given [newUserId]
+  @Deprecated('Use setCustomUserId, and setUserTraits for traits, instead.')
   Future<String?> overrideUserId({
     required String newUserId,
     Map<String, dynamic>? traits,
@@ -111,7 +112,12 @@ class HeliumFlutter {
         traits: traits,
       );
 
-  /// Clears the custom user ID previously set via [overrideUserId], reverting
+  /// Sets a custom user ID for the current user. Use [clearCustomUserId] to
+  /// revert to Helium's anonymous user ID.
+  Future<void> setCustomUserId(String newUserId) =>
+      HeliumFlutterPlatform.instance.setCustomUserId(newUserId);
+
+  /// Clears the custom user ID previously set via [setCustomUserId], reverting
   /// to Helium's anonymous user ID. Use when a user signs out.
   ///
   /// Note: [resetHelium] does not clear the custom user ID.

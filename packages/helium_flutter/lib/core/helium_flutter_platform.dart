@@ -98,6 +98,8 @@ abstract class HeliumFlutterPlatform extends PlatformInterface {
 
   Future<void> clearCustomUserId();
 
+  Future<void> setCustomUserId(String newUserId);
+
   Future<PaywallInfo?> getPaywallInfo(String trigger);
 
   Future<bool> handleDeepLink(String uri);
