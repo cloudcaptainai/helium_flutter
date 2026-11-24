@@ -72,6 +72,8 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
       'useDefaultDelegate': purchaseDelegate == null,
       'wrapperSdkVersion': heliumFlutterSdkVersion,
       'delegateType': purchaseDelegate?.delegateType,
+      'supportsPromotionalOffers':
+          purchaseDelegate?.supportsPromotionalOffers ?? false,
       'androidConsumableProductIds': androidConsumableProductIds?.toList(),
     };
   }
@@ -181,6 +183,7 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
         String productId = '';
         String? basePlanId;
         String? offerId;
+        String? promoOfferId;
 
         if (handler.arguments is String) {
           productId = handler.arguments as String;
@@ -189,6 +192,7 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
           productId = args['productId'] as String? ?? '';
           basePlanId = args['basePlanId'] as String?;
           offerId = args['offerId'] as String?;
+          promoOfferId = args['promoOfferId'] as String?;
         }
 
         HeliumPurchaseResult result;
@@ -196,7 +200,10 @@ class HeliumFlutterMethodChannel extends HeliumFlutterPlatform {
           result = await purchaseDelegate.makePurchaseAndroid(productId,
               basePlanId: basePlanId, offerId: offerId);
         } else if (Platform.isIOS) {
-          result = await purchaseDelegate.makePurchaseIOS(productId);
+          result = promoOfferId != null
+              ? await purchaseDelegate.makePurchaseIOSWithPromoOffer(
+                  productId, promoOfferId)
+              : await purchaseDelegate.makePurchaseIOS(productId);
         } else {
           // ignore: deprecated_member_use_from_same_package
           result = await purchaseDelegate.makePurchase(productId);

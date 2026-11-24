@@ -1,3 +1,6 @@
+## 3.3.17
+- Bumped to stay in sync with helium_flutter 3.3.17 (adds promotional offer hooks for custom purchase delegates).
+
 ## 3.3.16
 - Updated helium-swift dependency to 4.15.0
 - Updated Helium Android dependency to 4.8.0

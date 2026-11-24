@@ -24,6 +24,23 @@ abstract class HeliumPurchaseDelegate {
     return makePurchase(productId);
   }
 
+  /// Whether this delegate applies App Store promotional offers on iOS.
+  ///
+  /// When `true`, paywalls show the paired promotional offer's pricing to
+  /// eligible users, and purchases of a product paired with a promotional
+  /// offer call [makePurchaseIOSWithPromoOffer]. When `false`, paywalls show
+  /// the regular price and purchases call [makePurchaseIOS].
+  bool get supportsPromotionalOffers => false;
+
+  /// Purchase [productId] on iOS, applying the App Store promotional offer
+  /// [promoOfferId] that is paired with the product in Helium.
+  ///
+  /// Only called when [supportsPromotionalOffers] is `true`.
+  Future<HeliumPurchaseResult> makePurchaseIOSWithPromoOffer(
+      String productId, String promoOfferId) async {
+    return makePurchaseIOS(productId);
+  }
+
   Future<bool> restorePurchases();
 }
 
