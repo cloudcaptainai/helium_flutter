@@ -1,6 +1,3 @@
-## 3.3.17
-- Added iOS App Store promotional offer support for custom purchase delegates: override `supportsPromotionalOffers` and `makePurchaseIOSWithPromoOffer` on `HeliumPurchaseDelegate`
-
 ## 3.3.16
 - Updated helium-swift dependency to 4.15.0
 - Updated Helium Android dependency to 4.8.0
