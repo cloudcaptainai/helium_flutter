@@ -60,6 +60,8 @@ class HeliumFlutter {
   /// Helium paywall cannot be displayed. Prefer handling the
   /// `onPaywallUnavailable` callback on [presentUpsell] instead — the
   /// [fallbackPaywall] widget is planned for removal in the next major release.
+  /// Unlike Helium paywalls, this widget does not close itself after a
+  /// purchase. Your widget is responsible for its own dismissal.
   Future<String?> initialize({
     required String apiKey,
     HeliumCallbacks? callbacks,
@@ -96,20 +98,16 @@ class HeliumFlutter {
 
   ///Hide currently visible Helium paywall.
   ///
-  /// Only for advanced use cases, such as when your app must dismiss a paywall
-  /// itself in response to a deep link or push notification. Paywalls shown
-  /// with [presentUpsell] hide themselves (for example after a purchase or when
-  /// the user closes them), so a normal presentation flow does not need to call
-  /// this.
+  /// Paywalls shown with [presentUpsell] hide themselves (for example after a
+  /// purchase or when the user closes them), so a normal presentation flow does
+  /// not need to call this.
   Future<bool> hideUpsell() => HeliumFlutterPlatform.instance.hideUpsell();
 
   ///Hide all Helium paywalls.
   ///
-  /// Only for advanced use cases, such as when your app must dismiss a paywall
-  /// itself in response to a deep link or push notification. Paywalls shown
-  /// with [presentUpsell] hide themselves (for example after a purchase or when
-  /// the user closes them), so a normal presentation flow does not need to call
-  /// this.
+  /// Paywalls shown with [presentUpsell] hide themselves (for example after a
+  /// purchase or when the user closes them), so a normal presentation flow does
+  /// not need to call this.
   Future<bool> hideAllUpsells() =>
       HeliumFlutterPlatform.instance.hideAllUpsells();
 
