@@ -798,7 +798,9 @@ class DemoHeliumPaywallDelegate: HeliumPaywallDelegate, HeliumDelegateReturnsTra
                         switch lowercasedStatus {
                         case "purchased":
                             status = .purchased
-                            // Store transaction IDs for HeliumDelegateReturnsTransaction
+                            // Store transaction IDs for HeliumDelegateReturnsTransaction. A result
+                            // without one must not leave an earlier purchase's IDs in place.
+                            self.latestTransactionResult = nil
                             if let transactionId = resultMap["transactionId"] as? String,
                                let productId = resultMap["productId"] as? String {
                                 self.latestTransactionResult = HeliumTransactionIdResult(

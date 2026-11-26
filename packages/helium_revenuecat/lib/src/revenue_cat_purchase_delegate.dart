@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:flutter/services.dart';
 import 'package:helium_flutter/helium_flutter.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
@@ -97,6 +98,7 @@ class RevenueCatPurchaseDelegate extends HeliumPurchaseDelegate
 
   @override
   Future<HeliumPurchaseResult> makePurchaseIOS(String productId) async {
+    final tappedAt = DateTime.now();
     await _syncAppUserId();
 
     try {
@@ -107,8 +109,13 @@ class RevenueCatPurchaseDelegate extends HeliumPurchaseDelegate
       }
 
       final purchaseResult = await Purchases.purchase(PurchaseParams.storeProduct(products.first));
-      final transactionId = purchaseResult.storeTransaction.transactionIdentifier;
-      return _evaluatePurchaseResult(purchaseResult.customerInfo, productId, transactionId: transactionId);
+      final transaction = purchaseResult.storeTransaction;
+      return _evaluatePurchaseResult(
+        purchaseResult.customerInfo,
+        productId,
+        transactionId: transactionIdMadeSince(transaction, tappedAt),
+        transactionProductId: transaction.productIdentifier,
+      );
     } on PlatformException catch (e) {
       return _handlePlatformException(e);
     } catch (e) {
@@ -199,14 +206,18 @@ class RevenueCatPurchaseDelegate extends HeliumPurchaseDelegate
 
   /// Evaluates customer info to determine purchase result.
   HeliumPurchaseResult _evaluatePurchaseResult(
-      CustomerInfo customerInfo, String productId, {String? transactionId}) {
+      CustomerInfo customerInfo, String productId,
+      {String? transactionId, String? transactionProductId}) {
     if (!_isProductActive(customerInfo, productId)) {
       log('[Helium] Purchase succeeded but product not immediately active in customerInfo: $productId');
     }
+    final hasTransactionId = transactionId != null && transactionId.isNotEmpty;
+    final hasTransactionProduct = transactionProductId != null && transactionProductId.isNotEmpty;
+    // Keep the reported product paired with the reported transaction.
     return HeliumPurchaseResult(
       status: HeliumTransactionStatus.purchased,
-      transactionId: transactionId,
-      productId: productId,
+      transactionId: hasTransactionId ? transactionId : null,
+      productId: hasTransactionId && hasTransactionProduct ? transactionProductId : productId,
     );
   }
 
@@ -306,4 +317,23 @@ class RevenueCatPurchaseDelegate extends HeliumPurchaseDelegate
     }
   }
 
+}
+
+/// Returns [transaction]'s ID when the store made it at or after [tappedAt], otherwise null.
+///
+/// A same-group plan change that takes effect at renewal hands back the existing, older
+/// transaction, which must not be attributed to this purchase. Leaving the ID out lets the native
+/// SDK look up the purchase itself.
+@visibleForTesting
+String? transactionIdMadeSince(StoreTransaction transaction, DateTime tappedAt) {
+  final transactionId = transaction.transactionIdentifier;
+  if (transactionId.isEmpty) return null;
+  final purchasedAt = DateTime.tryParse(transaction.purchaseDate);
+  if (purchasedAt == null) return null;
+  // Store purchase dates can be truncated to whole seconds.
+  final tappedAtSecond = DateTime.fromMillisecondsSinceEpoch(
+    tappedAt.millisecondsSinceEpoch - tappedAt.millisecondsSinceEpoch % 1000,
+    isUtc: true,
+  );
+  return purchasedAt.isBefore(tappedAtSecond) ? null : transactionId;
 }
