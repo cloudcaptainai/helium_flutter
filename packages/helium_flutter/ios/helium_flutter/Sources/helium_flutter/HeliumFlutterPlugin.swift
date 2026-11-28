@@ -383,6 +383,7 @@ public class HeliumFlutterPlugin: NSObject, FlutterPlugin {
         let useDefaultDelegate: Bool
         let wrapperSdkVersion: String
         let delegateType: String?
+        let supportsPromotionalOffers: Bool
     }
 
     private func parseInitArgs(_ args: [String: Any]) -> ParsedInitArgs {
@@ -397,7 +398,8 @@ public class HeliumFlutterPlugin: NSObject, FlutterPlugin {
             paywallLoadingConfig: convertMarkersToBooleans(args["paywallLoadingConfig"] as? [String: Any]),
             useDefaultDelegate: args["useDefaultDelegate"] as? Bool ?? false,
             wrapperSdkVersion: args["wrapperSdkVersion"] as? String ?? "unknown",
-            delegateType: args["delegateType"] as? String
+            delegateType: args["delegateType"] as? String,
+            supportsPromotionalOffers: args["supportsPromotionalOffers"] as? Bool ?? false
         )
     }
 
@@ -426,7 +428,11 @@ public class HeliumFlutterPlugin: NSObject, FlutterPlugin {
         if parsed.useDefaultDelegate {
             delegate = DefaultPurchaseDelegate(methodChannel: channel)
         } else {
-            delegate = DemoHeliumPaywallDelegate(delegateType: parsed.delegateType, methodChannel: channel)
+            delegate = DemoHeliumPaywallDelegate(
+                delegateType: parsed.delegateType,
+                supportsPromotionalOffers: parsed.supportsPromotionalOffers,
+                methodChannel: channel
+            )
         }
         Helium.config.purchaseDelegate = delegate
 
@@ -743,6 +749,7 @@ func convertValueMarkersToBooleans(_ value: Any) -> Any {
 class DemoHeliumPaywallDelegate: HeliumPaywallDelegate, HeliumDelegateReturnsTransaction {
     private let _delegateType: String?
     public var delegateType: String { _delegateType ?? "custom" }
+    let supportsPromotionalOffers: Bool
     let _methodChannel: FlutterMethodChannel
 
     // Thread-safe storage for transaction result
@@ -761,8 +768,9 @@ class DemoHeliumPaywallDelegate: HeliumPaywallDelegate, HeliumDelegateReturnsTra
         }
     }
 
-    init(delegateType: String?, methodChannel: FlutterMethodChannel) {
+    init(delegateType: String?, supportsPromotionalOffers: Bool, methodChannel: FlutterMethodChannel) {
         _delegateType = delegateType
+        self.supportsPromotionalOffers = supportsPromotionalOffers
         _methodChannel = methodChannel
     }
 
@@ -771,8 +779,18 @@ class DemoHeliumPaywallDelegate: HeliumPaywallDelegate, HeliumDelegateReturnsTra
         return latestTransactionResult
     }
 
-    // Required: Make a purchase
     func makePurchase(productId: String) async -> HeliumPaywallTransactionStatus {
+        await invokeMakePurchase(arguments: productId)
+    }
+
+    func makePurchase(productId: String, promoOfferId: String) async -> HeliumPaywallTransactionStatus {
+        guard supportsPromotionalOffers else {
+            return await makePurchase(productId: productId)
+        }
+        return await invokeMakePurchase(arguments: ["productId": productId, "promoOfferId": promoOfferId])
+    }
+
+    private func invokeMakePurchase(arguments: Any) async -> HeliumPaywallTransactionStatus {
         // Clear previous transaction result
         latestTransactionResult = nil
 
@@ -785,7 +803,7 @@ class DemoHeliumPaywallDelegate: HeliumPaywallDelegate, HeliumDelegateReturnsTra
 
                 _methodChannel.invokeMethod(
                     "makePurchase",
-                    arguments: productId
+                    arguments: arguments
                 ) { result in
                     let status: HeliumPaywallTransactionStatus
 

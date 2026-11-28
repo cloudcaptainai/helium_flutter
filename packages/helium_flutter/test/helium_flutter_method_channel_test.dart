@@ -76,6 +76,27 @@ void main() {
       'Initialization started!',
     );
   });
+  test('initialize tells native whether the purchase delegate supports promotional offers',
+      () async {
+    final initArgs = <Map>[];
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(channel, (MethodCall methodCall) async {
+      if (methodCall.method == initializeMethodName) {
+        initArgs.add(methodCall.arguments as Map);
+      }
+      return null;
+    });
+
+    await platform.initialize(apiKey: initializeValue.apiKey);
+    await platform.resetHelium();
+    await platform.initialize(
+      apiKey: initializeValue.apiKey,
+      purchaseDelegate: _PromoOfferPurchaseDelegate(),
+    );
+
+    expect(initArgs.map((args) => args['supportsPromotionalOffers']).toList(),
+        [false, true]);
+  });
   test('wrapper SDK info reaches native before any other call', () async {
     final calls = <MethodCall>[];
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
@@ -1424,4 +1445,12 @@ void main() {
 
     expect(types, ['paywallOpen']);
   });
+}
+
+class _PromoOfferPurchaseDelegate extends HeliumPurchaseDelegate {
+  @override
+  bool get supportsPromotionalOffers => true;
+
+  @override
+  Future<bool> restorePurchases() async => false;
 }
